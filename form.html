@@ -28,7 +28,7 @@
     @keyframes fadeIn{ to{ opacity:1; transform:none } }
 
     /* Animated background (matches your other pages) */
-    .bg{ position:fixed; inset:0; z-index:-2;
+    .bg{ position:fixed; inset:0; z-index:0;  /* ⬅ was -2; bring it above page background */
       background: radial-gradient(1200px 360px at 50% -120px, rgba(196,30,58,.09), transparent 65%), var(--bg);
     }
     .bg::before, .bg::after{
@@ -51,7 +51,7 @@
       display:flex; align-items:center;
       backdrop-filter:saturate(180%) blur(6px);
       background:color-mix(in oklab, var(--surface) 88%, transparent);
-      border-bottom:1px solid var(--line); z-index:10;
+      border-bottom:1px solid var(--line); z-index:2; /* ⬅ above .bg */
     }
     .nav{ max-width:1200px; margin:0 auto; padding:0 16px; width:100%;
       display:flex; justify-content:space-between; align-items:center; height:100%;
@@ -59,7 +59,7 @@
     .brand img{ height:40px; width:auto; display:block; }
 
     /* Layout */
-    .stage{ min-height:calc(100dvh - var(--header-h)); display:grid; place-items:center; padding:24px 16px }
+    .stage{ min-height:calc(100dvh - var(--header-h)); display:grid; place-items:center; padding:24px 16px; position:relative; z-index:1; } /* ⬅ above .bg */
     .card{
       width:min(720px, 100%);
       background:var(--surface);
@@ -246,7 +246,7 @@
       });
     })();
 
-    // Insert + redirect to brand page based on first letters
+    // Insert + redirect to brand page with KZCF/KZNM handling
     (function(){
       const $ = (s)=>document.querySelector(s);
       const form = $('#gateForm');
@@ -275,20 +275,20 @@
       document.addEventListener('DOMContentLoaded', validate);
 
       function routeForReceipt(rcpt){
-        const code = (rcpt.match(/^[A-Z]{4}/i)?.[0] || '').toUpperCase();   // first 4 letters
-        const code2 = code.slice(0,2);                                      // first 2 letters (fallback)
+        const code = (rcpt.match(/^[A-Z]{4}/i)?.[0] || '').toUpperCase(); // first 4 letters
+        const code2 = code.slice(0,2);                                   // first 2 letters (fallback)
 
         // 4-letter specific routes
         const map4 = {
-          KZCF: 'kzcsurvey.html',   // Kazu Café
-          KZNM: 'kzsurvey.html',    // Kazunori
+          KZCF: 'kzcsurvey.html', // Kazu Café
+          KZNM: 'kzsurvey.html',  // Kazunori
         };
 
         // legacy / other 2-letter routes
         const map2 = {
-          MD: 'mdsurvey.html',      // Mendokoro
-          YS: 'yksurvey.html',      // Yushoken
-          MR: 'mrsurvey.html',      // Marudori
+          MD: 'mdsurvey.html',    // Mendokoro
+          YS: 'yksurvey.html',    // Yushoken
+          MR: 'mrsurvey.html',    // Marudori
         };
 
         return map4[code] || map2[code2] || null;
@@ -333,7 +333,6 @@
             receipt: data.receipt
           }).toString();
 
-          // Go to brand-specific survey
           overlay.querySelector('.window').textContent = 'Loading brand survey…';
           window.location.href = `${target}?${params}`;
         }catch(err){
