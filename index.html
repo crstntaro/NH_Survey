@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,13 +13,17 @@
   <style>
     :root{
       --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+
+      /* Light only */
       --ink:#101010; --muted:#6b7280;
       --gold:#85754E; --gold-dk:#6f6242;
       --line:#e5e7eb; --bg:#faf6ef; --surface:#ffffff;
+
       --header-h:72px;
       --sea1:.12; --sea2:.05;
     }
 
+    /* Base */
     *{ box-sizing:border-box; margin:0; padding:0 }
     html,body{ min-height:100% }
     body{
@@ -29,7 +33,7 @@
     }
     @keyframes fadeIn{ to{ opacity:1; transform:none } }
 
-    /* Animated background */
+    /* Animated background (base64 so GH Pages never strips it) */
     .bg{ position:fixed; inset:0; z-index:-2;
       background: radial-gradient(1200px 360px at 50% -120px, rgba(196,30,58,.09), transparent 65%), var(--bg);
     }
@@ -39,11 +43,11 @@
     }
     .bg::before{
       opacity:var(--sea1);
-      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23C41E3A" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+      background-image:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMzAwIDE1MCI+PGRlZnM+PHBhdHRlcm4gaWQ9InMiIHdpZHRoPSI1MCIgaGVpZ2h0PSIyNSIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMjVhMjUgMjUgMCAwMSA1MCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNDNDFFM0EiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNzKSIvPjwvc3ZnPg==');
     }
     .bg::after{
       opacity:var(--sea2); animation-duration:48s; animation-direction:reverse; transform:translateY(10px);
-      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23101010" stroke-width=".9" opacity=".25"/><path d="M12.5 25a12.5 12.5 0 0 1 25 0" fill="none" stroke="%23101010" stroke-width=".6" opacity=".18"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+      background-image:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMzAwIDE1MCI+PGRlZnM+PHBhdHRlcm4gaWQ9InMiIHdpZHRoPSI1MCIgaGVpZ2h0PSIyNSIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMjVhMjUgMjUgMCAwMSA1MCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDEwMTAiIHN0cm9rZS13aWR0aD0iLjkiIG9wYWNpdHk9Ii4yNSIvPjxwYXRoIGQ9Ik0xMi41IDI1QTEyLjUgMTIuNSAwIDAxMzcgMjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzEwMTAxMCIgc3Ryb2tlLXdpZHRoPSIuNiIgb3BhY2l0eT0iLjE4Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3MpIi8+PC9zdmc+');
     }
     @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
 
@@ -102,7 +106,7 @@
     .wrap{ max-width:980px; margin:0 auto; padding:22px 16px 48px; text-align:center }
     .h1{ font:800 clamp(24px,5vw,36px)/1.2 var(--font); margin:10px 0 12px }
     .lead{ color:var(--muted); font-size:clamp(15px,2.4vw,18px); max-width:860px; margin:0 auto 18px }
-    .receipt img{ width:min(92vw,500px); height:auto; display:block; margin:0 auto 18px }
+    .receipt img{ width:min(92vw,500px); height:auto; display:block; margin:0 auto 10px }
 
     .cta{
       position:relative; isolation:isolate;

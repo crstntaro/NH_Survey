@@ -145,10 +145,12 @@
         <label for="receipt">Receipt Number<span class="req" aria-hidden="true">*</span></label>
         <input id="receipt" name="receipt" type="text" inputmode="text" maxlength="18"
                placeholder="e.g., MDKB-123456-789101" required aria-describedby="receiptHelp receiptErr">
-        <div id="receiptHelp" class="hint">Format: <code>AAAA-000000-000000</code>. We’ll route by the first two letters:
-          <b>MD</b>, <b>YS</b>, <b>MR</b>, <b>KZ</b>, <b>KC</b>.
+        <div id="receiptHelp" class="hint">
+          Format: <code>AAAA-000000-000000</code> (starts with 4 letters). Routes:
+          <b>MD</b> → Mendokoro, <b>YS</b> → Yushoken, <b>MR</b> → Marudori,
+          <b>KZCF</b> → Kazu Café, <b>KZNM</b> → Kazunori.
         </div>
-        <div id="receiptErr" class="err">Unrecognized receipt code. Use MD / YS / MR / KZ / KC.</div>
+        <div id="receiptErr" class="err">Unrecognized receipt code. Try MD / YS / MR / KZCF / KZNM.</div>
 
         <div class="row">
           <div class="col">
@@ -244,7 +246,7 @@
       });
     })();
 
-    // Insert + redirect to brand page based on first two letters
+    // Insert + redirect to brand page based on first letters
     (function(){
       const $ = (s)=>document.querySelector(s);
       const form = $('#gateForm');
@@ -273,24 +275,24 @@
       document.addEventListener('DOMContentLoaded', validate);
 
       function routeForReceipt(rcpt){
-  const code = (rcpt.match(/^[A-Z]{4}/i)?.[0] || '').toUpperCase();   // first 4 letters
-  const code2 = code.slice(0,2);                                      // first 2 letters (fallback)
+        const code = (rcpt.match(/^[A-Z]{4}/i)?.[0] || '').toUpperCase();   // first 4 letters
+        const code2 = code.slice(0,2);                                      // first 2 letters (fallback)
 
-  // 4-letter specific routes
-  const map4 = {
-    KZCF: 'kzcsurvey.html',   // Kazu Café
-    KZNM: 'kzsurvey.html',    // Kazunori
-  };
+        // 4-letter specific routes
+        const map4 = {
+          KZCF: 'kzcsurvey.html',   // Kazu Café
+          KZNM: 'kzsurvey.html',    // Kazunori
+        };
 
-  // legacy / other 2-letter routes (keep whatever you already use)
-  const map2 = {
-    MD: 'mdsurvey.html',      // Mendokoro
-    YS: 'yksurvey.html',      // Yushoken
-    MR: 'mrsurvey.html',      // Marudori
-  };
+        // legacy / other 2-letter routes
+        const map2 = {
+          MD: 'mdsurvey.html',      // Mendokoro
+          YS: 'yksurvey.html',      // Yushoken
+          MR: 'mrsurvey.html',      // Marudori
+        };
 
-  return map4[code] || map2[code2] || null;
-}
+        return map4[code] || map2[code2] || null;
+      }
 
       form.addEventListener('submit', async (e)=>{
         e.preventDefault();
