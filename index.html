@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,17 +13,13 @@
   <style>
     :root{
       --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-
-      /* Light (only) */
       --ink:#101010; --muted:#6b7280;
       --gold:#85754E; --gold-dk:#6f6242;
       --line:#e5e7eb; --bg:#faf6ef; --surface:#ffffff;
-
       --header-h:72px;
       --sea1:.12; --sea2:.05;
     }
 
-    /* Base */
     *{ box-sizing:border-box; margin:0; padding:0 }
     html,body{ min-height:100% }
     body{
@@ -106,7 +102,7 @@
     .wrap{ max-width:980px; margin:0 auto; padding:22px 16px 48px; text-align:center }
     .h1{ font:800 clamp(24px,5vw,36px)/1.2 var(--font); margin:10px 0 12px }
     .lead{ color:var(--muted); font-size:clamp(15px,2.4vw,18px); max-width:860px; margin:0 auto 18px }
-    .receipt img{ width:min(92vw,500px); height:auto; display:block; margin:0 auto 10px }
+    .receipt img{ width:min(92vw,500px); height:auto; display:block; margin:0 auto 18px }
 
     .cta{
       position:relative; isolation:isolate;
