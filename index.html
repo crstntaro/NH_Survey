@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nippon Hasha Experience Survey</title>
+
+  <!-- Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+
+      /* Light */
+      --ink:#101010; --muted:#6b7280;
+      --gold:#85754E; --gold-dk:#6f6242;
+      --line:#e5e7eb; --bg:#faf6ef; --surface:#ffffff;
+
+      --header-h:72px;
+      --sea1:.12; --sea2:.05;
+    }
+    /* Dark */
+    html[data-theme="dark"]{
+      --ink:#e8e8e8; --muted:#a8afb9; --line:#2a2f36;
+      --bg:#0f1115; --surface:#151922; --sea1:.08; --sea2:.06;
+    }
+
+    /* Base */
+    *{ box-sizing:border-box; margin:0; padding:0 }
+    html,body{ min-height:100% }
+    body{
+      font-family:var(--font); color:var(--ink); background:var(--bg);
+      line-height:1.6; overflow-x:hidden;
+      opacity:0; transform:translateY(8px); animation:fadeIn .45s ease forwards;
+    }
+    @keyframes fadeIn{ to{ opacity:1; transform:none } }
+
+    /* Animated background */
+    .bg{ position:fixed; inset:0; z-index:-2;
+      background: radial-gradient(1200px 360px at 50% -120px, rgba(196,30,58,.09), transparent 65%), var(--bg);
+    }
+    .bg::before, .bg::after{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background-repeat:repeat; background-size:400px 200px; animation: float 34s linear infinite;
+    }
+    .bg::before{
+      opacity:var(--sea1);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23C41E3A" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    .bg::after{
+      opacity:var(--sea2); animation-duration:48s; animation-direction:reverse; transform:translateY(10px);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23101010" stroke-width=".9" opacity=".25"/><path d="M12.5 25a12.5 12.5 0 0 1 25 0" fill="none" stroke="%23101010" stroke-width=".6" opacity=".18"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
+
+    /* Header */
+    .site-header{
+      position:sticky; top:0; height:var(--header-h);
+      display:flex; align-items:center;
+      backdrop-filter:saturate(180%) blur(6px);
+      background:color-mix(in oklab, var(--surface) 88%, transparent);
+      border-bottom:1px solid var(--line); z-index:10;
+    }
+    .nav{ max-width:1200px; margin:0 auto; padding:0 16px; width:100%;
+      display:flex; justify-content:space-between; align-items:center; height:100%;
+    }
+    .brand img{ height:40px; width:auto }
+
+    .theme-toggle{
+      width:40px; height:40px; border-radius:999px; border:1px solid var(--line);
+      display:grid; place-items:center; cursor:pointer; background:var(--surface);
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
+    }
+    .theme-toggle svg{ width:20px; height:20px; fill:currentColor; color:var(--ink) }
+
+    /* Banner */
+    .banner{ background:url('blackbg.png') center/cover no-repeat; color:#fff; }
+    .banner .container{
+      max-width:1200px; margin:0 auto;
+      padding-block:clamp(8px,2vw,18px);           /* tighter top/bottom */
+      padding-inline:16px;
+      display:grid; align-items:center;
+      grid-template-columns: minmax(0,1.05fr) minmax(120px,.95fr);
+      column-gap:clamp(16px,4vw,64px);             /* more space between text & ramen */
+      overflow:visible;
+    }
+
+    .hero-copy{ display:grid; grid-template-rows:auto auto auto; align-content:start; row-gap:8px }
+    .redseal img{ height:clamp(16px,5vw,30px); width:auto; display:block }
+
+    .hero-title{
+      font:800 clamp(18px,5.2vw,32px)/1.08 var(--font);
+      color:var(--gold); text-transform:uppercase; letter-spacing:.02em;
+    }
+
+    .brand-row{
+      display:flex; flex-wrap:nowrap; gap:clamp(8px,1.8vw,16px);
+      align-items:center; justify-content:flex-start; min-width:0;
+    }
+    .brand-row img{ height:clamp(10px,5vw,30px); width:auto; filter:brightness(0) invert(1); flex:0 0 auto }
+
+    .hero-ramen{
+      justify-self:end; align-self:center;
+      width:clamp(150px,48vw,240px); aspect-ratio:1/1;
+      transform:translateX(clamp(10px,6vw,80px)); /* push further right */
+    }
+    .hero-ramen img{ width:100%; height:100%; object-fit:cover; display:block }
+
+    /* Safety on very small screens */
+    @media (max-width:560px){
+      .banner .container{ column-gap:clamp(10px,3vw,20px); }
+      .hero-ramen{ transform:translateX(clamp(4px,3vw,20px)); }
+    }
+
+    /* Body */
+    .wrap{ max-width:980px; margin:0 auto; padding:22px 16px 48px; text-align:center }
+    .h1{ font:800 clamp(24px,5vw,36px)/1.2 var(--font); margin:10px 0 12px }
+    .lead{ color:var(--muted); font-size:clamp(15px,2.4vw,18px); max-width:860px; margin:0 auto 18px }
+    .receipt img{ width:min(92vw,500px); height:auto; display:block; margin:0 auto 10px }
+
+    .cta{
+      position:relative; isolation:isolate;
+      display:inline-block; padding:14px 28px; border-radius:16px; font:800 16px/1 var(--font);
+      color:#fff; background:var(--gold); text-decoration:none;
+      border:1px solid rgba(0,0,0,.08); box-shadow:0 16px 32px rgba(133,117,78,.25);
+      overflow:hidden;
+    }
+    .cta::after{
+      content:""; position:absolute; inset:0; z-index:-1; background:var(--gold-dk);
+      transform:scaleX(0); transform-origin:left center; transition:transform .35s ease;
+    }
+    .cta:hover::after{ transform:scaleX(1) }
+    .cta:hover{ transform:translateY(-1px); transition:transform .2s ease }
+
+    .footer{ text-align:center; color:var(--muted); font-size:12px; margin:28px 0 }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="#"><img src="nhlogo.png" alt="Nippon Hasha Inc."></a>
+
+    </nav>
+  </header>
+
+  <!-- Banner -->
+  <section class="banner" role="region" aria-label="Nippon Hasha Customer Survey">
+    <div class="container">
+      <div class="hero-copy">
+        <div class="redseal"><img src="redlogo.png" alt="Red seal"></div>
+        <h1 class="hero-title">NIPPON HASHA</br>CUSTOMER SURVEY</h1>
+        <div class="brand-row" aria-label="Brands">
+          <img src="yushokenlogo.png" alt="Yushoken">
+          <img src="mendokorologo.png" alt="Mendokoro">
+          <img src="marudorilogo.png" alt="Marudori">
+          <img src="kazunorilogo.png" alt="Kazunori">
+        </div>
+      </div>
+
+      <div class="hero-ramen">
+        <img src="ramen-hero.png" alt="Signature ramen bowl">
+      </div>
+    </div>
+  </section>
+
+  <!-- Content -->
+  <main class="wrap">
+    <h2 class="h1">Welcome to Nippon Hasha's Customer Survey!</h2>
+    <p class="lead">
+      Your feedback will help us improve the Nippon Hasha experience! Refer to the image below and take note of your receipt number, get a treat on us on your next visit!
+    </p>
+    <div class="receipt" aria-label="Receipt sample">
+      <img src="receipt.png" alt="Sample receipt with number">
+    </div>
+    <a class="cta" href="form.html">Start Survey →</a>
+    <p class="footer">© <script>document.write(new Date().getFullYear())</script> Nippon Hasha</p>
+  </main>
+
+  <script>
+    // Theme toggle
+    (function(){
+      const key='nh-theme';
+      const html=document.documentElement;
+      const btn=document.getElementById('themeBtn');
+      const sun=document.getElementById('sunIcon');
+      const moon=document.getElementById('moonIcon');
+
+      function apply(mode){
+        html.setAttribute('data-theme',mode);
+        if(mode==='dark'){ sun.style.display='none'; moon.style.display='block'; }
+        else{ sun.style.display='block'; moon.style.display='none'; }
+      }
+      let saved=localStorage.getItem(key);
+      if(!saved){ saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light'; }
+      apply(saved);
+      btn.addEventListener('click',()=>{
+        const next = html.getAttribute('data-theme')==='dark' ? 'light' : 'dark';
+        localStorage.setItem(key,next); apply(next);
+      });
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{
+        if(!localStorage.getItem(key)) apply(e.matches?'dark':'light');
+      });
+    })();
+  </script>
+</body>
+</html>

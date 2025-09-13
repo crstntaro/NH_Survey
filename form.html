@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nippon Hasha — Start Survey</title>
+
+  <!-- Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      --ink:#101010; --muted:#6b7280; --gold:#85754E; --gold-dk:#6f6242;
+      --line:#e5e7eb; --bg:#faf6ef; --surface:#ffffff;
+      --header-h:72px; --sea1:.12; --sea2:.05;
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0 }
+    html,body{ min-height:100% }
+    body{
+      font-family:var(--font); color:var(--ink); background:var(--bg);
+      line-height:1.6; overflow-x:hidden;
+      opacity:0; transform:translateY(8px); animation:fadeIn .45s ease forwards;
+    }
+    @keyframes fadeIn{ to{ opacity:1; transform:none } }
+
+    /* Animated background (matches your other pages) */
+    .bg{ position:fixed; inset:0; z-index:-2;
+      background: radial-gradient(1200px 360px at 50% -120px, rgba(196,30,58,.09), transparent 65%), var(--bg);
+    }
+    .bg::before, .bg::after{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background-repeat:repeat; background-size:400px 200px; animation: float 34s linear infinite;
+    }
+    .bg::before{
+      opacity:var(--sea1);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23C41E3A" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    .bg::after{
+      opacity:var(--sea2); animation-duration:48s; animation-direction:reverse; transform:translateY(10px);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23101010" stroke-width=".9" opacity=".25"/><path d="M12.5 25a12.5 12.5 0 0 1 25 0" fill="none" stroke="%23101010" stroke-width=".6" opacity=".18"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
+
+    /* Header */
+    .site-header{
+      position:sticky; top:0; height:var(--header-h);
+      display:flex; align-items:center;
+      backdrop-filter:saturate(180%) blur(6px);
+      background:color-mix(in oklab, var(--surface) 88%, transparent);
+      border-bottom:1px solid var(--line); z-index:10;
+    }
+    .nav{ max-width:1200px; margin:0 auto; padding:0 16px; width:100%;
+      display:flex; justify-content:space-between; align-items:center; height:100%;
+    }
+    .brand img{ height:40px; width:auto; display:block; }
+
+    /* Layout */
+    .stage{ min-height:calc(100dvh - var(--header-h)); display:grid; place-items:center; padding:24px 16px }
+    .card{
+      width:min(720px, 100%);
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.10);
+      padding:22px;
+    }
+    .card h1{ font:800 clamp(20px,3.6vw,26px)/1.18 var(--font); margin-bottom:2px }
+    .sub{ color:var(--muted); font-size:13px; margin-bottom:14px }
+
+    label{ display:block; font:800 14px/1 var(--font); margin:16px 0 6px }
+    .req{ color:#C41E3A; margin-left:4px }
+
+    input[type="text"], input[type="email"]{
+      width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; font-size:15px;
+      background:var(--surface); color:var(--ink); outline:none;
+    }
+    input::placeholder{ color:#9aa2ae }
+    input[type="text"]:focus, input[type="email"]:focus{ border-color:#C41E3A; box-shadow:0 0 0 3px rgba(196,30,58,.15) }
+
+    .row{ display:flex; gap:12px; flex-wrap:wrap }
+    .row .col{ flex:1 1 240px }
+
+    .checks{ margin-top:10px; display:grid; gap:10px }
+    .check{ display:flex; gap:10px; align-items:flex-start }
+    .check input{ accent-color:#C41E3A; width:16px; height:16px; margin-top:2px }
+    .check div{ font-size:13px; line-height:1.45; color:var(--ink) }
+    .check small{ color:#C41E3A; display:block; margin-top:2px; font-size:11.5px }
+
+    /* CTA with fill sweep */
+    .actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:18px }
+    .cta{
+      position:relative; isolation:isolate;
+      display:inline-block; padding:14px 24px; border-radius:14px; font:800 15px/1 var(--font);
+      color:#fff; background:var(--gold); text-decoration:none; border:1px solid rgba(0,0,0,.08);
+      box-shadow:0 12px 26px rgba(133,117,78,.25); overflow:hidden; cursor:pointer;
+    }
+    .cta[disabled]{ opacity:.55; cursor:not-allowed; box-shadow:none }
+    .cta::after{
+      content:""; position:absolute; inset:0; z-index:-1; background:var(--gold-dk);
+      transform:scaleX(0); transform-origin:left center; transition:transform .35s ease;
+    }
+    .cta:hover:not([disabled])::after{ transform:scaleX(1) }
+    .hint{ color:var(--muted); font-size:12px }
+
+    .foot{ margin-top:14px; color:var(--muted); font-size:12px }
+
+    /* overlay */
+    .overlay{
+      position:fixed; inset:0; display:grid; place-items:center;
+      background:rgba(0,0,0,.14); backdrop-filter:blur(8px) saturate(120%);
+      opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:50;
+    }
+    .overlay.show{ opacity:1; pointer-events:auto; }
+    .window{
+      background:var(--surface); border:2px solid var(--gold); border-radius:16px;
+      padding:22px 26px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.35);
+    }
+    .err{ color:#b91c1c; font-size:12px; margin-top:8px; display:none }
+    .err.show{ display:block }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html" aria-label="Home">
+        <img src="nhlogo.png" alt="Nippon Hasha Inc.">
+      </a>
+    </nav>
+  </header>
+
+  <!-- Form -->
+  <main class="stage">
+    <section class="card" role="form">
+      <h1>Start your survey</h1>
+      <p class="sub">Enter your details to proceed.</p>
+
+      <form id="gateForm" novalidate>
+        <label for="receipt">Receipt Number<span class="req" aria-hidden="true">*</span></label>
+        <input id="receipt" name="receipt" type="text" inputmode="text" maxlength="18"
+               placeholder="e.g., MDKB-123456-789101" required aria-describedby="receiptHelp receiptErr">
+        <div id="receiptHelp" class="hint">Format: <code>AAAA-000000-000000</code>. We’ll route by the first two letters:
+          <b>MD</b>, <b>YS</b>, <b>MR</b>, <b>KZ</b>, <b>KC</b>.
+        </div>
+        <div id="receiptErr" class="err">Unrecognized receipt code. Use MD / YS / MR / KZ / KC.</div>
+
+        <div class="row">
+          <div class="col">
+            <label for="email">Email<span class="req" aria-hidden="true">*</span></label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required>
+          </div>
+          <div class="col">
+            <label for="name">Name <span class="hint">(optional)</span></label>
+            <input id="name" name="name" type="text" placeholder="Juan Dela Cruz">
+          </div>
+        </div>
+
+        <div class="checks" aria-label="Consent options">
+          <label class="check">
+            <input id="dpa" name="dpa" type="checkbox" required>
+            <div>
+              I agree to the Philippine Data Privacy Act and consent to the processing of my responses for service improvement.
+              <small>Required to proceed.</small>
+            </div>
+          </label>
+
+          <label class="check">
+            <input id="promo" name="promo" type="checkbox">
+            <div>
+              I’d like to receive emails about promotions and updates.
+              <small>Optional.</small>
+            </div>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="continueBtn" class="cta" type="submit" disabled>Continue →</button>
+          <span id="stateMsg" class="hint" aria-live="polite">Fill the required fields to continue.</span>
+        </div>
+
+        <p class="foot">By continuing, you acknowledge Nippon Hasha’s policies and terms of service.</p>
+      </form>
+    </section>
+  </main>
+
+  <!-- loading overlay -->
+  <div class="overlay" id="overlay">
+    <div class="window">Submitting…</div>
+  </div>
+
+  <!-- Supabase JS — UMD build -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+  <script>
+    // ---------- Supabase client ----------
+    const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // -------- Receipt formatter + validation ----------
+    (function(){
+      const receipt = document.getElementById('receipt');
+      const pattern = /^[A-Z]{4}-\d{6}-\d{6}$/;
+      function formatReceipt(raw){
+        const clean = raw.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+        const brand = clean.replace(/[^A-Z]/g,'').slice(0,4);
+        const nums  = clean.replace(/[^0-9]/g,'').slice(0,12);
+        const part1 = brand, part2 = nums.slice(0,6), part3 = nums.slice(6,12);
+        let out = part1;
+        if(part1.length===4 && part2.length>0) out += '-' + part2;
+        if(part1.length===4 && part2.length===6 && part3.length>0) out += '-' + part3;
+        return out;
+      }
+      function validateReceipt(){
+        const ok = pattern.test(receipt.value.trim());
+        receipt.setCustomValidity(ok ? '' : 'Format must be AAAA-000000-000000');
+        return ok;
+      }
+      receipt.addEventListener('input', ()=>{
+        const before=receipt.value, caret=receipt.selectionStart;
+        receipt.value = formatReceipt(receipt.value);
+        if(receipt.value.length>before.length && receipt.value[caret]==='-'){
+          receipt.setSelectionRange(caret+1, caret+1);
+        }
+        validateReceipt(); window.dispatchEvent(new Event('nh-validate'));
+      });
+      receipt.addEventListener('blur', validateReceipt);
+    })();
+
+    // Email message
+    (function(){
+      const email = document.getElementById('email');
+      email.addEventListener('input', ()=> email.setCustomValidity(''));
+      email.addEventListener('invalid', ()=>{
+        if(email.validity.typeMismatch || email.validity.valueMissing){
+          email.setCustomValidity('Please enter a valid email (e.g., you@example.com).');
+        }
+      });
+    })();
+
+    // Insert + redirect to brand page based on first two letters
+    (function(){
+      const $ = (s)=>document.querySelector(s);
+      const form = $('#gateForm');
+      const receipt = $('#receipt');
+      const email = $('#email');
+      const name = $('#name');
+      const dpa = $('#dpa');
+      const promo = $('#promo');
+      const btn = $('#continueBtn');
+      const state = $('#stateMsg');
+      const overlay = $('#overlay');
+      const errEl = $('#receiptErr');
+
+      const rOK = ()=> /^[A-Z]{4}-\d{6}-\d{6}$/.test(receipt.value.trim());
+      const eOK = ()=> email.validity.valid;
+      const dOK = ()=> dpa.checked;
+
+      function setState(msg){ state.textContent = msg; }
+      function validate(){
+        const ok = rOK() && eOK() && dOK();
+        btn.disabled = !ok;
+        setState(ok ? 'All set — press Continue.' : 'Fill the required fields to continue.');
+      }
+      ['input','change','blur'].forEach(evt => form.addEventListener(evt, validate));
+      window.addEventListener('nh-validate', validate);
+      document.addEventListener('DOMContentLoaded', validate);
+
+      function routeForReceipt(rcpt){
+  const code = (rcpt.match(/^[A-Z]{4}/i)?.[0] || '').toUpperCase();   // first 4 letters
+  const code2 = code.slice(0,2);                                      // first 2 letters (fallback)
+
+  // 4-letter specific routes
+  const map4 = {
+    KZCF: 'kzcsurvey.html',   // Kazu Café
+    KZNM: 'kzsurvey.html',    // Kazunori
+  };
+
+  // legacy / other 2-letter routes (keep whatever you already use)
+  const map2 = {
+    MD: 'mdsurvey.html',      // Mendokoro
+    YS: 'yksurvey.html',      // Yushoken
+    MR: 'mrsurvey.html',      // Marudori
+  };
+
+  return map4[code] || map2[code2] || null;
+}
+
+      form.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        validate();
+        if(btn.disabled) return;
+
+        const target = routeForReceipt(receipt.value.trim());
+        if(!target){
+          errEl.classList.add('show');
+          setState('Please check your receipt code.');
+          receipt.focus();
+          return;
+        }
+        errEl.classList.remove('show');
+
+        overlay.classList.add('show');
+        setState('Submitting…');
+
+        const payload = {
+          receipt: receipt.value.trim(),
+          email: email.value.trim().toLowerCase(),
+          name: name.value.trim() || null,
+          dpa: true,
+          promo: !!promo.checked
+        };
+
+        try{
+          const { data, error } = await supabase
+            .from('survey_responses')
+            .insert([payload])
+            .select()
+            .single();
+
+          if(error){ throw error; }
+
+          const params = new URLSearchParams({
+            response_id: data.id,
+            receipt: data.receipt
+          }).toString();
+
+          // Go to brand-specific survey
+          overlay.querySelector('.window').textContent = 'Loading brand survey…';
+          window.location.href = `${target}?${params}`;
+        }catch(err){
+          console.error(err);
+          setState(err?.message || 'Network error. Please try again.');
+          overlay.classList.remove('show');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mendokoro Survey — Nippon Hasha</title>
+
+  <!-- Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+
+      /* Mendokoro brand — BRIGHT RED */
+      --accent:#ff1f28;
+      --accent-dk:#cc0f19;
+
+      /* Shared tokens */
+      --ink:#101010; --muted:#6b7280;
+      --line:#e5e7eb; --bg:#faf6ef; --surface:#ffffff;
+      --header-h:72px;
+
+      /* animated seigaiha strengths */
+      --sea1:.12; --sea2:.05;
+
+      /* hero ramen art (matching food truck vibe) */
+      --hero-decor-right:url('mendo-bowl.png');
+      --hero-decor-left:url('mendo-ramen.png');
+
+      /* stage chili */
+      --stage-decor:url('mendo-chili.png');
+
+      --ease:cubic-bezier(.22,.61,.36,1);
+      --dur:.26s;
+    }
+
+    *{ box-sizing:border-box }
+    html,body{ min-height:100% }
+    body{
+      margin:0; font-family:var(--font); color:var(--ink); background:var(--bg);
+      line-height:1.6; overflow-x:hidden; opacity:0; transform:translateY(8px); animation:fadeIn .45s ease forwards;
+    }
+    @keyframes fadeIn{ to{ opacity:1; transform:none } }
+
+    /* ===== Animated background ===== */
+    .bg{ position:fixed; inset:0; z-index:-3;
+      background: radial-gradient(1200px 360px at 50% -120px, rgba(255,31,40,.10), transparent 65%), var(--bg);
+    }
+    .bg::before, .bg::after{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background-repeat:repeat; background-size:400px 200px; animation: float 34s linear infinite;
+    }
+    .bg::before{
+      opacity:var(--sea1);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23ff1f28" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    .bg::after{
+      opacity:var(--sea2); animation-duration:48s; animation-direction:reverse; transform:translateY(10px);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23101010" stroke-width=".9" opacity=".25"/><path d="M12.5 25a12.5 12.5 0 0 1 25 0" fill="none" stroke="%23101010" stroke-width=".6" opacity=".18"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
+
+    /* ===== Header ===== */
+    .site-header{
+      position:sticky; top:0; height:var(--header-h);
+      display:flex; align-items:center; z-index:10;
+      backdrop-filter:saturate(180%) blur(6px);
+      background:color-mix(in oklab, var(--surface) 88%, transparent);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{ max-width:1200px; margin:0 auto; padding:0 16px; width:100%;
+      display:flex; justify-content:space-between; align-items:center; height:100% }
+    .brand-left{ display:flex; align-items:center; gap:10px }
+    .brand-img{ height:34px; width:auto; display:block }
+    .brand-right{ display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; text-align:right }
+    .brand-name{ font:800 16px/1 var(--font) }
+    .brand-sub{ font:700 11px/1 var(--font); color:var(--muted); letter-spacing:.06em; text-transform:uppercase }
+
+    /* ===== HERO ===== */
+    .hero{
+      position:relative;
+      min-height:calc(100dvh - var(--header-h));
+      display:grid; place-items:center; padding:28px; text-align:center; overflow:hidden;
+    }
+    .wrap{ max-width:960px; margin:0 auto }
+
+    /* Twin ramen images like the food truck (soft blur + drop shadow) */
+    .hero::before,
+    .hero::after{
+      content:""; position:fixed; bottom:-60px; width:min(520px,70vw); aspect-ratio:1;
+      filter:blur(1px) drop-shadow(0 18px 36px rgba(0,0,0,.12));
+      opacity:.22; pointer-events:none; z-index:-1;
+      background-position:center; background-repeat:no-repeat; background-size:contain;
+      transform:translateZ(0);
+    }
+    .hero::before{
+      left:-80px;
+      background-image:var(--hero-decor-left);
+      transform:rotate(6deg) translateZ(0);
+    }
+    .hero::after{
+      right:-60px; width:min(520px,70vw);
+      background-image:var(--hero-decor-right);
+      transform:rotate(-6deg) translateZ(0);
+    }
+
+    .hero-logo{
+      display:inline-block; margin:0 auto 10px;
+      transform:translateY(8px) scale(.98); opacity:0;
+      animation: logoIn .6s var(--ease) .05s forwards;
+    }
+    .hero-logo img{ width:min(540px,78vw); height:auto; display:block; filter:drop-shadow(0 14px 24px rgba(0,0,0,.12)) }
+    @keyframes logoIn{ to{ transform:none; opacity:1 } }
+
+    h1{ margin:8px 0 4px; font:800 clamp(28px,5vw,44px)/1.1 var(--font); letter-spacing:-.2px; opacity:0; transform:translateY(8px); animation: rise .5s ease .12s forwards }
+    .subtitle{ font:700 clamp(13px,2.6vw,16px)/1.2 var(--font); color:var(--muted); opacity:0; transform:translateY(8px); animation: rise .5s ease .18s forwards }
+    .accent-underline{
+      width:0; height:3px; margin:10px auto 0;
+      background:linear-gradient(90deg, transparent 0%, var(--accent) 15%, var(--accent-dk) 85%, transparent 100%);
+      border-radius:999px; opacity:.9; animation: underline .7s ease .18s forwards;
+    }
+    @keyframes underline{ to{ width:180px } }
+    @keyframes rise{ to{ opacity:1; transform:none } }
+
+    .strap-hero{
+      display:inline-flex; gap:10px; align-items:center; margin:14px 0 22px; color:var(--accent);
+      font-weight:800; font-size:12px; letter-spacing:.12em; text-transform:uppercase; padding:8px 16px;
+      border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      border-radius:999px; background:color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+    .lead{ color:#4b5563; font-size:clamp(15px,2.4vw,18px); max-width:650px; margin:0 auto 22px }
+    .cta{
+      display:inline-flex; align-items:center; gap:12px; padding:14px 28px; border-radius:16px;
+      font:800 16px/1 var(--font); color:#fff; text-decoration:none; letter-spacing:.2px;
+      background: var(--accent); border:1px solid rgba(0,0,0,.08);
+      box-shadow:0 16px 32px color-mix(in srgb,var(--accent) 28%, transparent);
+      transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+    .cta:hover{ transform:translateY(-2px); box-shadow:0 20px 40px color-mix(in srgb, var(--accent) 36%, transparent) }
+
+    /* ===== SURVEY VIEWPORT ===== */
+    .viewport{
+      position:relative;
+      min-height:calc(100dvh - var(--header-h));
+      display:none; align-items:center; justify-content:center;
+      padding:20px 16px; overflow:hidden;
+    }
+
+    /* Subtle chilis behind the card */
+    .viewport::before,
+    .viewport::after{
+      content:""; position:absolute; pointer-events:none; z-index:-1;
+      background: var(--stage-decor) center/contain no-repeat;
+      opacity:.10; filter:blur(.5px) saturate(1.02);
+      transform: translateZ(0);
+    }
+    .viewport::before{ left:-40px; top:-20px; width:min(320px, 38vw); aspect-ratio:1; transform: rotate(-12deg) }
+    .viewport::after { right:-24px; bottom:-10px; width:min(260px, 30vw); aspect-ratio:1; transform: rotate(10deg) }
+
+    @media (prefers-reduced-motion: reduce){
+      .bg::before, .bg::after{ animation:none }
+    }
+
+    .card{
+      width:min(760px,100%);
+      background:var(--surface); border:1px solid var(--line); border-radius:20px;
+      box-shadow:0 16px 48px rgba(0,0,0,.08); padding:14px; position:relative; overflow:hidden;
+    }
+
+    .progress{ height:8px; background:#ffe7e9; border-radius:999px; overflow:hidden; margin:2px 0 10px }
+    .bar{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-dk)); transition:width .25s ease }
+
+    .step-hdr{ display:flex; align-items:center; justify-content:center; margin-bottom:8px; text-align:center }
+    .step-title{ font:800 clamp(18px,2.8vw,22px)/1.25 var(--font); max-width:680px }
+
+    /* Stage auto-sizes; allow overflow only when dropdown open */
+    .stage{
+      position:relative; overflow:hidden; background:var(--surface);
+      height:auto; transition:height var(--dur) var(--ease);
+    }
+    .stage.dropdown-open{ overflow:visible; }
+
+    .step{
+      position:absolute; inset:0; padding:10px 0 0;
+      opacity:0; pointer-events:none;
+      transform:translateX(12px);
+      overflow:auto; -webkit-overflow-scrolling: touch;
+    }
+    /* ✅ Let Q16’s dropdown overflow so the full list is visible */
+    .step[data-qid="16"]{ overflow:visible; }
+
+    .step.active{
+      opacity:1; transform:none; pointer-events:auto; z-index:2;
+      transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+      position:relative; /* active step participates in height */
+    }
+    .step.exiting-left, .step.exiting-right{
+      opacity:0; pointer-events:none; z-index:3;
+      transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+    }
+    .step.exiting-left{ transform:translateX(-12px) }
+    .step.exiting-right{ transform:translateX(12px) }
+    .step.entering-left{ transform:translateX(-12px) }
+    .step.entering-right{ transform:translateX(12px) }
+    .step.entering-left.active, .step.entering-right.active{ opacity:1; transform:none }
+
+    /* Equal-size pill buttons (food-truck style) */
+    .row{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:10px;
+      justify-items:stretch;
+      margin-top:8px;
+      width:min(100%, 680px);
+      margin-inline:auto;
+    }
+    .pill{
+      appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+      padding:0 14px; border-radius:12px; font:800 14px var(--font); cursor:pointer;
+      min-height:64px; display:grid; place-items:center; text-align:center;
+      transition:transform .12s var(--ease), box-shadow .12s var(--ease), background .12s var(--ease), border-color .12s var(--ease);
+    }
+    .pill:hover{ transform:translateY(-1px) }
+    .pill[aria-pressed="true"]{ background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 10px 18px color-mix(in srgb,var(--accent) 38%, transparent) }
+
+    textarea,input[type="text"]{
+      width:min(100%, 680px); padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:#4b5563; font:600 14px var(--font); margin:6px auto 0; display:block;
+    }
+    textarea{ min-height:90px; resize:vertical }
+
+    /* Typeahead */
+    .typeahead{ position:relative; width:min(100%,680px); margin:0 auto }
+    .ta-list{
+      position:absolute; left:0; right:0; top:calc(100% + 4px);
+      background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.08);
+      max-height:260px; overflow:auto; z-index:50; display:none;
+    }
+    .ta-item{ padding:10px 12px; cursor:pointer; font-size:14px }
+    .ta-item:hover, .ta-item.active{ background:#ffe7e9; color:#7a0b10 }
+
+    .slider-wrap{ display:grid; place-items:center; gap:6px; margin-top:6px }
+    .slider-value{ font-weight:800; color:var(--accent) }
+    .ticks{ display:flex; gap:6px; font-size:11px; color:var(--muted); justify-content:space-between; width:min(100%,680px) }
+
+    .actions{ display:flex; gap:10px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); justify-content:center }
+    .btn{ display:inline-block; padding:12px 18px; border-radius:12px; font:800 14px/1 var(--font); color:#fff; background:var(--accent); border:1px solid rgba(0,0,0,.08); cursor:pointer; box-shadow:0 10px 18px color-mix(in srgb,var(--accent) 38%, transparent) }
+    .btn.alt{ background:#ffe7e9; color:#7a0b10; box-shadow:none }
+    .btn[disabled]{ opacity:.55; cursor:not-allowed; box-shadow:none; filter:grayscale(.35) }
+
+    .state{ color:#b45309; font-size:12px; text-align:center; margin-top:6px; min-height:1em }
+    .state.ok{ color:#0b7f87 }
+
+    .grid5{ display:grid; grid-template-columns:1fr 1fr; gap:10px; width:min(100%, 680px); margin:8px auto 0 }
+    @media (max-width:640px){ .grid5{ grid-template-columns:1fr } }
+  </style>
+</head>
+<body>
+  <!-- ambient pattern -->
+  <div class="bg" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <div class="brand-left">
+        <img class="brand-img" src="mendokorologo.png" alt="Mendokoro Ramenba">
+      </div>
+      <div class="brand-right">
+        <div class="brand-name">MENDOKORO RAMENBA</div>
+        <div class="brand-sub">Customer Survey</div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="wrap">
+      <div class="hero-logo">
+        <img src="mendokorologo.png" alt="Mendokoro Ramenba">
+      </div>
+
+      <div class="subtitle">A Nippon Hasha Brand</div>
+      <div class="accent-underline" aria-hidden="true"></div>
+
+      <div class="strap-hero">Customer Survey</div>
+      <p class="lead">We’d love to hear about your dining experience! Share your thoughts and receive a little thank-you on your next visit.</p>
+
+      <a href="#start" id="startBtn" class="cta">Start Survey →</a>
+    </div>
+  </section>
+
+  <!-- SURVEY -->
+  <main class="viewport" id="viewport">
+    <div class="card" role="region" aria-label="Survey">
+      <div class="progress" aria-hidden="true"><div id="bar" class="bar"></div></div>
+      <div class="step-hdr"><div id="stepTitle" class="step-title">1) What branch did you go to?</div></div>
+
+      <form id="surveyForm" novalidate>
+        <div class="stage" id="stage">
+          <!-- Q1 -->
+          <section class="step active" data-qid="1" data-required="true" data-title="1) What branch did you go to?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q1" data-value="Alabang">Alabang</button>
+              <button type="button" class="pill" data-name="q1" data-value="BGC">BGC</button>
+              <button type="button" class="pill" data-name="q1" data-value="Cebu">Cebu</button>
+              <button type="button" class="pill" data-name="q1" data-value="Katipunan">Katipunan</button>
+              <button type="button" class="pill" data-name="q1" data-value="Makati">Makati</button>
+              <button type="button" class="pill" data-name="q1" data-value="Pasay">Pasay</button>
+              <input type="hidden" name="q1" required>
+            </div>
+          </section>
+
+          <!-- Q2 -->
+          <section class="step" data-qid="2" data-required="true" data-title="2) Is this your first time at this restaurant's branch?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q2" data-value="Yes">Yes</button>
+              <button type="button" class="pill" data-name="q2" data-value="No">No</button>
+              <input type="hidden" name="q2" required>
+            </div>
+          </section>
+
+          <!-- Q3 -->
+          <section class="step" data-qid="3" data-required="true" data-title="3) Did you Dine-In or Take-out in the said branch?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q3" data-value="Dine-In">Dine-In</button>
+              <button type="button" class="pill" data-name="q3" data-value="Take-Out">Take-Out</button>
+              <input type="hidden" name="q3" required>
+            </div>
+          </section>
+
+          <!-- Q4 -->
+          <section class="step" data-qid="4" data-required="true" data-title="4) How often do you visit us?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q4" data-value="More than once a week">More than once a week</button>
+              <button type="button" class="pill" data-name="q4" data-value="Once a week">Once a week</button>
+              <button type="button" class="pill" data-name="q4" data-value="Twice a month">Twice a month</button>
+              <button type="button" class="pill" data-name="q4" data-value="Once a month">Once a month</button>
+              <button type="button" class="pill" data-name="q4" data-value="Not regularly">Not regularly</button>
+              <button type="button" class="pill" data-name="q4" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q4" required>
+            </div>
+          </section>
+
+          <!-- Q5 -->
+          <section class="step" data-qid="5" data-required="true" data-title="5) How would you describe your overall customer experience?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q5" data-value="Great">Great</button>
+              <button type="button" class="pill" data-name="q5" data-value="Good">Good</button>
+              <button type="button" class="pill" data-name="q5" data-value="Okay">Okay</button>
+              <button type="button" class="pill" data-name="q5" data-value="Poor">Poor</button>
+              <button type="button" class="pill" data-name="q5" data-value="Very Poor">Very Poor</button>
+              <button type="button" class="pill" data-name="q5" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q5" required>
+            </div>
+          </section>
+
+          <!-- Q6 -->
+          <section class="step" data-qid="6" data-required="true" data-title="6) Did the brand offer great value for your money?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q6" data-value="Yes">Yes</button>
+              <button type="button" class="pill" data-name="q6" data-value="No">No</button>
+              <input type="hidden" name="q6" required>
+            </div>
+          </section>
+
+          <!-- Q7 -->
+          <section class="step" data-qid="7" data-required="true" data-title="7) How would you rate the overall quality of the food served? (tastes, freshness, appearance)">
+            <div class="row">
+              <button type="button" class="pill" data-name="q7" data-value="Great">Great</button>
+              <button type="button" class="pill" data-name="q7" data-value="Good">Good</button>
+              <button type="button" class="pill" data-name="q7" data-value="Okay">Okay</button>
+              <button type="button" class="pill" data-name="q7" data-value="Poor">Poor</button>
+              <button type="button" class="pill" data-name="q7" data-value="Very Poor">Very Poor</button>
+              <button type="button" class="pill" data-name="q7" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q7" required>
+            </div>
+          </section>
+
+          <!-- Q8 -->
+          <section class="step" data-qid="8" data-required="true" data-title="8) How would you rate the friendliness of the staff you interacted with?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q8" data-value="Great">Great</button>
+              <button type="button" class="pill" data-name="q8" data-value="Good">Good</button>
+              <button type="button" class="pill" data-name="q8" data-value="Okay">Okay</button>
+              <button type="button" class="pill" data-name="q8" data-value="Poor">Poor</button>
+              <button type="button" class="pill" data-name="q8" data-value="Very Poor">Very Poor</button>
+              <button type="button" class="pill" data-name="q8" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q8" required>
+            </div>
+          </section>
+
+          <!-- Q9 -->
+          <section class="step" data-qid="9" data-required="true" data-title="9) Were your orders served correctly?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q9" data-value="Yes">Yes</button>
+              <button type="button" class="pill" data-name="q9" data-value="No">No</button>
+              <input type="hidden" name="q9" required>
+            </div>
+          </section>
+
+          <!-- Q10 -->
+          <section class="step" data-qid="10" data-required="true" data-title="10) How would you rate the promptness of the service in this branch?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q10" data-value="Great">Great</button>
+              <button type="button" class="pill" data-name="q10" data-value="Good">Good</button>
+              <button type="button" class="pill" data-name="q10" data-value="Okay">Okay</button>
+              <button type="button" class="pill" data-name="q10" data-value="Poor">Poor</button>
+              <button type="button" class="pill" data-name="q10" data-value="Very Poor">Very Poor</button>
+              <button type="button" class="pill" data-name="q10" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q10" required>
+            </div>
+          </section>
+
+          <!-- Q11 -->
+          <section class="step" data-qid="11" data-required="true" data-title="11) How would you rate the overall cleanliness and orderliness of the restaurant, including the restroom, if applicable?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q11" data-value="Great">Great</button>
+              <button type="button" class="pill" data-name="q11" data-value="Good">Good</button>
+              <button type="button" class="pill" data-name="q11" data-value="Okay">Okay</button>
+              <button type="button" class="pill" data-name="q11" data-value="Poor">Poor</button>
+              <button type="button" class="pill" data-name="q11" data-value="Very Poor">Very Poor</button>
+              <button type="button" class="pill" data-name="q11" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q11" required>
+            </div>
+          </section>
+
+          <!-- Q12 (NPS slider) -->
+          <section class="step" data-qid="12" data-required="true" data-title="12) How likely is it that you would recommend this branch to others based on your overall experience? (1 = poorest, 10 = highly recommendable)">
+            <div class="slider-wrap">
+              <div class="slider-value" id="npsVal">5</div>
+              <input id="nps" type="range" name="q12" min="1" max="10" step="1" value="5" style="width:min(100%,680px)">
+              <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+          </section>
+
+          <!-- Q13 (pills + Other textbox) -->
+          <section class="step" data-qid="13" data-title="13) Identifying Preferences: Any dietary restrictions or preferences?">
+            <div class="row" id="q13Row">
+              <button type="button" class="pill" data-name="q13" data-value="No Meat">No Meat</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Nuts">No Nuts</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Pork">No Pork</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Chicken">No Chicken</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Shrimp">No Shrimp</button>
+              <button type="button" class="pill" data-name="q13" data-value="Not applicable">Not applicable</button>
+              <button type="button" class="pill" data-name="q13" data-value="__other" id="q13OtherBtn">Other</button>
+              <input type="hidden" name="q13">
+            </div>
+            <input id="q13OtherTxt" type="text" placeholder="Please specify…" style="display:none;margin-top:8px">
+            <div class="hint" style="text-align:center;margin-top:6px">We’ll use this to improve menu options and suggestions.</div>
+          </section>
+
+          <!-- Q14 -->
+          <section class="step" data-qid="14" data-title="14) Feedback on Current Menu: Toppings or side dishes you'd like to see?">
+            <textarea name="q14" placeholder="Your ideas…"></textarea>
+          </section>
+
+          <!-- Q15 -->
+          <section class="step" data-qid="15" data-title="15) Testing New Ideas: Suggestions for local/seasonal ingredients to incorporate?">
+            <textarea name="q15" placeholder="Your suggestions…"></textarea>
+          </section>
+
+          <!-- Q16 (with typeahead) -->
+          <section class="step" data-qid="16" data-title="16) Location: Where do you want us to open next?">
+            <div class="typeahead">
+              <input id="q16" name="q16" type="text" placeholder="City / Mall / Area" autocomplete="off">
+              <div class="ta-list" id="q16List"></div>
+            </div>
+            <div class="hint" style="text-align:center;margin-top:6px">Start typing — we’ll suggest cities and malls. Use ↑/↓ + Enter to select.</div>
+          </section>
+
+          <!-- Q17 -->
+          <section class="step" data-qid="17" data-title="17) What are the last five restaurants you've visited?">
+            <div class="grid5">
+              <input name="q17_1" placeholder="Restaurant 1">
+              <input name="q17_2" placeholder="Restaurant 2">
+              <input name="q17_3" placeholder="Restaurant 3">
+              <input name="q17_4" placeholder="Restaurant 4">
+              <input name="q17_5" placeholder="Restaurant 5">
+            </div>
+            <div class="hint" style="text-align:center;margin-top:6px">Free text. Auto-suggest coming later.</div>
+          </section>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="backBtn" class="btn alt">← Back to start</button>
+          <button type="button" id="nextBtn" class="btn" disabled>Next →</button>
+          <button type="submit" id="submitBtn" class="btn" style="display:none">Submit Survey →</button>
+        </div>
+        <div id="stateMsg" class="state" aria-live="polite">Select an answer to continue.</div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Supabase JS — UMD (kept, but not used for submit) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+  <script>
+    /* Hero → Survey (smooth) */
+    const hero = document.getElementById('hero');
+    const viewport = document.getElementById('viewport');
+    document.getElementById('startBtn').addEventListener('click',(e)=>{
+      e.preventDefault();
+      hero.style.transition='opacity .26s var(--ease), transform .26s var(--ease)';
+      hero.style.opacity='0'; hero.style.transform='translateY(-6px)';
+      setTimeout(()=>{ hero.style.display='none'; viewport.style.display='flex'; requestAnimationFrame(()=>{ refreshStageHeight(true); updateUI(); }); }, 200);
+    });
+
+    const $  = s=>document.querySelector(s);
+    const $$ = s=>Array.from(document.querySelectorAll(s));
+
+    const form = $('#surveyForm');
+    const steps = $$('.step');
+    const stage = $('#stage');
+    const stepTitleEl = $('#stepTitle');
+    const bar = $('#bar');
+    const backBtn = $('#backBtn');
+    const nextBtn = $('#nextBtn');
+    const submitBtn = $('#submitBtn');
+    const state = $('#stateMsg');
+
+    /* ====== Typeahead data (PH Cities + Malls) ====== */
+    const PH_CITIES = [
+      /* NCR */
+      "Caloocan","Las Piñas","Makati","Malabon","Mandaluyong","Manila","Marikina","Muntinlupa","Navotas","Parañaque","Pasay","Pasig","Quezon City","San Juan","Taguig","Valenzuela","Pateros",
+      /* Luzon */
+      "Alaminos","Angeles","Antipolo","Bacoor","Balanga","Batac","Batangas City","Baguio","Cabanatuan","Cabuyao","Candon","Cauayan","Cavite City","Dagupan","Dasmariñas","Gapan","General Trias","Iriga","Laoag","Legazpi","Ligao","Lipa","Lucena","Malolos","Meycauayan","Naga","Olongapo","Palayan","Puerto Princesa","San Carlos (Pangasinan)","San Fernando (La Union)","San Fernando (Pampanga)","San Jose (Nueva Ecija)","San Jose del Monte","San Pablo","Santa Rosa","Santiago","Sorsogon City","Tabuk","Tacurong","Tarlac City","Tayabas","Trece Martires","Vigan",
+      /* Visayas */
+      "Bacolod","Bago","Bais","Bayawan","Baybay","Borongan","Calbayog","Catbalogan","Cebu City","Danao","Dumaguete","Guihulngan","Iloilo City","Kabankalan","Kananga","Lapu-Lapu","Maasin","Mandaue","Ormoc","Passi","Roxas City","Silay","Sipalay","Tagbilaran","Tacloban","Talisay (Cebu)","Talisay (Negros Occidental)","Toledo","Victorias",
+      /* Mindanao */
+      "Butuan","Cabadbaran","Cagayan de Oro","Cotabato City","Davao City","Digos","Dipolog","Dapitan","El Salvador","Gingoog","General Santos","Iligan","Isabela City","Kidapawan","Koronadal","Mati","Malaybalay","Marawi","Oroquieta","Ozamiz","Pagadian","Panabo","Samal","San Carlos (Negros Occidental)","Surigao City","Tagum","Tangub","Tandag","Valencia","Zamboanga City"
+    ];
+
+    const PH_MALLS = [
+      "SM Mall of Asia","SM Megamall","SM North EDSA","SM Aura Premier","SM Southmall","SM Fairview","SM Manila","SM San Lazaro","SM Marikina","SM BF Parañaque","SM Bicutan","SM Sucat","SM Sta. Mesa",
+      "Ayala Malls Glorietta","Greenbelt","Ayala Malls Manila Bay","Ayala Malls Trinoma","UP Town Center","Market! Market!","Bonifacio High Street","One Bonifacio/High Street South",
+      "Robinsons Galleria","Robinsons Place Manila","Robinsons Magnolia","Robinsons Galleria South","Robinsons Metro East",
+      "Festival Mall","Alabang Town Center","Power Plant Mall","Shangri-La Plaza","Estancia at Capitol Commons","The Podium","Venice Grand Canal Mall",
+      "SM Seaside City Cebu","SM City Cebu","Ayala Center Cebu","Robinsons Galleria Cebu","Il Corso Lifemalls","Island Central Mactan",
+      "SM Lanang Premier","Abreeza Mall","Gaisano Mall of Davao","SM City Davao","Centrio Mall CDO","SM CDO Downtown Premier","Limketkai Center",
+      "SM City Baguio","SM City Clark","SM City Pampanga","MarQuee Mall","Vista Mall Bataan","Ayala Malls Harbor Point","Ayala Malls Marikina",
+      "Robinsons Ilocos Norte","SM City Laoag","SM City Tuguegarao","SM City Naga","SM City Legazpi","Robinsons Naga"
+    ];
+
+    /* ===== Typeahead helper (food-truck style) ===== */
+    function attachTypeahead(input, list, onPick){
+      const wrap = input.closest('.typeahead') || input.parentElement;
+      const ul = wrap.querySelector('.ta-list') || (()=>{ const d=document.createElement('div'); d.className='ta-list'; wrap.appendChild(d); return d; })();
+      let active = -1;
+
+      function filterItems(q){
+        const qv = q.trim().toLowerCase();
+        if(!qv) return [];
+        const seen = new Set();
+        const starts = list.filter(x=>x.toLowerCase().startsWith(qv));
+        const contains = list.filter(x=>!x.toLowerCase().startsWith(qv) && x.toLowerCase().includes(qv));
+        return [...starts, ...contains].filter(x=>{ if(seen.has(x)) return false; seen.add(x); return true; }).slice(0,24);
+      }
+      function openDropdown(){
+        ul.style.display='block';
+        stage.classList.add('dropdown-open'); // let it overflow
+      }
+      function closeDropdown(){
+        ul.style.display='none';
+        stage.classList.remove('dropdown-open');
+      }
+      function render(q){
+        const items = filterItems(q);
+        ul.innerHTML=''; active = -1;
+        if(items.length===0){ closeDropdown(); return; }
+        items.forEach((txt,i)=>{
+          const it=document.createElement('div'); it.className='ta-item'; it.textContent=txt;
+          it.addEventListener('mousedown', e=>{ e.preventDefault(); pick(txt); });
+          ul.appendChild(it);
+        });
+        openDropdown();
+      }
+      function highlight(){
+        [...ul.children].forEach((c,i)=> c.classList.toggle('active', i===active));
+        if(active>-1){
+          const el = ul.children[active];
+          const top = el.offsetTop, bottom = top + el.offsetHeight;
+          if(ul.scrollTop > top) ul.scrollTop = top;
+          else if(ul.scrollTop + ul.clientHeight < bottom) ul.scrollTop = bottom - ul.clientHeight;
+        }
+      }
+      function pick(val){
+        input.value = val;
+        closeDropdown();
+        onPick?.(val);
+      }
+
+      input.addEventListener('input', ()=> render(input.value));
+      input.addEventListener('focus', ()=> render(input.value));
+      input.addEventListener('blur', ()=> setTimeout(()=>closeDropdown(), 120));
+      input.addEventListener('keydown', e=>{
+        const n = ul.children.length;
+        if(!n) return;
+        if(e.key==='ArrowDown'){ active = (active+1)%n; highlight(); e.preventDefault(); }
+        else if(e.key==='ArrowUp'){ active = (active-1+n)%n; highlight(); e.preventDefault(); }
+        else if(e.key==='Enter' && active>-1){ e.preventDefault(); pick(ul.children[active].textContent); }
+      });
+    }
+
+    /* Unified pill behavior (sets a hidden input) + "Other" handling for Q13 */
+    function setupPills(){
+      $$('.row .pill').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const name = btn.dataset.name;
+          const value = btn.dataset.value;
+          const hidden = form.querySelector('input[type="hidden"][name="'+name+'"]');
+
+          // reset pressed state for this group
+          $$('.row .pill[data-name="'+name+'"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+          btn.setAttribute('aria-pressed','true');
+
+          if(name==='q13'){ // Special case: Other textbox
+            const otherTxt = $('#q13OtherTxt');
+            if(value==='__other'){
+              otherTxt.style.display='block';
+              otherTxt.focus();
+              hidden.value = otherTxt.value.trim();
+              otherTxt.addEventListener('input', ()=>{ hidden.value = otherTxt.value.trim(); updateUI(); });
+            }else{
+              otherTxt.style.display='none';
+              otherTxt.value='';
+              hidden.value = value;
+            }
+            refreshStageHeight();
+          }else{
+            if(hidden){ hidden.value = value; }
+          }
+          updateUI();
+        });
+      });
+      $$('.row .pill').forEach(b=>b.setAttribute('aria-pressed','false'));
+    }
+    setupPills();
+
+    /* Q12: live slider value */
+    const nps = $('#nps'), npsVal = $('#npsVal');
+    nps && nps.addEventListener('input', ()=> { npsVal.textContent = nps.value; updateUI(); });
+
+    let idx = 0;
+
+    /* ===== Auto-height per step (no empty space) ===== */
+    function measureStepHeight(i){
+      const step = steps[i];
+      if(!step) return 0;
+      const wasActive = step.classList.contains('active');
+      const prevPos = step.style.position;
+      step.style.position = 'relative';
+      step.style.visibility = 'hidden';
+      step.style.display = 'block';
+      const h = step.scrollHeight + 10; // cushion
+      step.style.display = wasActive ? 'block' : 'none';
+      step.style.position = prevPos || '';
+      step.style.visibility = wasActive ? '' : 'hidden';
+      return h;
+    }
+    function refreshStageHeight(initial=false){
+      const targetH = measureStepHeight(idx);
+      if(initial){ stage.style.height = targetH+'px'; return; }
+      stage.style.height = targetH+'px';
+    }
+
+    function setProgress(i){ bar.style.width = (((i+1)/steps.length)*100) + '%'; }
+
+    function stepValid(stepEl){
+      if(stepEl.dataset.required === 'false') return true;
+
+      const hidden = stepEl.querySelector('input[type="hidden"][name]');
+      if(hidden){
+        const otherBtn = stepEl.querySelector('#q13OtherBtn');
+        const otherTxt = stepEl.querySelector('#q13OtherTxt');
+        if(otherBtn && otherTxt && otherTxt.style.display === 'block'){
+          return !!hidden.value && hidden.value.trim().length>0;
+        }
+        return !!hidden.value;
+      }
+
+      const range = stepEl.querySelector('input[type="range"]');
+      if(range) return !!range.value;
+
+      const text = stepEl.querySelector('input[type="text"][required], textarea[required]');
+      if(text) return !!text.value.trim();
+
+      // Q16 is free text; allow empty but we still resize
+      return true;
+    }
+
+    function updateUI(){
+      const valid = stepValid(steps[idx]);
+      if(nextBtn.style.display!=='none') nextBtn.disabled = !valid;
+      state.textContent = valid ? '' : 'Select an answer to continue.';
+      stepTitleEl.textContent = steps[idx].dataset.title || '';
+      setProgress(idx);
+      backBtn.textContent = (idx===0) ? '← Back to start' : '← Back';
+      nextBtn.style.display = (idx < steps.length-1) ? 'inline-block' : 'none';
+      submitBtn.style.display = (idx === steps.length-1) ? 'inline-block' : 'none';
+      refreshStageHeight();
+    }
+
+    /* Smooth crossfade/slide with no ghosting */
+    let animating = false;
+    function show(i, dir=1){
+      if(animating || i<0 || i>=steps.length || i===idx) return;
+      animating = true;
+
+      const cur = steps[idx];
+      const nxt = steps[i];
+
+      nxt.style.display='block';
+      nxt.classList.remove('exiting-left','exiting-right','entering-left','entering-right','active');
+      nxt.classList.add(dir>0 ? 'entering-right' : 'entering-left');
+      nxt.getBoundingClientRect();
+
+      stage.style.height = (nxt.scrollHeight + 10) + 'px';
+
+      cur.classList.remove('active');
+      cur.classList.add(dir>0 ? 'exiting-left' : 'exiting-right');
+      nxt.classList.remove('entering-right','entering-left');
+      nxt.classList.add('active');
+
+      setTimeout(()=>{
+        cur.classList.remove('exiting-left','exiting-right');
+        cur.style.display='none';
+        idx = i;
+        updateUI();
+        animating = false;
+      }, 260);
+    }
+
+    const heroEl = document.getElementById('hero');
+    backBtn.addEventListener('click', ()=>{
+      if(idx===0){
+        viewport.style.transition='opacity .22s var(--ease), transform .22s var(--ease)';
+        viewport.style.opacity='0'; viewport.style.transform='translateY(6px)';
+        setTimeout(()=>{
+          viewport.style.display='none';
+          heroEl.style.display='grid';
+          requestAnimationFrame(()=>{
+            heroEl.style.opacity='1'; heroEl.style.transform='none';
+          });
+        }, 200);
+        return;
+      }
+      show(idx-1,-1);
+    });
+
+    nextBtn.addEventListener('click', ()=>{ if(!nextBtn.disabled) show(idx+1,+1) });
+    form.addEventListener('input',updateUI);
+    form.addEventListener('change',updateUI);
+
+    document.addEventListener('keydown',(e)=>{
+      const el=document.activeElement;
+      const typing = el && (el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && (el.type==='text' || el.type==='range')));
+      if(e.key==='Enter' && !typing){
+        e.preventDefault();
+        if(nextBtn.style.display!=='none' && !nextBtn.disabled) nextBtn.click();
+      }
+    });
+
+    /* Attach typeahead to Q16 using combined list */
+    function setupQ16Typeahead(){
+      const input = $('#q16');
+      if(!input) return;
+      const LIST = [...PH_CITIES, ...PH_MALLS];
+      attachTypeahead(input, LIST, ()=>{ updateUI(); });
+    }
+
+    /* Simulated submit → mdreward.html (no DB write) */
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      state.textContent = 'Submitting…';
+      submitBtn.disabled = true; nextBtn.disabled = true; backBtn.disabled = true;
+
+      // quick fake delay + tiny pulse
+      submitBtn.textContent = 'Submitting…';
+      submitBtn.style.filter = 'brightness(1.05)';
+      setTimeout(()=>{ submitBtn.style.filter=''; }, 300);
+
+      setTimeout(()=>{ window.location.href = 'mdreward.html'; }, 900);
+    });
+
+    window.addEventListener('load',()=>{
+      steps.forEach((s,i)=>{ s.style.display = (i===0) ? 'block' : 'none'; s.classList.toggle('active', i===0); });
+      refreshStageHeight(true);
+      updateUI();
+      setupQ16Typeahead();
+    });
+    window.addEventListener('resize',()=>refreshStageHeight());
+  </script>
+</body>
+</html>

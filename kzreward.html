@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kazunori — Reward</title>
+
+  <!-- Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+
+      /* Kazu Café brand (fresh green) */
+      --accent:#2f9e6e;
+      --accent-dk:#247a56;
+
+      /* Shared tokens */
+      --ink:#101010; --muted:#6b7280; --line:#e5e7eb;
+      --bg:#faf6ef; --surface:#ffffff;
+      --sea1:.12; --sea2:.06;
+      --ease:cubic-bezier(.22,.61,.36,1);
+      --header-h:72px;
+    }
+
+    *{ box-sizing:border-box }
+    html,body{ min-height:100% }
+    body{
+      margin:0; font-family:var(--font); color:var(--ink); background:var(--bg);
+      line-height:1.6;
+    }
+
+    /* Header */
+    .site-header{
+      position:sticky; top:0; height:var(--header-h);
+      display:flex; align-items:center; z-index:10;
+      backdrop-filter:saturate(180%) blur(6px);
+      background:color-mix(in oklab, var(--surface) 88%, transparent);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{ max-width:1200px; margin:0 auto; padding:0 16px; width:100%;
+      display:flex; justify-content:space-between; align-items:center; height:100% }
+    .brand-left{ display:flex; align-items:center; gap:10px }
+    .brand-img{ height:34px; width:auto; display:block }
+    .brand-right{ display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; text-align:right }
+    .brand-name{ font:800 16px/1 var(--font) }
+    .brand-sub{ font:700 11px/1 var(--font); color:var(--muted); letter-spacing:.06em; text-transform:uppercase }
+
+    /* Ambient background (seigaiha; tinted green) */
+    .bg{ position:fixed; inset:0; z-index:-1;
+      background: radial-gradient(1200px 360px at 50% -120px, rgba(47,158,110,.14), transparent 65%), var(--bg);
+    }
+    .bg::before, .bg::after{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background-repeat:repeat; background-size:400px 200px; animation: float 36s linear infinite;
+    }
+    .bg::before{
+      opacity:var(--sea1);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%232f9e6e" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    .bg::after{
+      opacity:var(--sea2); animation-duration:50s; animation-direction:reverse; transform:translateY(10px);
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><defs><pattern id="s" width="50" height="25" patternUnits="userSpaceOnUse"><path d="M0 25a25 25 0 0 1 50 0" fill="none" stroke="%23101010" stroke-width=".9" opacity=".25"/><path d="M12.5 25a12.5 12.5 0 0 1 25 0" fill="none" stroke="%23101010" stroke-width=".6" opacity=".18"/></pattern></defs><rect width="100%" height="100%" fill="url(%23s)"/></svg>');
+    }
+    @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
+
+    .wrap{ min-height:calc(100dvh - var(--header-h)); display:grid; place-items:center; padding:24px }
+    .card{
+      width:min(760px,100%); background:var(--surface); border:1px solid var(--line); border-radius:20px;
+      padding:20px; box-shadow:0 16px 48px rgba(0,0,0,.08); text-align:center;
+    }
+
+    .logo{ height:44px; margin:4px auto 8px; display:block; filter:drop-shadow(0 6px 12px rgba(0,0,0,.08)) }
+    h1{ font:800 clamp(22px,4.6vw,30px)/1.18 var(--font); margin:8px 0 6px; letter-spacing:-.2px }
+    p.lead{ color:#4b5563; margin:4px 0 14px }
+
+    .code{
+      display:inline-block; font:800 clamp(20px,4.2vw,28px)/1 var(--font); letter-spacing:.08em;
+      padding:14px 18px; border-radius:14px; color:#fff;
+      background:linear-gradient(90deg,var(--accent),var(--accent-dk));
+      box-shadow:0 14px 28px color-mix(in srgb,var(--accent) 32%, transparent);
+      user-select:all;
+    }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:14px 0 6px }
+    .btn{
+      padding:12px 16px; border-radius:12px; font:800 14px/1 var(--font);
+      border:1px solid rgba(0,0,0,.06); cursor:pointer; transition:transform .16s var(--ease), box-shadow .16s var(--ease);
+    }
+    .btn:hover{ transform:translateY(-1px) }
+    .copy{ background:#e6f5ee; color:#0f3c2d }
+    .save{ background:var(--accent); color:#fff; box-shadow:0 10px 18px color-mix(in srgb,var(--accent) 38%, transparent) }
+
+    .small{ font-size:12.5px; color:var(--muted); margin-top:8px }
+
+    /* Receipt-styled image (export target) */
+    .receipt{
+      margin:18px auto 0; width:min(580px,100%); background:#fff; border:1px dashed #a3a3a3;
+      border-radius:12px; padding:16px; text-align:left; color:#111; font-variant-numeric:tabular-nums;
+    }
+    .rec-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+    .rec-title{ font:800 16px var(--font) }
+    .rec-line{ border-top:1px dashed #a3a3a3; margin:10px 0 }
+    .rec-row{ display:flex; justify-content:space-between; font-size:13px; margin:4px 0 }
+    .footer{ margin-top:16px; font-size:12px; color:#6b7280; text-align:center }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <div class="brand-left">
+        <img class="brand-img" src="kazunorilogo.png" alt="Kazu Café">
+      </div>
+      <div class="brand-right">
+        <div class="brand-name">KAZUNORI</div>
+        <div class="brand-sub">Customer Survey</div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="bg" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <section class="card" role="region" aria-label="Kazu Café Reward">
+      <img class="logo" src="kazunorilogo.png" alt="Kazu Café">
+
+      <h1>Thank you for completing the survey!</h1>
+      <p class="lead">Show this code on your next visit to claim a <b>FREE 3-piece Gyoza</b>.</p>
+
+      <div id="code" class="code" aria-live="polite">KZ-XXXX-XXXX</div>
+
+      <div class="actions">
+        <button id="copyBtn" class="btn copy" type="button">Copy code</button>
+        <button id="saveBtn" class="btn save" type="button">Save as image</button>
+      </div>
+
+      <div class="small">Present this code at the counter. Valid for one use. Terms may apply.</div>
+
+      <!-- Export target (receipt look) -->
+      <div id="receiptCard" class="receipt" aria-hidden="true">
+        <div class="rec-head">
+          <span class="rec-title">Kazunori Coupon</span>
+          <img src="kazunorilogo.png" alt="" style="height:20px">
+        </div>
+        <div class="rec-line"></div>
+        <div class="rec-row"><span>Date</span><span id="recDate">—</span></div>
+        <div class="rec-row"><span>Receipt</span><span id="recNo">—</span></div>
+        <div class="rec-row"><span>Reward Code</span><b id="recCode">KZ-XXXX-XXXX</b></div>
+        <div class="rec-line"></div>
+        <div class="footer">Show this at the store to enjoy a FREE 3-piece Gyoza. Thank you!</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- html2canvas for “save as image” -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    (function(){
+      const qs = new URLSearchParams(location.search);
+
+      // Generate/pick code with KZ prefix
+      function makeCode(prefix="KZ"){
+        const chars="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let c=""; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+        return prefix + "-" + c.slice(0,4) + "-" + c.slice(4,8);
+      }
+      const reward = (qs.get('reward') || makeCode('KZ')).toUpperCase();
+      const receipt = qs.get('receipt') || '—';
+
+      const codeEl = document.getElementById('code');
+      const recCode = document.getElementById('recCode');
+      const recNo   = document.getElementById('recNo');
+      const recDate = document.getElementById('recDate');
+
+      codeEl.textContent = reward;
+      recCode.textContent = reward;
+      recNo.textContent = receipt;
+      recDate.textContent = new Date().toLocaleString();
+
+      // Copy with tiny toast
+      document.getElementById('copyBtn').addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(reward);
+          const msg = document.createElement('div');
+          msg.textContent = 'Code copied';
+          Object.assign(msg.style,{
+            position:'fixed', left:'50%', bottom:'20px', transform:'translateX(-50%)',
+            background:'#101010', color:'#fff', padding:'8px 12px', borderRadius:'10px',
+            font:'700 12px/1 Montserrat, sans-serif', zIndex:9999, opacity:'0',
+            transition:'opacity .18s ease'
+          });
+          document.body.appendChild(msg);
+          requestAnimationFrame(()=>{ msg.style.opacity='1'; });
+          setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 1100);
+        }catch(e){
+          alert('Copy failed');
+        }
+      });
+
+      // Save-as-image (robust: fonts/images ready, CORS-safe, toBlob + fallbacks)
+      document.getElementById('saveBtn').addEventListener('click', async ()=>{
+        const node = document.getElementById('receiptCard');
+
+        // Ensure images inside receipt are CORS-friendly for html2canvas
+        node.querySelectorAll('img').forEach(img => img.setAttribute('crossorigin','anonymous'));
+
+        // Wait for webfonts
+        if (document.fonts && document.fonts.ready) {
+          try { await document.fonts.ready; } catch {}
+        }
+        // Wait for images inside the receipt to decode
+        const imgs = Array.from(node.querySelectorAll('img'));
+        await Promise.all(
+          imgs.map(img => (img.decode ? img.decode().catch(()=>{}) :
+                           new Promise(r => (img.complete ? r() : (img.onload = img.onerror = r)))))
+        );
+
+        try{
+          const canvas = await html2canvas(node, {
+            backgroundColor:'#ffffff',
+            scale: Math.min(2, (window.devicePixelRatio || 1)),
+            useCORS: true,
+            allowTaint: false,
+            logging: false
+          });
+
+          const downloadFile = (blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `Kazu-Reward-${reward}.png`;
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(()=>URL.revokeObjectURL(url), 1000);
+          };
+
+          if (canvas.toBlob) {
+            canvas.toBlob((blob)=>{
+              if (blob) downloadFile(blob);
+              else throw new Error('toBlob produced null');
+            }, 'image/png');
+          } else {
+            // Fallback for very old browsers
+            const dataUrl = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.download = `Kazu-Reward-${reward}.png`;
+            a.href = dataUrl;
+            if (typeof a.download === 'string') a.click();
+            else window.open(dataUrl, '_blank');
+          }
+        }catch(err){
+          // Final fallback if something blocks programmatic download
+          try{
+            const canvas = await html2canvas(node, { backgroundColor:'#ffffff', scale:1 });
+            const dataUrl = canvas.toDataURL('image/png');
+            const win = window.open();
+            if (win) {
+              win.document.write('<iframe src="'+dataUrl+'" frameborder="0" style="border:0;top:0;left:0;bottom:0;right:0;width:100%;height:100%;position:fixed;"></iframe>');
+            } else {
+              alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+            }
+          }catch(e){
+            alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
