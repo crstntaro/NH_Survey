@@ -14,18 +14,13 @@
     :root{
       --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 
-      /* Light */
+      /* Light (only) */
       --ink:#101010; --muted:#6b7280;
       --gold:#85754E; --gold-dk:#6f6242;
       --line:#e5e7eb; --bg:#faf6ef; --surface:#ffffff;
 
       --header-h:72px;
       --sea1:.12; --sea2:.05;
-    }
-    /* Dark */
-    html[data-theme="dark"]{
-      --ink:#e8e8e8; --muted:#a8afb9; --line:#2a2f36;
-      --bg:#0f1115; --surface:#151922; --sea1:.08; --sea2:.06;
     }
 
     /* Base */
@@ -69,22 +64,15 @@
     }
     .brand img{ height:40px; width:auto }
 
-    .theme-toggle{
-      width:40px; height:40px; border-radius:999px; border:1px solid var(--line);
-      display:grid; place-items:center; cursor:pointer; background:var(--surface);
-      box-shadow:0 2px 8px rgba(0,0,0,.06);
-    }
-    .theme-toggle svg{ width:20px; height:20px; fill:currentColor; color:var(--ink) }
-
     /* Banner */
     .banner{ background:url('blackbg.png') center/cover no-repeat; color:#fff; }
     .banner .container{
       max-width:1200px; margin:0 auto;
-      padding-block:clamp(8px,2vw,18px);           /* tighter top/bottom */
+      padding-block:clamp(8px,2vw,18px);
       padding-inline:16px;
       display:grid; align-items:center;
       grid-template-columns: minmax(0,1.05fr) minmax(120px,.95fr);
-      column-gap:clamp(16px,4vw,64px);             /* more space between text & ramen */
+      column-gap:clamp(16px,4vw,64px);
       overflow:visible;
     }
 
@@ -105,11 +93,10 @@
     .hero-ramen{
       justify-self:end; align-self:center;
       width:clamp(150px,48vw,240px); aspect-ratio:1/1;
-      transform:translateX(clamp(10px,6vw,80px)); /* push further right */
+      transform:translateX(clamp(10px,6vw,80px));
     }
     .hero-ramen img{ width:100%; height:100%; object-fit:cover; display:block }
 
-    /* Safety on very small screens */
     @media (max-width:560px){
       .banner .container{ column-gap:clamp(10px,3vw,20px); }
       .hero-ramen{ transform:translateX(clamp(4px,3vw,20px)); }
@@ -145,7 +132,6 @@
   <header class="site-header">
     <nav class="nav">
       <a class="brand" href="#"><img src="nhlogo.png" alt="Nippon Hasha Inc."></a>
-
     </nav>
   </header>
 
@@ -181,32 +167,5 @@
     <a class="cta" href="form.html">Start Survey →</a>
     <p class="footer">© <script>document.write(new Date().getFullYear())</script> Nippon Hasha</p>
   </main>
-
-  <script>
-    // Theme toggle
-    (function(){
-      const key='nh-theme';
-      const html=document.documentElement;
-      const btn=document.getElementById('themeBtn');
-      const sun=document.getElementById('sunIcon');
-      const moon=document.getElementById('moonIcon');
-
-      function apply(mode){
-        html.setAttribute('data-theme',mode);
-        if(mode==='dark'){ sun.style.display='none'; moon.style.display='block'; }
-        else{ sun.style.display='block'; moon.style.display='none'; }
-      }
-      let saved=localStorage.getItem(key);
-      if(!saved){ saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light'; }
-      apply(saved);
-      btn.addEventListener('click',()=>{
-        const next = html.getAttribute('data-theme')==='dark' ? 'light' : 'dark';
-        localStorage.setItem(key,next); apply(next);
-      });
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{
-        if(!localStorage.getItem(key)) apply(e.matches?'dark':'light');
-      });
-    })();
-  </script>
 </body>
 </html>
