@@ -269,6 +269,43 @@
     .slider-value{ font-weight:800; color:var(--accent) }
     .ticks{ display:flex; gap:6px; font-size:11px; color:var(--muted); justify-content:space-between; width:min(100%,680px) }
 
+    /* ==== Ramen bowl thumb for Q12 slider (graceful fallback) ==== */
+    #nps{ appearance:none; height:6px; border-radius:999px; background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 30%, #c7fff9), #fff);
+      /* prevent page from swiping while sliding */
+      touch-action: none;
+    }
+    #nps::-webkit-slider-thumb{
+      -webkit-appearance:none; appearance:none;
+      width:40px; height:40px; border-radius:50%;
+      background:
+        url('ramenicon.png') center/70% no-repeat,
+        radial-gradient(#ffffff, #ffffff);
+      border:2px solid color-mix(in srgb, var(--accent) 40%, #fff);
+      box-shadow:0 6px 14px rgba(0,0,0,.18);
+      cursor:pointer;
+    }
+    #nps::-moz-range-thumb{
+      width:40px; height:40px; border-radius:50%;
+      background:
+        url('ramenicon.png') center/70% no-repeat,
+        radial-gradient(#ffffff, #ffffff);
+      border:2px solid color-mix(in srgb, var(--accent) 40%, #fff);
+      box-shadow:0 6px 14px rgba(0,0,0,.18);
+      cursor:pointer;
+    }
+
+    /* === INLINE SVG RAMEN ICON OVERRIDE (keeps your lines above; ensures icon shows even without ramenicon.png) === */
+    #nps::-webkit-slider-thumb{
+      background:
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="%230f7270" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 24h48c0 13-10 24-24 24S8 37 8 24z" fill="%23fff"/><path d="M20 16h24M16 20h32M24 12h16"/><path d="M20 48c2 4 6 8 12 8s10-4 12-8"/></g><g fill="%231fa6a0"><circle cx="22" cy="28" r="2"/><circle cx="32" cy="30" r="2"/><circle cx="42" cy="28" r="2"/></g></svg>') center/70% no-repeat,
+        radial-gradient(#ffffff, #ffffff);
+    }
+    #nps::-moz-range-thumb{
+      background:
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="%230f7270" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 24h48c0 13-10 24-24 24S8 37 8 24z" fill="%23fff"/><path d="M20 16h24M16 20h32M24 12h16"/><path d="M20 48c2 4 6 8 12 8s10-4 12-8"/></g><g fill="%231fa6a0"><circle cx="22" cy="28" r="2"/><circle cx="32" cy="30" r="2"/><circle cx="42" cy="28" r="2"/></g></svg>') center/70% no-repeat,
+        radial-gradient(#ffffff, #ffffff);
+    }
+
     .actions{ display:flex; gap:10px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); justify-content:center }
     .btn{ display:inline-block; padding:12px 18px; border-radius:12px; font:800 14px/1 var(--font); color:#0c3d3b; background:
       linear-gradient(180deg, color-mix(in srgb, var(--pop) 85%, #fff), color-mix(in srgb, var(--accent) 16%, #fff));
@@ -447,13 +484,15 @@
             </div>
           </section>
 
-          <!-- Q12 (NPS slider) -->
+          <!-- Q12 (NPS slider + required follow-up) -->
           <section class="step" data-qid="12" data-required="true" data-title="12) How likely is it that you would recommend this branch to others based on your overall experience? (1 = poorest, 10 = highly recommendable)">
             <div class="slider-wrap">
               <div class="slider-value" id="npsVal">5</div>
               <input id="nps" type="range" name="q12" min="1" max="10" step="1" value="5" style="width:min(100%,680px)">
               <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
+            <!-- NEW: required follow-up (always visible) -->
+            <textarea id="npsFollow" name="q12_follow" placeholder="" required style="margin-top:8px"></textarea>
           </section>
 
           <!-- Q13 (pills + Other textbox) -->
@@ -660,7 +699,12 @@
 
     /* Q12: live slider value */
     const nps = $('#nps'), npsVal = $('#npsVal');
-    nps && nps.addEventListener('input', ()=> { npsVal.textContent = nps.value; updateUI(); });
+    nps && nps.addEventListener('input', ()=> { 
+      npsVal.textContent = nps.value; 
+      setNpsFollowUX();
+      refreshStageHeight();
+      updateUI(); 
+    });
 
     let idx = 0;
 
@@ -790,6 +834,28 @@
       attachTypeahead(input, LIST, ()=>{ updateUI(); });
     }
 
+    /* ===== Q12 follow-up UX ===== */
+    const npsFollow = document.getElementById('npsFollow');
+    function setNpsFollowUX(){
+      if(!nps || !npsFollow) return;
+      const v = parseInt(nps.value, 10) || 5;
+      if(v <= 6){
+        npsFollow.placeholder = "What can we do better to improve your satisfaction?";
+      }else if(v <= 8){
+        npsFollow.placeholder = "What would make you more likely to recommend us?";
+      }else{
+        npsFollow.placeholder = "What is the main reason you would recommend us?";
+      }
+    }
+    npsFollow && npsFollow.addEventListener('input', ()=>{ updateUI(); });
+
+    /* Lock page swipe while dragging the slider (mobile) */
+    if(nps){
+      const block = (e)=>{ e.preventDefault(); e.stopPropagation(); };
+      nps.addEventListener('touchstart', block, {passive:false});
+      nps.addEventListener('touchmove', block, {passive:false});
+    }
+
     /* Simulated submit → kzcreward.html (no DB write) */
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
@@ -806,6 +872,7 @@
     window.addEventListener('load',()=>{
       steps.forEach((s,i)=>{ s.style.display = (i===0) ? 'block' : 'none'; s.classList.toggle('active', i===0); });
       refreshStageHeight(true);
+      setNpsFollowUX(); /* init Q12 follow-up placeholder */
       updateUI();
       setupQ16Typeahead();
     });

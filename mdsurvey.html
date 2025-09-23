@@ -245,6 +245,64 @@
     .slider-value{ font-weight:800; color:var(--accent) }
     .ticks{ display:flex; gap:6px; font-size:11px; color:var(--muted); justify-content:space-between; width:min(100%,680px) }
 
+    /* ===== Ramen slider thumb ===== */
+    .ramen-range{
+      -webkit-appearance:none;
+      appearance:none;
+      width:min(100%,680px);
+      height:14px;
+      border-radius:999px;
+      background:
+        linear-gradient(var(--accent),var(--accent)) left/ var(--fill,0%) 100% no-repeat,
+        #ffe7e9;
+      border:1px solid var(--line);
+      outline:none;
+      transition:filter .15s var(--ease);
+    }
+    .ramen-range:focus{ filter:brightness(1.02) }
+
+    /* WebKit thumb */
+    .ramen-range::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:var(--thumb-size,34px);
+      height:var(--thumb-size,34px);
+      border-radius:50%;
+      background-color:var(--accent);
+      border:3px solid #fff;
+      box-shadow:0 6px 14px rgba(0,0,0,.18);
+      background-repeat:no-repeat;
+      background-position:center;
+      background-size:72%;
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="%23ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 30h44c0 13-10.5 24-22 24S10 43 10 30Z"/><path d="M18 24h28"/><path d="M22 20c0-3 4-3 4 0m6 0c0-3 4-3 4 0m6 0c0-3 4-3 4 0"/></g></svg>');
+      transition:transform .15s var(--ease), filter .15s var(--ease);
+    }
+    .ramen-range:active::-webkit-slider-thumb{ transform:translateY(-1px) scale(1.05) }
+
+    /* Firefox track + thumb */
+    .ramen-range::-moz-range-track{
+      height:14px;
+      border-radius:999px;
+      background:
+        linear-gradient(var(--accent),var(--accent)) left/ var(--fill,0%) 100% no-repeat,
+        #ffe7e9;
+      border:1px solid var(--line);
+    }
+    .ramen-range::-moz-range-thumb{
+      width:var(--thumb-size,34px);
+      height:var(--thumb-size,34px);
+      border-radius:50%;
+      background-color:var(--accent);
+      border:3px solid #fff;
+      box-shadow:0 6px 14px rgba(0,0,0,.18);
+      background-repeat:no-repeat;
+      background-position:center;
+      background-size:72%;
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="%23ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 30h44c0 13-10.5 24-22 24S10 43 10 30Z"/><path d="M18 24h28"/><path d="M22 20c0-3 4-3 4 0m6 0c0-3 4-3 4 0m6 0c0-3 4-3 4 0"/></g></svg>');
+      transition:transform .15s var(--ease), filter .15s var(--ease);
+    }
+    .ramen-range:active::-moz-range-thumb{ transform:translateY(-1px) scale(1.05) }
+
     .actions{ display:flex; gap:10px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); justify-content:center }
     .btn{ display:inline-block; padding:12px 18px; border-radius:12px; font:800 14px/1 var(--font); color:#fff; background:var(--accent); border:1px solid rgba(0,0,0,.08); cursor:pointer; box-shadow:0 10px 18px color-mix(in srgb,var(--accent) 38%, transparent) }
     .btn.alt{ background:#ffe7e9; color:#7a0b10; box-shadow:none }
@@ -428,12 +486,36 @@
             </div>
           </section>
 
-          <!-- Q12 (NPS slider) -->
-          <section class="step" data-qid="12" data-required="true" data-title="12) How likely is it that you would recommend this branch to others based on your overall experience? (1 = poorest, 10 = highly recommendable)">
+          <!-- Q12 (NPS slider + conditional follow-ups) -->
+          <section class="step" data-qid="12" data-required="true" data-title="12) How likely is it that you would recommend this branch to others based on your overall experience?">
             <div class="slider-wrap">
               <div class="slider-value" id="npsVal">5</div>
-              <input id="nps" type="range" name="q12" min="1" max="10" step="1" value="5" style="width:min(100%,680px)">
-              <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+
+              <!-- ramen bowl is the thumb itself -->
+              <input id="nps" class="ramen-range" type="range" name="q12" min="0" max="10" step="1" value="5">
+
+              <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+
+            <!-- Follow-up containers -->
+            <div id="npsFollowups" style="margin-top:16px">
+              <!-- Promoter -->
+              <div id="npsPromoter" style="display:none">
+                <label for="q12a">What is the main reason you would recommend us?</label>
+                <textarea name="q12a" id="q12a" placeholder="Your reason…"></textarea>
+              </div>
+
+              <!-- Passive -->
+              <div id="npsPassive" style="display:none">
+                <label for="q12b">What would make you more likely to recommend us?</label>
+                <textarea name="q12b" id="q12b" placeholder="Price, portion, taste, service…"></textarea>
+              </div>
+
+              <!-- Detractor -->
+              <div id="npsDetractor" style="display:none">
+                <label for="q12c">What can we do better to improve your satisfaction?</label>
+                <textarea name="q12c" id="q12c" placeholder="Your feedback…"></textarea>
+              </div>
             </div>
           </section>
 
@@ -561,7 +643,7 @@
       }
       function openDropdown(){
         ul.style.display='block';
-        stage.classList.add('dropdown-open'); // let it overflow
+        stage.classList.add('dropdown-open');
       }
       function closeDropdown(){
         ul.style.display='none';
@@ -605,7 +687,7 @@
       });
     }
 
-    /* Unified pill behavior (sets a hidden input) + "Other" handling for Q13 */
+    /* Unified pill behavior + "Other" handling for Q13 */
     function setupPills(){
       $$('.row .pill').forEach(btn=>{
         btn.addEventListener('click', ()=>{
@@ -613,11 +695,10 @@
           const value = btn.dataset.value;
           const hidden = form.querySelector('input[type="hidden"][name="'+name+'"]');
 
-          // reset pressed state for this group
           $$('.row .pill[data-name="'+name+'"]').forEach(b=>b.setAttribute('aria-pressed','false'));
           btn.setAttribute('aria-pressed','true');
 
-          if(name==='q13'){ // Special case: Other textbox
+          if(name==='q13'){
             const otherTxt = $('#q13OtherTxt');
             if(value==='__other'){
               otherTxt.style.display='block';
@@ -640,9 +721,57 @@
     }
     setupPills();
 
-    /* Q12: live slider value */
+    /* Q12: ramen-thumb slider + conditional followups */
     const nps = $('#nps'), npsVal = $('#npsVal');
-    nps && nps.addEventListener('input', ()=> { npsVal.textContent = nps.value; updateUI(); });
+    const npsPromoter = $('#npsPromoter');
+    const npsPassive = $('#npsPassive');
+    const npsDetractor = $('#npsDetractor');
+    const q12a = $('#q12a'), q12b = $('#q12b'), q12c = $('#q12c');
+
+    function setRequired(el, on){
+      if(!el) return;
+      if(on){ el.setAttribute('required','required'); }
+      else{ el.removeAttribute('required'); }
+    }
+
+    function updateRamenSlider(val){
+      // Track fill percentage
+      const pct = (val/10)*100;
+      nps.style.setProperty('--fill', pct+'%');
+
+      // Thumb size: 30px → 56px across 0–10
+      const size = 30 + (val*2.6);
+      nps.style.setProperty('--thumb-size', size+'px');
+    }
+
+    function updateNPSUI(val){
+      npsVal.textContent = val;
+
+      // Hide all followups first + remove required
+      npsPromoter.style.display = 'none';
+      npsPassive.style.display  = 'none';
+      npsDetractor.style.display= 'none';
+      setRequired(q12a,false); setRequired(q12b,false); setRequired(q12c,false);
+
+      if(val >= 9){        // Promoters
+        npsPromoter.style.display = 'block';
+        setRequired(q12a,true);
+      }else if(val >= 7){  // Passives
+        npsPassive.style.display = 'block';
+        setRequired(q12b,true);
+      }else{               // Detractors
+        npsDetractor.style.display = 'block';
+        setRequired(q12c,true);
+      }
+
+      updateRamenSlider(val);
+      refreshStageHeight();
+    }
+
+    nps && nps.addEventListener('input', ()=>{
+      updateNPSUI(parseInt(nps.value,10));
+      updateUI();
+    });
 
     let idx = 0;
 
@@ -655,7 +784,7 @@
       step.style.position = 'relative';
       step.style.visibility = 'hidden';
       step.style.display = 'block';
-      const h = step.scrollHeight + 10; // cushion
+      const h = step.scrollHeight + 10;
       step.style.display = wasActive ? 'block' : 'none';
       step.style.position = prevPos || '';
       step.style.visibility = wasActive ? '' : 'hidden';
@@ -683,12 +812,13 @@
       }
 
       const range = stepEl.querySelector('input[type="range"]');
-      if(range) return !!range.value;
+      if(range) return range.value !== ''; // treat "0" as valid
 
-      const text = stepEl.querySelector('input[type="text"][required], textarea[required]');
-      if(text) return !!text.value.trim();
-
-      // Q16 is free text; allow empty but we still resize
+      // any required textareas/inputs inside this step
+      const requiredTexts = stepEl.querySelectorAll('input[required], textarea[required]');
+      for(const t of requiredTexts){
+        if(t.offsetParent !== null && !t.value.trim()) return false; // only if visible
+      }
       return true;
     }
 
@@ -778,7 +908,6 @@
       state.textContent = 'Submitting…';
       submitBtn.disabled = true; nextBtn.disabled = true; backBtn.disabled = true;
 
-      // quick fake delay + tiny pulse
       submitBtn.textContent = 'Submitting…';
       submitBtn.style.filter = 'brightness(1.05)';
       setTimeout(()=>{ submitBtn.style.filter=''; }, 300);
@@ -791,6 +920,11 @@
       refreshStageHeight(true);
       updateUI();
       setupQ16Typeahead();
+
+      // initialize NPS UI once DOM is ready
+      if(nps){
+        updateNPSUI(parseInt(nps.value,10));
+      }
     });
     window.addEventListener('resize',()=>refreshStageHeight());
   </script>
