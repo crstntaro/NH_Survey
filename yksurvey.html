@@ -172,6 +172,7 @@
     .slider-wrap{ display:grid; place-items:center; gap:6px; margin-top:6px }
     .slider-value{ font-weight:800; color:var(--accent) }
     .ticks{ display:flex; gap:6px; font-size:11px; color:#6b7280; justify-content:space-between; width:min(100%,680px) }
+    .sentiment-slider .ticks span{ flex:1; text-align:center }
     .ramen-range{
       -webkit-appearance:none; appearance:none; width:min(100%,680px); height:14px; border-radius:999px;
       background: linear-gradient(var(--accent),var(--accent)) left/ var(--fill,0%) 100% no-repeat, #ffe7e9;
@@ -242,14 +243,8 @@
         <div class="stage" id="stage">
           <section class="step active" data-qid="1" data-required="true" data-title="1) What branch did you go to?">
             <div class="row">
-              <button type="button" class="pill" data-name="q1" data-value="Alabang">Alabang</button>
-              <button type="button" class="pill" data-name="q1" data-value="BGC">BGC</button>
+              <button type="button" class="pill" data-name="q1" data-value="Molito (Alabang)">Molito (Alabang)</button>
               <button type="button" class="pill" data-name="q1" data-value="Cebu">Cebu</button>
-              <button type="button" class="pill" data-name="q1" data-value="Katipunan">Katipunan</button>
-              <button type="button" class="pill" data-name="q1" data-value="Makati">Makati</button>
-              <button type="button" class="pill" data-name="q1" data-value="Pasay">Pasay</button>
-              <button type="button" class="pill" data-name="q1" data-value="Ortigas">Ortigas</button>
-              <button type="button" class="pill" data-name="q1" data-value="Panay">Panay</button>
               <input type="hidden" name="q1" required>
             </div>
           </section>
@@ -267,7 +262,21 @@
               <input type="hidden" name="q3" required>
             </div>
           </section>
-          <section class="step" data-qid="4" data-required="true" data-title="4) How often do you visit us?">
+          <section class="step" data-qid="4" data-title="4) Identifying Preferences: Any dietary restrictions or preferences?">
+            <div class="row" id="q13Row">
+              <button type="button" class="pill" data-name="q13" data-value="No Meat">No Meat</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Nuts">No Nuts</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Pork">No Pork</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Chicken">No Chicken</button>
+              <button type="button" class="pill" data-name="q13" data-value="No Shrimp">No Shrimp</button>
+              <button type="button" class="pill" data-name="q13" data-value="Not applicable">Not applicable</button>
+              <button type="button" class="pill" data-name="q13" data-value="__other" id="q13OtherBtn">Other</button>
+              <input type="hidden" name="q13">
+            </div>
+            <input id="q13OtherTxt" type="text" placeholder="Please specify…" style="display:none;margin-top:8px">
+            <div class="hint" style="text-align:center;margin-top:6px">We’ll use this to improve menu options and suggestions.</div>
+          </section>
+          <section class="step" data-qid="5" data-required="true" data-title="5) How often do you visit us?">
             <div class="row">
               <button type="button" class="pill" data-name="q4" data-value="More than once a week">More than once a week</button>
               <button type="button" class="pill" data-name="q4" data-value="Once a week">Once a week</button>
@@ -278,25 +287,28 @@
               <input type="hidden" name="q4" required>
             </div>
           </section>
-          <section class="step" data-qid="5" data-required="true" data-title="5) How would you describe your overall customer experience?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q5" data-value="Great">Great</button>
-              <button type="button" class="pill" data-name="q5" data-value="Good">Good</button>
-              <button type="button" class="pill" data-name="q5" data-value="Okay">Okay</button>
-              <button type="button" class="pill" data-name="q5" data-value="Poor">Poor</button>
-              <button type="button" class="pill" data-name="q5" data-value="Very Poor">Very Poor</button>
-              <button type="button" class="pill" data-name="q5" data-value="Not applicable">Not applicable</button>
-              <input type="hidden" name="q5" required>
+          <section class="step" data-qid="6" data-required="true" data-title="6) How would you describe your overall customer experience?">
+            <div class="slider-wrap sentiment-slider">
+              <div class="slider-value" id="q5ScaleLabel">Okay</div>
+              <input id="q5Scale" class="ramen-range" type="range" min="1" max="5" step="1" value="3" aria-label="Overall experience rating">
+              <div class="ticks">
+                <span>Very Poor</span>
+                <span>Poor</span>
+                <span>Okay</span>
+                <span>Good</span>
+                <span>Great</span>
+              </div>
             </div>
+            <input type="hidden" name="q5" required>
           </section>
-          <section class="step" data-qid="6" data-required="true" data-title="6) Did the brand offer great value for your money?">
+          <section class="step" data-qid="7" data-required="true" data-title="7) Did the brand offer great value for your money?">
             <div class="row">
               <button type="button" class="pill" data-name="q6" data-value="Yes">Yes</button>
               <button type="button" class="pill" data-name="q6" data-value="No">No</button>
               <input type="hidden" name="q6" required>
             </div>
           </section>
-          <section class="step" data-qid="7" data-required="true" data-title="7) How would you rate the overall quality of the food served? (tastes, freshness, appearance)">
+          <section class="step" data-qid="8" data-required="true" data-title="8) How would you rate the overall quality of the food served? (tastes, freshness, appearance)">
             <div class="row">
               <button type="button" class="pill" data-name="q7" data-value="Great">Great</button>
               <button type="button" class="pill" data-name="q7" data-value="Good">Good</button>
@@ -307,7 +319,7 @@
               <input type="hidden" name="q7" required>
             </div>
           </section>
-          <section class="step" data-qid="8" data-required="true" data-title="8) How would you rate the friendliness of the staff you interacted with?">
+          <section class="step" data-qid="9" data-required="true" data-title="9) How would you rate the friendliness of the staff you interacted with?">
             <div class="row">
               <button type="button" class="pill" data-name="q8" data-value="Great">Great</button>
               <button type="button" class="pill" data-name="q8" data-value="Good">Good</button>
@@ -318,14 +330,14 @@
               <input type="hidden" name="q8" required>
             </div>
           </section>
-          <section class="step" data-qid="9" data-required="true" data-title="9) Were your orders served correctly?">
+          <section class="step" data-qid="10" data-required="true" data-title="10) Were your orders served correctly?">
             <div class="row">
               <button type="button" class="pill" data-name="q9" data-value="Yes">Yes</button>
               <button type="button" class="pill" data-name="q9" data-value="No">No</button>
               <input type="hidden" name="q9" required>
             </div>
           </section>
-          <section class="step" data-qid="10" data-required="true" data-title="10) How would you rate the promptness of the service in this branch?">
+          <section class="step" data-qid="11" data-required="true" data-title="11) How would you rate the promptness of the service in this branch?">
             <div class="row">
               <button type="button" class="pill" data-name="q10" data-value="Great">Great</button>
               <button type="button" class="pill" data-name="q10" data-value="Good">Good</button>
@@ -336,7 +348,7 @@
               <input type="hidden" name="q10" required>
             </div>
           </section>
-          <section class="step" data-qid="11" data-required="true" data-title="11) How would you rate the overall cleanliness and orderliness of the restaurant, including the restroom, if applicable?">
+          <section class="step" data-qid="12" data-required="true" data-title="12) How would you rate the overall cleanliness and orderliness of the restaurant, including the restroom, if applicable?">
             <div class="row">
               <button type="button" class="pill" data-name="q11" data-value="Great">Great</button>
               <button type="button" class="pill" data-name="q11" data-value="Good">Good</button>
@@ -347,7 +359,7 @@
               <input type="hidden" name="q11" required>
             </div>
           </section>
-          <section class="step" data-qid="12" data-required="true" data-title="12) How likely is it that you would recommend this branch to others based on your overall experience?">
+          <section class="step" data-qid="13" data-required="true" data-title="13) How likely is it that you would recommend this branch to others based on your overall experience?">
             <div class="slider-wrap">
               <div class="slider-value" id="npsVal">5</div>
               <input id="nps" class="ramen-range" type="range" name="q12" min="0" max="10" step="1" value="5">
@@ -367,20 +379,6 @@
                 <textarea name="q12c" id="q12c" placeholder="Your feedback…"></textarea>
               </div>
             </div>
-          </section>
-          <section class="step" data-qid="13" data-title="13) Identifying Preferences: Any dietary restrictions or preferences?">
-            <div class="row" id="q13Row">
-              <button type="button" class="pill" data-name="q13" data-value="No Meat">No Meat</button>
-              <button type="button" class="pill" data-name="q13" data-value="No Nuts">No Nuts</button>
-              <button type="button" class="pill" data-name="q13" data-value="No Pork">No Pork</button>
-              <button type="button" class="pill" data-name="q13" data-value="No Chicken">No Chicken</button>
-              <button type="button" class="pill" data-name="q13" data-value="No Shrimp">No Shrimp</button>
-              <button type="button" class="pill" data-name="q13" data-value="Not applicable">Not applicable</button>
-              <button type="button" class="pill" data-name="q13" data-value="__other" id="q13OtherBtn">Other</button>
-              <input type="hidden" name="q13">
-            </div>
-            <input id="q13OtherTxt" type="text" placeholder="Please specify…" style="display:none;margin-top:8px">
-            <div class="hint" style="text-align:center;margin-top:6px">We’ll use this to improve menu options and suggestions.</div>
           </section>
           <section class="step" data-qid="14" data-title="14) Feedback on Current Menu: Toppings or side dishes you'd like to see?">
             <textarea name="q14" placeholder="Your ideas…"></textarea>
@@ -436,6 +434,38 @@
     const nextBtn = $('#nextBtn');
     const submitBtn = $('#submitBtn');
     const state = $('#stateMsg');
+    const q2Hidden = form.querySelector('input[name="q2"]');
+    const q4Hidden = form.querySelector('input[name="q4"]');
+    const q4Step = q4Hidden ? q4Hidden.closest('.step') : null;
+
+    function visibleSteps(){
+      return steps.filter(step => step.dataset.skip !== 'true');
+    }
+    function resolveTargetIndex(target, dir){
+      let next = target;
+      while(next >= 0 && next < steps.length && steps[next].dataset.skip === 'true'){
+        next += dir;
+      }
+      return next;
+    }
+    function syncVisitFrequencyStep(){
+      if(!q4Step || !q4Hidden) return;
+      const firstTimer = (q2Hidden?.value || '').toLowerCase() === 'yes';
+      if(firstTimer){
+        q4Step.dataset.skip = 'true';
+        q4Hidden.value = 'Not applicable';
+        q4Hidden.dataset.autofill = 'first-time';
+        $$('.row .pill[data-name="q4"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+      }else{
+        delete q4Step.dataset.skip;
+        if(q4Hidden.dataset.autofill === 'first-time'){
+          q4Hidden.value = '';
+          delete q4Hidden.dataset.autofill;
+        }
+      }
+      refreshStageHeight();
+      updateUI();
+    }
     const PH_CITIES = [
       "Caloocan","Las Piñas","Makati","Malabon","Mandaluyong","Manila","Marikina","Muntinlupa","Navotas","Parañaque","Pasay","Pasig","Quezon City","San Juan","Taguig","Valenzuela","Pateros",
       "Alaminos","Angeles","Antipolo","Bacoor","Balanga","Batac","Batangas City","Baguio","Cabanatuan","Cabuyao","Candon","Cauayan","Cavite City","Dagupan","Dasmariñas","Gapan","General Trias","Iriga","Laoag","Legazpi","Ligao","Lipa","Lucena","Malolos","Meycauayan","Naga","Olongapo","Palayan","Puerto Princesa","San Carlos (Pangasinan)","San Fernando (La Union)","San Fernando (Pampanga)","San Jose (Nueva Ecija)","San Jose del Monte","San Pablo","Santa Rosa","Santiago","Sorsogon City","Tabuk","Tacurong","Tarlac City","Tayabas","Trece Martires","Vigan",
@@ -505,6 +535,7 @@
           const hidden = form.querySelector('input[type="hidden"][name="'+name+'"]');
           $$('.row .pill[data-name="'+name+'"]').forEach(b=>b.setAttribute('aria-pressed','false'));
           btn.setAttribute('aria-pressed','true');
+          let handledBySync = false;
           if(name==='q13'){
             const otherTxt = $('#q13OtherTxt');
             if(value==='__other'){
@@ -519,14 +550,38 @@
             }
             refreshStageHeight();
           }else{
-            if(hidden){ hidden.value = value }
+            if(hidden){
+              hidden.value = value;
+              if(name==='q4'){ delete hidden.dataset.autofill; }
+            }
+            if(name==='q2'){
+              handledBySync = true;
+              syncVisitFrequencyStep();
+            }
           }
-          updateUI();
+          if(!handledBySync){ updateUI(); }
         });
       });
       $$('.row .pill').forEach(b=>b.setAttribute('aria-pressed','false'));
     }
     setupPills();
+    const SENTIMENT_LABELS = ['Very Poor','Poor','Okay','Good','Great'];
+    const q5Slider = $('#q5Scale');
+    const q5Label  = $('#q5ScaleLabel');
+    const q5Hidden = form.querySelector('input[name="q5"]');
+    function updateSentimentSlider(val){
+      const idx = Math.max(1, Math.min(SENTIMENT_LABELS.length, Number(val))) - 1;
+      const label = SENTIMENT_LABELS[idx] || SENTIMENT_LABELS[2];
+      if(q5Label){ q5Label.textContent = label; }
+      if(q5Hidden){ q5Hidden.value = label; }
+    }
+    if(q5Slider){
+      updateSentimentSlider(q5Slider.value);
+      q5Slider.addEventListener('input', ()=>{
+        updateSentimentSlider(q5Slider.value);
+        updateUI();
+      });
+    }
     const nps = $('#nps'), npsVal = $('#npsVal');
     const npsPromoter = $('#npsPromoter');
     const npsPassive = $('#npsPassive');
@@ -553,6 +608,7 @@
     }
     nps && nps.addEventListener('input', ()=>{ updateNPSUI(parseInt(nps.value,10)); updateUI() });
     let idx = 0;
+    syncVisitFrequencyStep();
     function measureStepHeight(i){
       const step = steps[i]; if(!step) return 0;
       const wasActive = step.classList.contains('active');
@@ -568,7 +624,14 @@
       if(initial){ stage.style.height = targetH+'px'; return }
       stage.style.height = targetH+'px';
     }
-    function setProgress(i){ bar.style.width = (((i+1)/steps.length)*100) + '%' }
+    function setProgress(i){
+      const visible = visibleSteps();
+      const current = steps[i];
+      const total = visible.length || 1;
+      const position = visible.indexOf(current);
+      const at = position === -1 ? total : position + 1;
+      bar.style.width = ((at / total) * 100) + '%';
+    }
     function stepValid(stepEl){
       if(stepEl.dataset.required === 'false') return true;
       const hidden = stepEl.querySelector('input[type="hidden"][name]');
@@ -596,10 +659,12 @@
       refreshStageHeight();
     }
     let animating = false;
-    function show(i, dir=1){
-      if(animating || i<0 || i>=steps.length || i===idx) return;
+    function show(target, dir=1){
+      if(animating) return;
+      const resolved = resolveTargetIndex(target, dir);
+      if(resolved<0 || resolved>=steps.length || resolved===idx) return;
       animating = true;
-      const cur = steps[idx]; const nxt = steps[i];
+      const cur = steps[idx]; const nxt = steps[resolved];
       nxt.style.display='block';
       nxt.classList.remove('exiting-left','exiting-right','entering-left','entering-right','active');
       nxt.classList.add(dir>0 ? 'entering-right' : 'entering-left');
@@ -612,7 +677,7 @@
       setTimeout(()=>{
         cur.classList.remove('exiting-left','exiting-right');
         cur.style.display='none';
-        idx = i;
+        idx = resolved;
         updateUI();
         animating = false;
       }, 260);
