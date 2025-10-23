@@ -196,9 +196,12 @@
       box-shadow:0 16px 48px rgba(0,0,0,.08); padding:14px; position:relative; overflow:visible; /* let list overflow */
     }
 
-    .progress{ height:8px; background:color-mix(in srgb, var(--pop) 36%, #fff4d7); border-radius:999px; overflow:hidden; margin:2px 0 10px }
-    .bar{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-dk)); transition:width .25s ease }
+    .progress{ display:none }
 
+    .step-meta{display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:14px}
+    .step-chip{font:800 12px var(--font); color:#0f5d3f; padding:6px 12px; border-radius:999px; background:#e6fff6; border:1px solid #b8f7e0; letter-spacing:.08em; text-transform:uppercase}
+    .step-mini{flex:1; max-width:200px; height:8px; background:#d1fbe9; border-radius:999px; overflow:hidden}
+    .step-mini div{height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-dk)); transition:width .25s var(--ease)}
     .step-hdr{ display:flex; align-items:center; justify-content:center; margin-bottom:8px; text-align:center }
     .step-title{ font:800 clamp(18px,2.8vw,22px)/1.25 var(--font); max-width:680px }
 
@@ -265,47 +268,30 @@
     .ta-item{ padding:10px 12px; cursor:pointer; font-size:14px }
     .ta-item:hover, .ta-item.active{ background:color-mix(in srgb, var(--accent) 14%, #e9fffb); color:#0f4b49 }
 
-    .slider-wrap{ display:grid; place-items:center; gap:6px; margin-top:6px }
-    .slider-value{ font-weight:800; color:var(--accent) }
-    .ticks{ display:flex; gap:6px; font-size:11px; color:var(--muted); justify-content:space-between; width:min(100%,680px) }
-    .sentiment-slider .ticks span{ flex:1; text-align:center }
-
-    /* ==== Ramen bowl thumb for Q12 slider (graceful fallback) ==== */
-    #nps{ appearance:none; height:6px; border-radius:999px; background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 30%, #c7fff9), #fff);
-      /* prevent page from swiping while sliding */
-      touch-action: none;
+    .slider-shell{
+      width:100%; max-width:640px; border-radius:28px; background:#fff;
+      box-shadow:0 24px 60px color-mix(in srgb, var(--accent) 18%, transparent);
+      border:1px solid color-mix(in srgb, var(--accent) 16%, transparent);
+      padding:28px 24px 32px; display:grid; gap:18px; justify-items:center; margin:8px auto 0;
     }
-    #nps::-webkit-slider-thumb{
-      -webkit-appearance:none; appearance:none;
-      width:40px; height:40px; border-radius:50%;
-      background:
-        url('ramenicon.png') center/70% no-repeat,
-        radial-gradient(#ffffff, #ffffff);
-      border:2px solid color-mix(in srgb, var(--accent) 40%, #fff);
-      box-shadow:0 6px 14px rgba(0,0,0,.18);
-      cursor:pointer;
-    }
-    #nps::-moz-range-thumb{
-      width:40px; height:40px; border-radius:50%;
-      background:
-        url('ramenicon.png') center/70% no-repeat,
-        radial-gradient(#ffffff, #ffffff);
-      border:2px solid color-mix(in srgb, var(--accent) 40%, #fff);
-      box-shadow:0 6px 14px rgba(0,0,0,.18);
-      cursor:pointer;
-    }
-
-    /* === INLINE SVG RAMEN ICON OVERRIDE (keeps your lines above; ensures icon shows even without ramenicon.png) === */
-    #nps::-webkit-slider-thumb{
-      background:
-        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="%230f7270" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 24h48c0 13-10 24-24 24S8 37 8 24z" fill="%23fff"/><path d="M20 16h24M16 20h32M24 12h16"/><path d="M20 48c2 4 6 8 12 8s10-4 12-8"/></g><g fill="%231fa6a0"><circle cx="22" cy="28" r="2"/><circle cx="32" cy="30" r="2"/><circle cx="42" cy="28" r="2"/></g></svg>') center/70% no-repeat,
-        radial-gradient(#ffffff, #ffffff);
-    }
-    #nps::-moz-range-thumb{
-      background:
-        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="%230f7270" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 24h48c0 13-10 24-24 24S8 37 8 24z" fill="%23fff"/><path d="M20 16h24M16 20h32M24 12h16"/><path d="M20 48c2 4 6 8 12 8s10-4 12-8"/></g><g fill="%231fa6a0"><circle cx="22" cy="28" r="2"/><circle cx="32" cy="30" r="2"/><circle cx="42" cy="28" r="2"/></g></svg>') center/70% no-repeat,
-        radial-gradient(#ffffff, #ffffff);
-    }
+    .slider-shell-rating .slider-score{font:800 clamp(44px,9vw,56px)/1 var(--font); color:var(--accent)}
+    .slider-shell-rating .slider-score-label{font:700 13px/1.2 var(--font); letter-spacing:.12em; text-transform:uppercase; color:#0f172a}
+    .slider-shell-rating .slider-score-label.is-empty{color:#94a3b8}
+    .slider-shell-nps .slider-score{font:800 clamp(44px,9vw,56px)/1 var(--font); color:#0f172a}
+    .slider-track{position:relative;width:calc(100% - 36px);max-width:800px;margin:0 auto;padding-bottom:12px}
+    .slider-lane{position:relative;width:100%;height:12px;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%, #fff) 0%,color-mix(in srgb,var(--accent) 6%, #fff) 100%)}
+    .slider-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--accent) 0%,color-mix(in srgb,var(--accent) 45%, #fff) 100%);transition:width .22s var(--ease)}
+    .slider-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:var(--thumb-size,clamp(52px,12vw,76px));height:var(--thumb-size,clamp(52px,12vw,76px));display:grid;place-items:center;pointer-events:none}
+    .slider-thumb img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 18px 36px color-mix(in srgb,var(--accent) 40%, transparent));pointer-events:none}
+    .slider-track input[type="range"]{position:absolute;inset:-24px 26px -16px 26px;width:auto;height:auto;opacity:0;cursor:pointer;touch-action:none}
+    .slider-ticks{width:100%;display:flex;justify-content:space-between;gap:6px;padding:0 26px;font:700 11px/1.2 var(--font);color:#6b7b8f;text-transform:none;letter-spacing:.08em;max-width:800px;margin:0 auto}
+    .slider-ticks span{position:relative;display:grid;justify-items:center;gap:4px;padding-top:10px;white-space:nowrap;text-align:center;transition:color .18s var(--ease)}
+    .slider-ticks span::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:2px;height:8px;border-radius:999px;background:#d8eef0;transition:background .18s var(--ease),height .18s var(--ease)}
+    .slider-ticks span.active{color:var(--accent)}
+    .slider-ticks span.active::before{background:var(--accent);height:12px}
+    .slider-followup{display:none;width:100%;max-width:640px;margin:12px auto 0;text-align:left}
+    .slider-followup label{display:block;font:700 13px/1.4 var(--font);margin-bottom:6px;color:#124040;letter-spacing:.04em;text-transform:uppercase}
+    .slider-followup textarea{width:100%;min-height:96px;resize:vertical;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;font:500 14px/1.5 var(--font);color:var(--ink);box-shadow:0 12px 32px rgba(18,64,64,.08)}
 
     .actions{ display:flex; gap:10px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); justify-content:center }
     .btn{ display:inline-block; padding:12px 18px; border-radius:12px; font:800 14px/1 var(--font); color:#0c3d3b; background:
@@ -359,6 +345,10 @@
   <main class="viewport" id="viewport">
     <div class="card" role="region" aria-label="Survey">
       <div class="progress" aria-hidden="true"><div id="bar" class="bar"></div></div>
+      <div class="step-meta" aria-live="polite">
+        <span id="stepChip" class="step-chip">Question 1 of 1</span>
+        <div class="step-mini"><div id="stepMiniBar"></div></div>
+      </div>
       <div class="step-hdr"><div id="stepTitle" class="step-title">1) What branch did you go to?</div></div>
 
       <form id="surveyForm" novalidate>
@@ -420,16 +410,21 @@
 
           <!-- Q6 -->
           <section class="step" data-qid="6" data-required="true" data-title="6) How would you describe your overall customer experience?">
-            <div class="slider-wrap sentiment-slider">
-              <div class="slider-value" id="q5ScaleLabel">Okay</div>
-              <input id="q5Scale" class="ramen-range" type="range" min="1" max="5" step="1" value="3" aria-label="Overall experience rating">
-              <div class="ticks">
-                <span>Very Poor</span>
-                <span>Poor</span>
-                <span>Okay</span>
-                <span>Good</span>
-                <span>Great</span>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q5" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="5">
+              <div class="slider-score" id="q5Score">5</div>
+              <div class="slider-score-label" id="q5ScoreLabel">DECENT</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="q5Scale" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Overall experience rating">
               </div>
+              <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+            <div class="slider-followup" id="q5Follow">
+              <label for="q5FollowText" id="q5FollowLabel">Tell us more about your experience</label>
+              <textarea id="q5FollowText" name="q5_follow" placeholder=""></textarea>
             </div>
             <input type="hidden" name="q5" required>
           </section>
@@ -445,29 +440,39 @@
 
           <!-- Q8 -->
           <section class="step" data-qid="8" data-required="true" data-title="8) How would you rate the overall quality of the food served? (tastes, freshness, appearance)">
-            <div class="row">
-              <button type="button" class="pill" data-name="q7" data-value="Great">Great</button>
-              <button type="button" class="pill" data-name="q7" data-value="Good">Good</button>
-              <button type="button" class="pill" data-name="q7" data-value="Okay">Okay</button>
-              <button type="button" class="pill" data-name="q7" data-value="Poor">Poor</button>
-              <button type="button" class="pill" data-name="q7" data-value="Very Poor">Very Poor</button>
-              <button type="button" class="pill" data-name="q7" data-value="Not applicable">Not applicable</button>
-              <input type="hidden" name="q7" required>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q7" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
+              <div class="slider-score" id="q7Score">5</div>
+              <div class="slider-score-label" id="q7ScoreLabel">OKAY</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="q7Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Food quality rating">
+              </div>
+              <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
+            <input type="hidden" name="q7" required>
           </section>
+
 
           <!-- Q9 -->
           <section class="step" data-qid="9" data-required="true" data-title="9) How would you rate the friendliness of the staff you interacted with?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q8" data-value="Great">Great</button>
-              <button type="button" class="pill" data-name="q8" data-value="Good">Good</button>
-              <button type="button" class="pill" data-name="q8" data-value="Okay">Okay</button>
-              <button type="button" class="pill" data-name="q8" data-value="Poor">Poor</button>
-              <button type="button" class="pill" data-name="q8" data-value="Very Poor">Very Poor</button>
-              <button type="button" class="pill" data-name="q8" data-value="Not applicable">Not applicable</button>
-              <input type="hidden" name="q8" required>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q8" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
+              <div class="slider-score" id="q8Score">5</div>
+              <div class="slider-score-label" id="q8ScoreLabel">OKAY</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="q8Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Staff friendliness rating">
+              </div>
+              <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
+            <input type="hidden" name="q8" required>
           </section>
+
 
           <!-- Q10 -->
           <section class="step" data-qid="10" data-required="true" data-title="10) Were your orders served correctly?">
@@ -480,36 +485,52 @@
 
           <!-- Q11 -->
           <section class="step" data-qid="11" data-required="true" data-title="11) How would you rate the promptness of the service in this branch?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q10" data-value="Great">Great</button>
-              <button type="button" class="pill" data-name="q10" data-value="Good">Good</button>
-              <button type="button" class="pill" data-name="q10" data-value="Okay">Okay</button>
-              <button type="button" class="pill" data-name="q10" data-value="Poor">Poor</button>
-              <button type="button" class="pill" data-name="q10" data-value="Very Poor">Very Poor</button>
-              <button type="button" class="pill" data-name="q10" data-value="Not applicable">Not applicable</button>
-              <input type="hidden" name="q10" required>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q10" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
+              <div class="slider-score" id="q10Score">5</div>
+              <div class="slider-score-label" id="q10ScoreLabel">OKAY</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="q10Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Service promptness rating">
+              </div>
+              <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
+            <input type="hidden" name="q10" required>
           </section>
+
 
           <!-- Q12 -->
           <section class="step" data-qid="12" data-required="true" data-title="12) How would you rate the overall cleanliness and orderliness of the restaurant, including the restroom, if applicable?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q11" data-value="Great">Great</button>
-              <button type="button" class="pill" data-name="q11" data-value="Good">Good</button>
-              <button type="button" class="pill" data-name="q11" data-value="Okay">Okay</button>
-              <button type="button" class="pill" data-name="q11" data-value="Poor">Poor</button>
-              <button type="button" class="pill" data-name="q11" data-value="Very Poor">Very Poor</button>
-              <button type="button" class="pill" data-name="q11" data-value="Not applicable">Not applicable</button>
-              <input type="hidden" name="q11" required>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q11" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
+              <div class="slider-score" id="q11Score">5</div>
+              <div class="slider-score-label" id="q11ScoreLabel">OKAY</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="q11Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Cleanliness rating">
+              </div>
+              <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
+            <input type="hidden" name="q11" required>
           </section>
+
 
           <!-- Q12 (NPS slider + required follow-up) -->
           <section class="step" data-qid="13" data-required="true" data-title="13) How likely is it that you would recommend this branch to others based on your overall experience? (1 = poorest, 10 = highly recommendable)">
-            <div class="slider-wrap">
-              <div class="slider-value" id="npsVal">5</div>
-              <input id="nps" type="range" name="q12" min="1" max="10" step="1" value="5" style="width:min(100%,680px)">
-              <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            <div class="slider-shell slider-shell-nps" data-slider-type="nps">
+              <div class="slider-score" id="npsVal">5</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="nps" class="ramen-range" type="range" name="q12" min="1" max="10" step="1" value="5">
+              </div>
+              <div class="slider-ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
             <!-- NEW: required follow-up (always visible) -->
             <textarea id="npsFollow" name="q12_follow" placeholder="" required style="margin-top:8px"></textarea>
@@ -578,6 +599,8 @@
     const steps = $$('.step');
     const stage = $('#stage');
     const stepTitleEl = $('#stepTitle');
+    const stepChipEl = $('#stepChip');
+    const stepMiniBarEl = $('#stepMiniBar');
     const bar = $('#bar');
     const backBtn = $('#backBtn');
     const nextBtn = $('#nextBtn');
@@ -586,6 +609,7 @@
     const q2Hidden = form.querySelector('input[name="q2"]');
     const q4Hidden = form.querySelector('input[name="q4"]');
     const q4Step = q4Hidden ? q4Hidden.closest('.step') : null;
+    let idx = 0;
 
     function visibleSteps(){
       return steps.filter(step => step.dataset.skip !== 'true');
@@ -740,34 +764,144 @@
       $$('.row .pill').forEach(b=>b.setAttribute('aria-pressed','false'));
     }
     setupPills();
-    const SENTIMENT_LABELS = ['Very Poor','Poor','Okay','Good','Great'];
-    const q5Slider = $('#q5Scale');
-    const q5Label  = $('#q5ScaleLabel');
-    const q5Hidden = form.querySelector('input[name="q5"]');
-    function updateSentimentSlider(val){
-      const idx = Math.max(1, Math.min(SENTIMENT_LABELS.length, Number(val))) - 1;
-      const label = SENTIMENT_LABELS[idx] || SENTIMENT_LABELS[2];
-      if(q5Label){ q5Label.textContent = label; }
-      if(q5Hidden){ q5Hidden.value = label; }
+    function createSliderInstance(shell){
+  if(!shell) return null;
+  const range = shell.querySelector('input[type="range"]');
+  if(!range) return null;
+  const inst = {
+    shell,
+    range,
+    fill: shell.querySelector('.slider-fill'),
+    thumb: shell.querySelector('.slider-thumb'),
+    ticks: Array.from(shell.querySelectorAll('.slider-ticks span')),
+    score: shell.querySelector('.slider-score'),
+    labelEl: shell.querySelector('.slider-score-label'),
+    min: Number(range.min || 0),
+    max: Number(range.max || 0),
+    step: Number(range.step || 1),
+    scoreFormatter: val => String(Math.round(val)),
+    labelFormatter: null,
+    commitFormatter: val => String(Math.round(val)),
+    hidden: null
+  };
+
+  const hiddenAttr = shell.dataset.sliderInput || '';
+  if(hiddenAttr){
+    inst.hidden = form.querySelector(`input[name="${hiddenAttr}"]`);
+  }else{
+    const next = shell.nextElementSibling;
+    if(next && next.tagName === 'INPUT' && next.type === 'hidden'){ inst.hidden = next; }
+  }
+
+  const type = shell.dataset.sliderType || '';
+  const labelData = (shell.dataset.sliderLabels || '').split(',').map(l=>l.trim()).filter(Boolean);
+
+  if(type === 'rating' && labelData.length){
+    inst.labelFormatter = val => {
+      const idx = Math.min(labelData.length - 1, Math.max(0, Math.round(val) - 1));
+      return labelData[idx] || '';
+    };
+  }
+
+  const defaultVal = Number(shell.dataset.sliderDefault ?? range.value ?? inst.min);
+  if(Number.isFinite(defaultVal)) range.value = defaultVal;
+
+  const stepSize = inst.step > 0 ? inst.step : 1;
+  const rangeSpan = inst.max - inst.min;
+
+  inst.update = value=>{
+    const val = value !== undefined ? Number(value) : Number(inst.range.value);
+    const ratioRaw = rangeSpan>0 ? (val - inst.min)/rangeSpan : 0;
+    const pct = Math.max(0, Math.min(1, ratioRaw));
+    if(inst.fill) inst.fill.style.width = `${pct*100}%`;
+    if(inst.thumb) inst.thumb.style.left = `${pct*100}%`;
+
+    if(inst.ticks.length){
+      const idx = Math.min(inst.ticks.length - 1, Math.max(0, Math.round((val - inst.min)/stepSize)));
+      inst.ticks.forEach((tick,i)=> tick.classList.toggle('active', i===idx));
     }
-    if(q5Slider){
-      updateSentimentSlider(q5Slider.value);
-      q5Slider.addEventListener('input', ()=>{
-        updateSentimentSlider(q5Slider.value);
+
+    if(inst.score){
+      inst.score.textContent = inst.scoreFormatter ? inst.scoreFormatter(val) : String(Math.round(val));
+    }
+    if(inst.labelEl){
+      const displayRaw = inst.labelFormatter ? inst.labelFormatter(val) : '';
+      const display = displayRaw ? displayRaw.toUpperCase() : '';
+      inst.labelEl.textContent = display;
+      inst.labelEl.classList.toggle('is-empty', !display);
+    }
+    if(inst.hidden){
+      inst.hidden.value = inst.commitFormatter ? inst.commitFormatter(val) : String(val);
+    }
+  };
+
+  return inst;
+}
+    const ratingSliderInstances = Array.from(document.querySelectorAll('[data-slider-type="rating"]'))
+      .map(createSliderInstance)
+      .filter(Boolean);
+    const q5Follow = $('#q5Follow');
+    const q5FollowLabel = $('#q5FollowLabel');
+    const q5FollowText = $('#q5FollowText');
+    function updateExperienceFollowup(val){
+      if(!q5Follow || !q5FollowText) return;
+      const score = Number(val);
+      let prompt = '';
+      let placeholder = '';
+      let required = false;
+      if(score <= 4){
+        prompt = 'What could we improve to earn a higher score?';
+        placeholder = 'Share any issues you encountered…';
+        required = true;
+      }else if(score >= 8){
+        prompt = 'Amazing! What made your experience stand out?';
+        placeholder = 'Tell us what you loved…';
+        required = false;
+      }else{
+        q5Follow.style.display = 'none';
+        setRequired(q5FollowText,false);
+        q5FollowText.value = '';
+        refreshStageHeight();
+        return;
+      }
+      q5Follow.style.display = 'block';
+      if(q5FollowLabel){ q5FollowLabel.textContent = prompt; }
+      q5FollowText.placeholder = placeholder;
+      setRequired(q5FollowText, required);
+      refreshStageHeight();
+    }
+    let experienceSliderInst = null;
+    ratingSliderInstances.forEach(inst=>{
+      inst.update(inst.range.value);
+      if(inst.hidden?.name === 'q5'){ experienceSliderInst = inst; }
+      inst.range.addEventListener('input', ()=>{
+        inst.update(inst.range.value);
+        if(inst.hidden?.name === 'q5'){ updateExperienceFollowup(inst.range.value); }
         updateUI();
       });
-    }
-
-    /* Q12: live slider value */
-    const nps = $('#nps'), npsVal = $('#npsVal');
-    nps && nps.addEventListener('input', ()=> { 
-      npsVal.textContent = nps.value; 
-      setNpsFollowUX();
-      refreshStageHeight();
-      updateUI(); 
     });
+    if(experienceSliderInst){ updateExperienceFollowup(experienceSliderInst.range.value); }
 
-    let idx = 0;
+    const npsShell = document.querySelector('[data-slider-type="nps"]');
+    const npsSliderInst = createSliderInstance(npsShell);
+    const npsRange = npsSliderInst ? npsSliderInst.range : $('#nps');
+    const npsPromoter = $('#npsPromoter');
+    const npsPassive = $('#npsPassive');
+    const npsDetractor = $('#npsDetractor');
+    const q12a = $('#q12a'), q12b = $('#q12b'), q12c = $('#q12c');
+    function setRequired(el, on){ if(!el) return; if(on){ el.setAttribute('required','required') } else{ el.removeAttribute('required') } }
+    function updateNPSUI(val){
+      if(npsSliderInst){ npsSliderInst.update(val); }
+      if(npsPromoter){ npsPromoter.style.display = 'none'; }
+      if(npsPassive){ npsPassive.style.display = 'none'; }
+      if(npsDetractor){ npsDetractor.style.display = 'none'; }
+      setRequired(q12a,false); setRequired(q12b,false); setRequired(q12c,false);
+      if(val >= 9){ if(npsPromoter){ npsPromoter.style.display = 'block'; } setRequired(q12a,true); }
+      else if(val >= 7){ if(npsPassive){ npsPassive.style.display = 'block'; } setRequired(q12b,true); }
+      else{ if(npsDetractor){ npsDetractor.style.display = 'block'; } setRequired(q12c,true); }
+      refreshStageHeight();
+    }
+    if(npsRange){ npsRange.addEventListener('input', ()=>{ updateNPSUI(Number(npsRange.value)); updateUI(); }); }
     syncVisitFrequencyStep();
 
     /* ===== Auto-height per step (matching others) ===== */
@@ -798,6 +932,12 @@
       const position = visible.indexOf(current);
       const at = position === -1 ? total : position + 1;
       bar.style.width = ((at / total) * 100) + '%';
+      if(stepMiniBarEl){
+        stepMiniBarEl.style.width = `${(at/total)*100}%`;
+      }
+      if(stepChipEl){
+        stepChipEl.textContent = `Question ${at} of ${total}`;
+      }
     }
 
     function stepValid(stepEl){
@@ -908,8 +1048,8 @@
     /* ===== Q12 follow-up UX ===== */
     const npsFollow = document.getElementById('npsFollow');
     function setNpsFollowUX(){
-      if(!nps || !npsFollow) return;
-      const v = parseInt(nps.value, 10) || 5;
+      if(!npsRange || !npsFollow) return;
+      const v = parseInt(npsRange.value, 10) || 0;
       if(v <= 6){
         npsFollow.placeholder = "What can we do better to improve your satisfaction?";
       }else if(v <= 8){
@@ -918,13 +1058,15 @@
         npsFollow.placeholder = "What is the main reason you would recommend us?";
       }
     }
-    npsFollow && npsFollow.addEventListener('input', ()=>{ updateUI(); });
-
-    /* Lock page swipe while dragging the slider (mobile) */
-    if(nps){
+    if(npsFollow){
+      npsFollow.addEventListener('input', ()=>{ updateUI(); });
+    }
+    if(npsRange){
+      npsRange.addEventListener('input', setNpsFollowUX);
       const block = (e)=>{ e.preventDefault(); e.stopPropagation(); };
-      nps.addEventListener('touchstart', block, {passive:false});
-      nps.addEventListener('touchmove', block, {passive:false});
+      npsRange.addEventListener('touchstart', block, {passive:false});
+      npsRange.addEventListener('touchmove', block, {passive:false});
+      setNpsFollowUX();
     }
 
     /* Simulated submit → kzcreward.html (no DB write) */
