@@ -192,8 +192,7 @@
       padding:28px 24px 32px; display:grid; gap:18px; justify-items:center; margin:8px auto 0;
     }
     .slider-shell-rating .slider-score{font:800 clamp(44px,9vw,56px)/1 var(--font); color:var(--accent)}
-    .slider-shell-rating .slider-score-label{font:700 13px/1.2 var(--font); letter-spacing:.12em; text-transform:uppercase; color:#0f172a}
-    .slider-shell-rating .slider-score-label.is-empty{color:#94a3b8}
+    .slider-shell-rating .slider-score-label{display:none}
     .slider-shell-nps .slider-score{font:800 clamp(44px,9vw,56px)/1 var(--font); color:#0f172a}
     .slider-track{position:relative;width:calc(100% - 36px);max-width:800px;margin:0 auto;padding-bottom:12px}
     .slider-lane{position:relative;width:100%;height:12px;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%, #fff) 0%,color-mix(in srgb,var(--accent) 6%, #fff) 100%)}
@@ -217,8 +216,13 @@
     .btn[disabled]{ opacity:.55; cursor:not-allowed; box-shadow:none; filter:grayscale(.35) }
     .state{ color:#b45309; font-size:12px; text-align:center; margin-top:6px; min-height:1em }
     .state.ok{ color:#0b7f87 }
-    .grid5{ display:grid; grid-template-columns:1fr 1fr; gap:10px; width:min(100%, 680px); margin:8px auto 0 }
-    @media (max-width:640px){ .grid5{ grid-template-columns:1fr } }
+    .restaurant-list{display:grid;gap:12px;width:min(100%,680px);margin:8px auto 0}
+    .restaurant-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:color-mix(in srgb,var(--accent) 6%, #fff);box-shadow:0 12px 24px color-mix(in srgb,var(--accent) 12%, transparent);transition:border-color .18s var(--ease), box-shadow .18s var(--ease)}
+    .restaurant-item span{flex:0 0 32px;height:32px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%, #fff);color:var(--accent);display:grid;place-items:center;font:700 14px/1 var(--font)}
+    .restaurant-item input{flex:1;border:none;background:transparent;font:600 14px var(--font);color:var(--ink);padding:0}
+    .restaurant-item input::placeholder{color:var(--muted)}
+    .restaurant-item input:focus{outline:none}
+    .restaurant-item:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 28%, transparent),0 12px 24px color-mix(in srgb,var(--accent) 12%, transparent)}
   </style>
 </head>
 <body>
@@ -303,19 +307,19 @@
             </div>
           </section>
           <section class="step" data-qid="6" data-required="true" data-title="6) How would you describe your overall customer experience?">
-            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q5" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="5">
-              <div class="slider-score" id="q5Score">5</div>
-              <div class="slider-score-label" id="q5ScoreLabel">DECENT</div>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q5" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="1">
+              <div class="slider-score" id="q5Score">1</div>
+              <div class="slider-score-label" id="q5ScoreLabel">Low</div>
               <div class="slider-track">
                 <div class="slider-lane">
                   <div class="slider-fill"></div>
                   <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
                 </div>
-                <input id="q5Scale" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Overall experience rating">
+                <input id="q5Scale" class="ramen-range" type="range" min="1" max="10" step="1" value="1" aria-label="Overall experience rating">
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
-            <div class="slider-followup" id="q5Follow">
+            <div class="slider-followup" id="q5Follow" data-low-label="What could we improve to enhance your overall experience?" data-low-placeholder="Share any issues we should address…" data-high-label="Amazing! What made your visit special?" data-high-placeholder="Tell us the highlights of your visit…" data-neutral-display="show" data-neutral-label="Got it! Anything else we should know?" data-neutral-placeholder="Share any additional thoughts…">
               <label for="q5FollowText" id="q5FollowLabel">Tell us more about your experience</label>
               <textarea id="q5FollowText" name="q5_follow" placeholder=""></textarea>
             </div>
@@ -329,32 +333,40 @@
             </div>
           </section>
           <section class="step" data-qid="8" data-required="true" data-title="8) How would you rate the overall quality of the food served? (tastes, freshness, appearance)">
-            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q7" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
-              <div class="slider-score" id="q7Score">5</div>
-              <div class="slider-score-label" id="q7ScoreLabel">OKAY</div>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q7" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="1">
+              <div class="slider-score" id="q7Score">1</div>
+              <div class="slider-score-label" id="q7ScoreLabel">Low</div>
               <div class="slider-track">
                 <div class="slider-lane">
                   <div class="slider-fill"></div>
                   <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
                 </div>
-                <input id="q7Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Food quality rating">
+                <input id="q7Range" class="ramen-range" type="range" min="1" max="10" step="1" value="1" aria-label="Food quality rating">
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+            <div class="slider-followup" id="q7Follow" data-low-label="What went wrong with the food?" data-low-placeholder="Tell us what didn’t work for you…" data-high-label="Awesome! What did you love most about the food?" data-high-placeholder="Share the highlights of your meal…" data-neutral-display="show" data-neutral-label="How could the food be better next time?" data-neutral-placeholder="Share any tips or tweaks…">
+              <label for="q7FollowText" id="q7FollowLabel">Tell us more about your rating</label>
+              <textarea id="q7FollowText" name="q7_follow" placeholder=""></textarea>
             </div>
             <input type="hidden" name="q7" required>
           </section>
           <section class="step" data-qid="9" data-required="true" data-title="9) How would you rate the friendliness of the staff you interacted with?">
-            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q8" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
-              <div class="slider-score" id="q8Score">5</div>
-              <div class="slider-score-label" id="q8ScoreLabel">OKAY</div>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q8" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="1">
+              <div class="slider-score" id="q8Score">1</div>
+              <div class="slider-score-label" id="q8ScoreLabel">Low</div>
               <div class="slider-track">
                 <div class="slider-lane">
                   <div class="slider-fill"></div>
                   <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
                 </div>
-                <input id="q8Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Staff friendliness rating">
+                <input id="q8Range" class="ramen-range" type="range" min="1" max="10" step="1" value="1" aria-label="Staff friendliness rating">
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+            <div class="slider-followup" id="q8Follow" data-low-label="What went wrong with the service?" data-low-placeholder="Let us know what didn’t feel welcoming…" data-high-label="Awesome! Who made your visit great?" data-high-placeholder="We’d love to celebrate your experience…" data-neutral-display="show" data-neutral-label="How could the service be better?" data-neutral-placeholder="Share any tips or tweaks…">
+              <label for="q8FollowText" id="q8FollowLabel">Tell us more about your rating</label>
+              <textarea id="q8FollowText" name="q8_follow" placeholder=""></textarea>
             </div>
             <input type="hidden" name="q8" required>
           </section>
@@ -366,32 +378,40 @@
             </div>
           </section>
           <section class="step" data-qid="11" data-required="true" data-title="11) How would you rate the promptness of the service in this branch?">
-            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q10" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
-              <div class="slider-score" id="q10Score">5</div>
-              <div class="slider-score-label" id="q10ScoreLabel">OKAY</div>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q10" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="1">
+              <div class="slider-score" id="q10Score">1</div>
+              <div class="slider-score-label" id="q10ScoreLabel">Low</div>
               <div class="slider-track">
                 <div class="slider-lane">
                   <div class="slider-fill"></div>
                   <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
                 </div>
-                <input id="q10Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Service promptness rating">
+                <input id="q10Range" class="ramen-range" type="range" min="1" max="10" step="1" value="1" aria-label="Service promptness rating">
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+            <div class="slider-followup" id="q10Follow" data-low-label="What went wrong with the speed?" data-low-placeholder="Tell us what slowed things down…" data-high-label="Awesome! What impressed you about our speed?" data-high-placeholder="Let us know what stood out…" data-neutral-display="show" data-neutral-label="How could our speed be better?" data-neutral-placeholder="Share any ideas to help us move faster…">
+              <label for="q10FollowText" id="q10FollowLabel">Tell us more about your rating</label>
+              <textarea id="q10FollowText" name="q10_follow" placeholder=""></textarea>
             </div>
             <input type="hidden" name="q10" required>
           </section>
           <section class="step" data-qid="12" data-required="true" data-title="12) How would you rate the overall cleanliness and orderliness of the restaurant, including the restroom, if applicable?">
-            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q11" data-slider-labels="Very Poor,Very Poor,Poor,Poor,Okay,Okay,Good,Good,Excellent,Excellent" data-slider-default="5">
-              <div class="slider-score" id="q11Score">5</div>
-              <div class="slider-score-label" id="q11ScoreLabel">OKAY</div>
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q11" data-slider-labels="Low,Low,Low,Low,Decent,Decent,Decent,Awesome,Awesome,Awesome" data-slider-default="1">
+              <div class="slider-score" id="q11Score">1</div>
+              <div class="slider-score-label" id="q11ScoreLabel">Low</div>
               <div class="slider-track">
                 <div class="slider-lane">
                   <div class="slider-fill"></div>
                   <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
                 </div>
-                <input id="q11Range" class="ramen-range" type="range" min="1" max="10" step="1" value="5" aria-label="Cleanliness rating">
+                <input id="q11Range" class="ramen-range" type="range" min="1" max="10" step="1" value="1" aria-label="Cleanliness rating">
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            </div>
+            <div class="slider-followup" id="q11Follow" data-low-label="What went wrong with the cleanliness?" data-low-placeholder="Let us know what needs more attention…" data-high-label="Awesome! What looked spotless to you?" data-high-placeholder="Share what impressed you…" data-neutral-display="show" data-neutral-label="How could the cleanliness be better?" data-neutral-placeholder="Share any suggestions for tidier spaces…">
+              <label for="q11FollowText" id="q11FollowLabel">Tell us more about your rating</label>
+              <textarea id="q11FollowText" name="q11_follow" placeholder=""></textarea>
             </div>
             <input type="hidden" name="q11" required>
           </section>
@@ -436,12 +456,27 @@
             <div class="hint" style="text-align:center;margin-top:6px">Start typing — we’ll suggest cities and malls. Use ↑/↓ + Enter to select.</div>
           </section>
           <section class="step" data-qid="17" data-title="17) What are the last five restaurants you've visited?">
-            <div class="grid5">
-              <input name="q17_1" placeholder="Restaurant 1">
-              <input name="q17_2" placeholder="Restaurant 2">
-              <input name="q17_3" placeholder="Restaurant 3">
-              <input name="q17_4" placeholder="Restaurant 4">
-              <input name="q17_5" placeholder="Restaurant 5">
+            <div class="restaurant-list">
+              <label class="restaurant-item">
+                <span>1</span>
+                <input name="q17_1" placeholder="Restaurant 1" aria-label="Restaurant 1">
+              </label>
+              <label class="restaurant-item">
+                <span>2</span>
+                <input name="q17_2" placeholder="Restaurant 2" aria-label="Restaurant 2">
+              </label>
+              <label class="restaurant-item">
+                <span>3</span>
+                <input name="q17_3" placeholder="Restaurant 3" aria-label="Restaurant 3">
+              </label>
+              <label class="restaurant-item">
+                <span>4</span>
+                <input name="q17_4" placeholder="Restaurant 4" aria-label="Restaurant 4">
+              </label>
+              <label class="restaurant-item">
+                <span>5</span>
+                <input name="q17_5" placeholder="Restaurant 5" aria-label="Restaurant 5">
+              </label>
             </div>
             <div class="hint" style="text-align:center;margin-top:6px">Free text. Auto-suggest coming later.</div>
           </section>
@@ -642,6 +677,7 @@
 
   const type = shell.dataset.sliderType || '';
   const labelData = (shell.dataset.sliderLabels || '').split(',').map(l=>l.trim()).filter(Boolean);
+  inst.touched = false;
 
   if(type === 'rating' && labelData.length){
     inst.labelFormatter = val => {
@@ -673,12 +709,16 @@
     }
     if(inst.labelEl){
       const displayRaw = inst.labelFormatter ? inst.labelFormatter(val) : '';
-      const display = displayRaw ? displayRaw.toUpperCase() : '';
+      const display = displayRaw || '';
       inst.labelEl.textContent = display;
       inst.labelEl.classList.toggle('is-empty', !display);
     }
     if(inst.hidden){
-      inst.hidden.value = inst.commitFormatter ? inst.commitFormatter(val) : String(val);
+      if(inst.touched){
+        inst.hidden.value = inst.commitFormatter ? inst.commitFormatter(val) : String(val);
+      }else{
+        inst.hidden.value = '';
+      }
     }
   };
 
@@ -687,47 +727,70 @@
     const ratingSliderInstances = Array.from(document.querySelectorAll('[data-slider-type="rating"]'))
       .map(createSliderInstance)
       .filter(Boolean);
-    const q5Follow = $('#q5Follow');
-    const q5FollowLabel = $('#q5FollowLabel');
-    const q5FollowText = $('#q5FollowText');
-    function updateExperienceFollowup(val){
-      if(!q5Follow || !q5FollowText) return;
-      const score = Number(val);
-      let prompt = '';
-      let placeholder = '';
-      let required = false;
-      if(score <= 4){
-        prompt = 'What could we improve to earn a higher score?';
-        placeholder = 'Share any issues you encountered…';
-        required = true;
-      }else if(score >= 8){
-        prompt = 'Amazing! What made your experience stand out?';
-        placeholder = 'Tell us what you loved…';
-        required = false;
-      }else{
-        q5Follow.style.display = 'none';
-        setRequired(q5FollowText,false);
-        q5FollowText.value = '';
+
+    function configureSliderFollowup(inst){
+      const hiddenName = inst.hidden?.name;
+      if(!hiddenName) return null;
+      const followEl = document.getElementById(`${hiddenName}Follow`);
+      if(!followEl) return null;
+      const textarea = followEl.querySelector('textarea');
+      const labelEl = followEl.querySelector('label');
+      if(!textarea || !labelEl) return null;
+      const lowMax = Number(followEl.dataset.lowMax ?? 4);
+      const highMin = Number(followEl.dataset.highMin ?? 8);
+      const lowLabel = followEl.dataset.lowLabel || 'What could we improve to earn a higher score?';
+      const lowPlaceholder = followEl.dataset.lowPlaceholder || 'Share any issues you encountered…';
+      const highLabel = followEl.dataset.highLabel || 'Amazing! What made your experience stand out?';
+      const highPlaceholder = followEl.dataset.highPlaceholder || 'Tell us what you loved…';
+      const neutralLabel = followEl.dataset.neutralLabel || '';
+      const neutralPlaceholder = followEl.dataset.neutralPlaceholder || '';
+      const showNeutral = (followEl.dataset.neutralDisplay || '').toLowerCase() === 'show';
+      return (value, touched)=>{
+        if(!touched){
+          followEl.style.display = 'none';
+          textarea.value = '';
+          setRequired(textarea, false);
+          refreshStageHeight();
+          return;
+        }
+        const score = Number(value);
+        if(score <= lowMax){
+          followEl.style.display = 'block';
+          labelEl.textContent = lowLabel;
+          textarea.placeholder = lowPlaceholder;
+          setRequired(textarea, true);
+        }else if(score >= highMin){
+          followEl.style.display = 'block';
+          labelEl.textContent = highLabel;
+          textarea.placeholder = highPlaceholder;
+          setRequired(textarea, false);
+        }else if(showNeutral){
+          followEl.style.display = 'block';
+          labelEl.textContent = neutralLabel;
+          textarea.placeholder = neutralPlaceholder;
+          setRequired(textarea, false);
+        }else{
+          followEl.style.display = 'none';
+          textarea.value = '';
+          setRequired(textarea, false);
+        }
         refreshStageHeight();
-        return;
-      }
-      q5Follow.style.display = 'block';
-      if(q5FollowLabel){ q5FollowLabel.textContent = prompt; }
-      q5FollowText.placeholder = placeholder;
-      setRequired(q5FollowText, required);
-      refreshStageHeight();
+      };
     }
-    let experienceSliderInst = null;
+
     ratingSliderInstances.forEach(inst=>{
       inst.update(inst.range.value);
-      if(inst.hidden?.name === 'q5'){ experienceSliderInst = inst; }
+      const applyFollowup = configureSliderFollowup(inst);
+      if(applyFollowup){
+        applyFollowup(inst.range.value, inst.touched);
+      }
       inst.range.addEventListener('input', ()=>{
+        inst.touched = true;
         inst.update(inst.range.value);
-        if(inst.hidden?.name === 'q5'){ updateExperienceFollowup(inst.range.value); }
+        if(applyFollowup){ applyFollowup(inst.range.value, inst.touched); }
         updateUI();
       });
     });
-    if(experienceSliderInst){ updateExperienceFollowup(experienceSliderInst.range.value); }
 
     const npsShell = document.querySelector('[data-slider-type="nps"]');
     const npsSliderInst = createSliderInstance(npsShell);
@@ -743,12 +806,16 @@
       if(npsPassive){ npsPassive.style.display = 'none'; }
       if(npsDetractor){ npsDetractor.style.display = 'none'; }
       setRequired(q12a,false); setRequired(q12b,false); setRequired(q12c,false);
+      if(npsSliderInst && !npsSliderInst.touched){
+        refreshStageHeight();
+        return;
+      }
       if(val >= 9){ if(npsPromoter){ npsPromoter.style.display = 'block'; } setRequired(q12a,true); }
       else if(val >= 7){ if(npsPassive){ npsPassive.style.display = 'block'; } setRequired(q12b,true); }
       else{ if(npsDetractor){ npsDetractor.style.display = 'block'; } setRequired(q12c,true); }
       refreshStageHeight();
     }
-    if(npsRange){ npsRange.addEventListener('input', ()=>{ updateNPSUI(Number(npsRange.value)); updateUI(); }); }
+    if(npsRange){ npsRange.addEventListener('input', ()=>{ if(npsSliderInst){ npsSliderInst.touched = true; } updateNPSUI(Number(npsRange.value)); updateUI(); }); }
     syncVisitFrequencyStep();
     function measureStepHeight(i){
       const step = steps[i];
