@@ -375,7 +375,20 @@
           </section>
 
           <!-- Q3 -->
-          <section class="step" data-qid="3" data-required="true" data-title="3) Did you Dine-In or Take-out in the said branch?">
+          <section class="step" data-qid="3" data-required="true" data-title="3) How often do you visit us?">
+            <div class="row">
+              <button type="button" class="pill" data-name="q4" data-value="More than once a week">More than once a week</button>
+              <button type="button" class="pill" data-name="q4" data-value="Once a week">Once a week</button>
+              <button type="button" class="pill" data-name="q4" data-value="Twice a month">Twice a month</button>
+              <button type="button" class="pill" data-name="q4" data-value="Once a month">Once a month</button>
+              <button type="button" class="pill" data-name="q4" data-value="Not regularly">Not regularly</button>
+              <button type="button" class="pill" data-name="q4" data-value="Not applicable">Not applicable</button>
+              <input type="hidden" name="q4" required>
+            </div>
+          </section>
+
+          <!-- Q4 -->
+          <section class="step" data-qid="4" data-required="true" data-title="4) Did you Dine-In or Take-out in the said branch?">
             <div class="row">
               <button type="button" class="pill" data-name="q3" data-value="Dine-In">Dine-In</button>
               <button type="button" class="pill" data-name="q3" data-value="Take-Out">Take-Out</button>
@@ -383,8 +396,8 @@
             </div>
           </section>
 
-          <!-- Q4 -->
-          <section class="step" data-qid="4" data-title="4) Identifying Preferences: Any dietary restrictions or preferences?">
+          <!-- Q5 -->
+          <section class="step" data-qid="5" data-title="5) Identifying Preferences: Any dietary restrictions or preferences?">
             <div class="row" id="q13Row">
               <button type="button" class="pill" data-name="q13" data-value="No Meat">No Meat</button>
               <button type="button" class="pill" data-name="q13" data-value="No Nuts">No Nuts</button>
@@ -397,19 +410,6 @@
             </div>
             <input id="q13OtherTxt" type="text" placeholder="Please specify…" style="display:none;margin-top:8px">
             <div class="hint" style="text-align:center;margin-top:6px">We’ll use this to improve menu options and suggestions.</div>
-          </section>
-
-          <!-- Q5 -->
-          <section class="step" data-qid="5" data-required="true" data-title="5) How often do you visit us?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q4" data-value="More than once a week">More than once a week</button>
-              <button type="button" class="pill" data-name="q4" data-value="Once a week">Once a week</button>
-              <button type="button" class="pill" data-name="q4" data-value="Twice a month">Twice a month</button>
-              <button type="button" class="pill" data-name="q4" data-value="Once a month">Once a month</button>
-              <button type="button" class="pill" data-name="q4" data-value="Not regularly">Not regularly</button>
-              <button type="button" class="pill" data-name="q4" data-value="Not applicable">Not applicable</button>
-              <input type="hidden" name="q4" required>
-            </div>
           </section>
 
           <!-- Q6 -->
@@ -657,17 +657,24 @@
     }
     function syncVisitFrequencyStep(){
       if(!q4Step || !q4Hidden) return;
-      const firstTimer = (q2Hidden?.value || '').toLowerCase() === 'yes';
-      if(firstTimer){
-        q4Step.dataset.skip = 'true';
-        q4Hidden.value = 'Not applicable';
-        q4Hidden.dataset.autofill = 'first-time';
-        $$('.row .pill[data-name="q4"]').forEach(b=>b.setAttribute('aria-pressed','false'));
-      }else{
+      const answer = (q2Hidden?.value || '').toLowerCase();
+      if(answer === 'no'){
         delete q4Step.dataset.skip;
         if(q4Hidden.dataset.autofill === 'first-time'){
           q4Hidden.value = '';
           delete q4Hidden.dataset.autofill;
+        }
+      }else{
+        q4Step.dataset.skip = 'true';
+        $$('.row .pill[data-name="q4"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+        if(answer === 'yes'){
+          q4Hidden.value = 'Not applicable';
+          q4Hidden.dataset.autofill = 'first-time';
+        }else{
+          if(q4Hidden.dataset.autofill === 'first-time'){
+            delete q4Hidden.dataset.autofill;
+          }
+          q4Hidden.value = '';
         }
       }
       refreshStageHeight();
