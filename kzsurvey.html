@@ -405,12 +405,24 @@
           </section>
 
           <!-- Q7 -->
-          <section class="step" data-qid="7" data-required="true" data-title="7) Did the brand offer great value for your money?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q6" data-value="Yes">Yes</button>
-              <button type="button" class="pill" data-name="q6" data-value="No">No</button>
-              <input type="hidden" name="q6" required>
+          <section class="step" data-qid="7" data-required="true" data-title="7) How would you rate the value you received for your money?">
+            <div class="slider-shell slider-shell-rating" data-slider-type="rating" data-slider-input="q6" data-slider-labels="Needs work,Needs work,Needs work,Needs work,Fair,Fair,Fair,Excellent,Excellent,Excellent" data-slider-default="1">
+              <div class="slider-score" id="q6Score">1</div>
+              <div class="slider-score-label" id="q6ScoreLabel">Needs work</div>
+              <div class="slider-track">
+                <div class="slider-lane">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"><img src="ramenbowl.png" alt="Ramen bowl"></div>
+                </div>
+                <input id="q6Range" class="ramen-range" type="range" min="1" max="10" step="1" value="1" aria-label="Value for money rating">
+              </div>
+              <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
+            <div class="slider-followup" id="q6Follow" data-low-label="What made the visit feel like it wasn’t worth the price?" data-low-placeholder="Tell us what felt overpriced or lacking…" data-high-label="Awesome! What made the visit worth every peso?" data-high-placeholder="Share the details that made it a great value…" data-neutral-display="show" data-neutral-label="Any ideas to help us deliver even better value?" data-neutral-placeholder="Tell us what would make the price feel perfect…">
+              <label for="q6FollowText" id="q6FollowLabel">Tell us more about the value you received</label>
+              <textarea id="q6FollowText" name="q6_follow" placeholder=""></textarea>
+            </div>
+            <input type="hidden" name="q6" required>
           </section>
 
           <!-- Q8 -->
@@ -813,7 +825,8 @@
     scoreFormatter: val => String(Math.round(val)),
     labelFormatter: null,
     commitFormatter: val => String(Math.round(val)),
-    hidden: null
+    hidden: null,
+    numberInput: null
   };
 
   const hiddenAttr = shell.dataset.sliderInput || '';
@@ -822,6 +835,14 @@
   }else{
     const next = shell.nextElementSibling;
     if(next && next.tagName === 'INPUT' && next.type === 'hidden'){ inst.hidden = next; }
+  }
+
+  inst.numberInput = shell.querySelector('[data-slider-number]');
+  if(inst.numberInput){
+    if(!inst.numberInput.hasAttribute('min')) inst.numberInput.setAttribute('min', String(inst.min));
+    if(!inst.numberInput.hasAttribute('max')) inst.numberInput.setAttribute('max', String(inst.max));
+    if(!inst.numberInput.hasAttribute('step')) inst.numberInput.setAttribute('step', String(inst.step > 0 ? inst.step : 1));
+    inst.numberInput.setAttribute('inputmode', inst.numberInput.getAttribute('inputmode') || 'numeric');
   }
 
   const type = shell.dataset.sliderType || '';
@@ -853,8 +874,10 @@
       inst.ticks.forEach((tick,i)=> tick.classList.toggle('active', i===idx));
     }
 
-    if(inst.score){
-      inst.score.textContent = inst.scoreFormatter ? inst.scoreFormatter(val) : String(Math.round(val));
+    const displayVal = inst.scoreFormatter ? inst.scoreFormatter(val) : String(Math.round(val));
+    if(inst.score){ inst.score.textContent = displayVal; }
+    if(inst.numberInput && document.activeElement !== inst.numberInput){
+      inst.numberInput.value = displayVal;
     }
     if(inst.labelEl){
       const displayRaw = inst.labelFormatter ? inst.labelFormatter(val) : '';
@@ -933,12 +956,57 @@
       if(applyFollowup){
         applyFollowup(inst.range.value, inst.touched);
       }
-      inst.range.addEventListener('input', ()=>{
+      const handleRangeInput = ()=>{
         inst.touched = true;
         inst.update(inst.range.value);
         if(applyFollowup){ applyFollowup(inst.range.value, inst.touched); }
         updateUI();
-      });
+      };
+      inst.range.addEventListener('input', handleRangeInput);
+      if(inst.numberInput){
+        const stepSize = inst.step > 0 ? inst.step : 1;
+        inst.numberInput.addEventListener('input', ()=>{
+          const raw = inst.numberInput.value.trim();
+          if(raw === ''){
+            inst.touched = false;
+            if(inst.hidden){ inst.hidden.value = ''; }
+            inst.update(inst.range.value);
+            if(applyFollowup){ applyFollowup(inst.range.value, inst.touched); }
+            updateUI();
+            return;
+          }
+          const parsed = Number(raw);
+          if(!Number.isFinite(parsed)) return;
+          let val = Math.max(inst.min, Math.min(inst.max, parsed));
+          val = inst.min + Math.round((val - inst.min) / stepSize) * stepSize;
+          val = Number(val.toFixed(4));
+          val = Math.max(inst.min, Math.min(inst.max, val));
+          inst.range.value = String(val);
+          inst.touched = true;
+          inst.update(val);
+          if(applyFollowup){ applyFollowup(val, inst.touched); }
+          updateUI();
+        });
+        inst.numberInput.addEventListener('blur', ()=>{
+          const raw = inst.numberInput.value.trim();
+          if(raw === ''){
+            inst.touched = false;
+            if(inst.hidden){ inst.hidden.value = ''; }
+            inst.update(inst.range.value);
+            if(applyFollowup){ applyFollowup(inst.range.value, inst.touched); }
+            updateUI();
+            return;
+          }
+          let val = Number(raw);
+          if(!Number.isFinite(val)){ val = Number(inst.range.value); }
+          val = Math.max(inst.min, Math.min(inst.max, val));
+          val = inst.min + Math.round((val - inst.min) / stepSize) * stepSize;
+          val = Number(val.toFixed(4));
+          inst.range.value = String(val);
+          inst.update(val);
+          if(applyFollowup){ applyFollowup(val, inst.touched); }
+        });
+      }
     });
 
     const npsShell = document.querySelector('[data-slider-type="nps"]');

@@ -74,12 +74,12 @@
     label{ display:block; font:800 14px/1 var(--font); margin:16px 0 6px }
     .req{ color:#C41E3A; margin-left:4px }
 
-    input[type="text"], input[type="email"]{
+    input[type="text"], input[type="email"], input[type="tel"]{
       width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; font-size:15px;
       background:var(--surface); color:var(--ink); outline:none;
     }
     input::placeholder{ color:#9aa2ae }
-    input[type="text"]:focus, input[type="email"]:focus{ border-color:#C41E3A; box-shadow:0 0 0 3px rgba(196,30,58,.15) }
+    input[type="text"]:focus, input[type="email"]:focus, input[type="tel"]:focus{ border-color:#C41E3A; box-shadow:0 0 0 3px rgba(196,30,58,.15) }
 
     .row{ display:flex; gap:12px; flex-wrap:wrap }
     .row .col{ flex:1 1 240px }
@@ -157,6 +157,12 @@
             <label for="email">Email<span class="req" aria-hidden="true">*</span></label>
             <input id="email" name="email" type="email" placeholder="you@example.com" required>
           </div>
+          <div class="col">
+            <label for="phone">Contact Number<span class="req" aria-hidden="true">*</span></label>
+            <input id="phone" name="phone" type="tel" inputmode="tel" pattern="^09[0-9]{9}$" placeholder="09XXXXXXXXX" required>
+          </div>
+        </div>
+        <div class="row">
           <div class="col">
             <label for="name">Name <span class="hint">(optional)</span></label>
             <input id="name" name="name" type="text" placeholder="Juan Dela Cruz">
@@ -246,6 +252,31 @@
       });
     })();
 
+    // Contact number (optional, PH mobile format)
+    (function(){
+      const phone = document.getElementById('phone');
+      if(!phone) return;
+      const pattern = /^09\d{9}$/;
+      function format(value){
+        return value.replace(/\D/g,'').slice(0,11);
+      }
+      function validate(){
+        const val = phone.value.trim();
+        const ok = pattern.test(val);
+        phone.setCustomValidity(ok ? '' : 'Enter an 11-digit Philippine mobile number starting with 09.');
+        return ok;
+      }
+      phone.addEventListener('input', ()=>{
+        const caret = phone.selectionStart || 0;
+        const formatted = format(phone.value);
+        phone.value = formatted;
+        const pos = Math.min(formatted.length, caret);
+        try{ phone.setSelectionRange(pos, pos); }catch(_){}
+        validate();
+      });
+      phone.addEventListener('blur', validate);
+    })();
+
     // Insert + redirect to brand page with KZCF/KZNM handling
     (function(){
       const $ = (s)=>document.querySelector(s);
@@ -253,6 +284,7 @@
       const receipt = $('#receipt');
       const email = $('#email');
       const name = $('#name');
+      const phone = $('#phone');
       const dpa = $('#dpa');
       const promo = $('#promo');
       const btn = $('#continueBtn');
@@ -262,11 +294,12 @@
 
       const rOK = ()=> /^[A-Z]{4}-\d{6}-\d{6}$/.test(receipt.value.trim());
       const eOK = ()=> email.validity.valid;
+      const pOK = ()=> !phone || phone.checkValidity();
       const dOK = ()=> dpa.checked;
 
       function setState(msg){ state.textContent = msg; }
       function validate(){
-        const ok = rOK() && eOK() && dOK();
+        const ok = rOK() && eOK() && dOK() && pOK();
         btn.disabled = !ok;
         setState(ok ? 'All set — press Continue.' : 'Fill the required fields to continue.');
       }
@@ -298,6 +331,10 @@
         e.preventDefault();
         validate();
         if(btn.disabled) return;
+        if(phone && !phone.checkValidity()){
+          phone.reportValidity();
+          return;
+        }
 
         const target = routeForReceipt(receipt.value.trim());
         if(!target){
@@ -320,17 +357,52 @@
         };
 
         try{
+          let record = null;
           const { data, error } = await supabase
             .from('survey_responses')
             .insert([payload])
             .select()
             .single();
 
-          if(error){ throw error; }
+          if(error){
+            if(error.code === '23505'){
+              setState('Receipt found — resuming your survey…');
+              const { data: existing, error: updateErr } = await supabase
+                .from('survey_responses')
+                .update({
+                  email: payload.email,
+                  name: payload.name,
+                  promo: payload.promo,
+                  dpa: payload.dpa
+                })
+                .eq('receipt', payload.receipt)
+                .select()
+                .maybeSingle();
+              if(updateErr){ throw updateErr; }
+              record = existing;
+              if(!record){
+                const { data: fetched, error: fetchErr } = await supabase
+                  .from('survey_responses')
+                  .select()
+                  .eq('receipt', payload.receipt)
+                  .maybeSingle();
+                if(fetchErr){ throw fetchErr; }
+                record = fetched;
+              }
+            }else{
+              throw error;
+            }
+          }else{
+            record = data;
+          }
+
+          if(!record){
+            throw new Error('We were unable to save your details. Please try again.');
+          }
 
           const params = new URLSearchParams({
-            response_id: data.id,
-            receipt: data.receipt
+            response_id: record.id,
+            receipt: record.receipt
           }).toString();
 
           overlay.querySelector('.window').textContent = 'Loading brand survey…';
