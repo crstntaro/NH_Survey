@@ -157,15 +157,15 @@
             <label for="email">Email<span class="req" aria-hidden="true">*</span></label>
             <input id="email" name="email" type="email" placeholder="you@example.com" required>
           </div>
-          <div class="col">
-            <label for="phone">Contact Number<span class="req" aria-hidden="true">*</span></label>
-            <input id="phone" name="phone" type="tel" inputmode="tel" pattern="^09[0-9]{9}$" placeholder="09XXXXXXXXX" required>
-          </div>
         </div>
         <div class="row">
           <div class="col">
             <label for="name">Name <span class="hint">(optional)</span></label>
             <input id="name" name="name" type="text" placeholder="Juan Dela Cruz">
+          </div>
+          <div class="col">
+            <label for="phone">Contact Number <span class="hint">(optional)</span></label>
+            <input id="phone" name="phone" type="tel" inputmode="tel" pattern="^09[0-9]{9}$" placeholder="09XXXXXXXXX">
           </div>
         </div>
 
@@ -262,6 +262,10 @@
       }
       function validate(){
         const val = phone.value.trim();
+        if(!val){
+          phone.setCustomValidity('');
+          return true;
+        }
         const ok = pattern.test(val);
         phone.setCustomValidity(ok ? '' : 'Enter an 11-digit Philippine mobile number starting with 09.');
         return ok;
