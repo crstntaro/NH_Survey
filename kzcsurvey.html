@@ -252,6 +252,8 @@
     }
     .pill:hover{ transform:translateY(-1px) }
     .pill[aria-pressed="true"]{ background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 10px 18px color-mix(in srgb,var(--accent) 38%, transparent) }
+    .pill-clear{border-style:dashed;color:var(--accent);background:transparent;box-shadow:none}
+    .pill-clear:hover{background:color-mix(in srgb,var(--accent) 10%, #fff);color:var(--accent)}
 
     textarea,input[type="text"]{
       width:min(100%, 680px); padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:#4b5563; font:600 14px var(--font); margin:6px auto 0; display:block;
@@ -407,7 +409,8 @@
               <button type="button" class="pill" data-name="q13" data-value="Not applicable">Not applicable</button>
               <button type="button" class="pill" data-name="q13" data-value="__other" id="q13OtherBtn">Other</button>
               <input type="hidden" name="q13">
-            </div>
+                        </div>
+            <button type="button" class="pill pill-clear" id="q13Clear">Clear selection</button>
             <input id="q13OtherTxt" type="text" placeholder="Please specify…" style="display:none;margin-top:8px">
             <div class="hint" style="text-align:center;margin-top:6px">We’ll use this to improve menu options and suggestions.</div>
           </section>
@@ -665,6 +668,87 @@
     const q4Hidden = form.querySelector('input[name="q4"]');
     const q4Step = q4Hidden ? q4Hidden.closest('.step') : null;
     let idx = 0;
+
+    const q13Buttons = Array.from(document.querySelectorAll('.row .pill[data-name="q13"]'));
+    const q13Hidden = form.querySelector('input[name="q13"]');
+    const q13OtherTxt = $('#q13OtherTxt');
+    const q13ClearBtn = $('#q13Clear');
+
+    function setPillPressed(btn, state){
+      if(!btn) return;
+      btn.setAttribute('aria-pressed', state ? 'true' : 'false');
+    }
+
+    function updateQ13Hidden(){
+      if(!q13Hidden) return;
+      const selections = [];
+      q13Buttons.forEach(b=>{
+        if(b.getAttribute('aria-pressed') === 'true'){
+          const val = b.dataset.value;
+          if(val === '__other'){
+            const otherVal = q13OtherTxt?.value.trim();
+            if(otherVal){ selections.push(otherVal); }
+          }else{
+            selections.push(val);
+          }
+        }
+      });
+      q13Hidden.value = selections.join(', ');
+    }
+
+    function handleQ13Selection(btn){
+      if(!btn) return;
+      const value = btn.dataset.value;
+      const nextState = btn.getAttribute('aria-pressed') !== 'true';
+
+      if(value === 'Not applicable' && nextState){
+        q13Buttons.forEach(p=>{ if(p!==btn){ setPillPressed(p,false); } });
+        if(q13OtherTxt){
+          q13OtherTxt.style.display='none';
+          q13OtherTxt.value='';
+        }
+      }else if(value !== 'Not applicable'){
+        const naBtn = q13Buttons.find(p=>p.dataset.value === 'Not applicable');
+        setPillPressed(naBtn,false);
+      }
+
+      setPillPressed(btn,nextState);
+
+      if(value === '__other' && q13OtherTxt){
+        if(nextState){
+          q13OtherTxt.style.display='block';
+          q13OtherTxt.focus();
+        }else{
+          q13OtherTxt.style.display='none';
+          q13OtherTxt.value='';
+        }
+      }
+
+      updateQ13Hidden();
+      refreshStageHeight();
+      updateUI();
+    }
+
+    if(q13OtherTxt){
+      q13OtherTxt.addEventListener('input', ()=>{
+        updateQ13Hidden();
+        updateUI();
+      });
+    }
+
+    if(q13ClearBtn){
+      q13ClearBtn.addEventListener('click', ()=>{
+        q13Buttons.forEach(btn=>setPillPressed(btn,false));
+        if(q13OtherTxt){
+          q13OtherTxt.value='';
+          q13OtherTxt.style.display='none';
+        }
+        if(q13Hidden){ q13Hidden.value=''; }
+        updateUI();
+        refreshStageHeight();
+      });
+    }
+
 
     function visibleSteps(){
       return steps.filter(step => step.dataset.skip !== 'true');
