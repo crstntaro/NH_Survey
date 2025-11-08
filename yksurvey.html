@@ -181,12 +181,12 @@
     .slider-shell-rating .slider-score{font:800 clamp(44px,9vw,56px)/1 var(--font); color:var(--accent)}
     .slider-shell-rating .slider-score-label{display:none}
     .slider-shell-nps .slider-score{font:800 clamp(44px,9vw,56px)/1 var(--font); color:#0f172a}
-    .slider-track{position:relative;width:calc(100% - 36px);max-width:800px;margin:0 auto;padding-bottom:12px}
+    .slider-track{position:relative;width:calc(100% - 36px);max-width:800px;margin:0 auto;padding-bottom:12px;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
     .slider-lane{position:relative;width:100%;height:12px;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%, #fff) 0%,color-mix(in srgb,var(--accent) 6%, #fff) 100%)}
     .slider-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--accent) 0%,color-mix(in srgb,var(--accent) 45%, #fff) 100%);transition:width .22s var(--ease)}
     .slider-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:var(--thumb-size,clamp(52px,12vw,76px));height:var(--thumb-size,clamp(52px,12vw,76px));display:grid;place-items:center;pointer-events:none}
-    .slider-thumb img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 18px 36px color-mix(in srgb,var(--accent) 40%, transparent));pointer-events:none}
-    .slider-track input[type="range"]{position:absolute;inset:-24px 26px -16px 26px;width:auto;height:auto;opacity:0;cursor:pointer;touch-action:none}
+    .slider-thumb img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 18px 36px color-mix(in srgb,var(--accent) 40%, transparent));pointer-events:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+    .slider-track input[type="range"]{position:absolute;inset:-24px 26px -16px 26px;width:auto;height:auto;opacity:0;cursor:pointer;touch-action:pan-y;-webkit-appearance:none;appearance:none;outline:none;-webkit-tap-highlight-color:transparent}
     .slider-ticks{width:100%;display:flex;justify-content:space-between;gap:6px;padding:0 26px;font:700 11px/1.2 var(--font);color:#6b7b8f;text-transform:none;letter-spacing:.08em;max-width:800px;margin:0 auto}
     .slider-ticks span{position:relative;display:grid;justify-items:center;gap:4px;padding-top:10px;white-space:nowrap;text-align:center;transition:color .18s var(--ease)}
     .slider-ticks span::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:2px;height:8px;border-radius:999px;background:#d8eef0;transition:background .18s var(--ease),height .18s var(--ease)}
@@ -255,7 +255,7 @@
               <input type="hidden" name="q1" required>
             </div>
           </section>
-          <section class="step" data-qid="2" data-required="true" data-title="2) Is this your first time at this restaurant's branch?">
+          <section class="step" data-qid="2" data-required="true" data-title="2) Was this your first time at this restaurant's branch?">
             <div class="row">
               <button type="button" class="pill" data-name="q2" data-value="Yes">Yes</button>
               <button type="button" class="pill" data-name="q2" data-value="No">No</button>
@@ -280,7 +280,7 @@
               <input type="hidden" name="q3" required>
             </div>
           </section>
-          <section class="step" data-qid="5" data-title="5) Identifying Preferences: Any dietary restrictions or preferences?">
+          <section class="step" data-qid="5" data-title="5) Any dietary restrictions or preferences?">
             <div class="row" id="q13Row">
               <button type="button" class="pill" data-name="q13" data-value="No Meat">No Meat</button>
               <button type="button" class="pill" data-name="q13" data-value="No Nuts">No Nuts</button>
@@ -307,7 +307,7 @@
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
-            <div class="slider-followup" id="q5Follow" data-low-label="What could we improve to enhance your overall experience?" data-low-placeholder="Share any issues we should address…" data-high-label="Amazing! What made your visit special?" data-high-placeholder="Tell us the highlights of your visit…" data-neutral-display="show" data-neutral-label="Thanks! Anything else we should note?" data-neutral-placeholder="Share any additional thoughts…">
+            <div class="slider-followup" id="q5Follow" data-low-max="6" data-high-min="9" data-low-label="What could we improve to enhance your overall experience?" data-low-placeholder="Share any issues we should address…" data-high-label="Amazing! What made your visit special?" data-high-placeholder="Tell us the highlights of your visit…" data-neutral-display="show" data-neutral-label="Got it...." data-neutral-placeholder="Share any additional thoughts…">
               <label for="q5FollowText" id="q5FollowLabel">Tell us more about your experience</label>
               <textarea id="q5FollowText" name="q5_follow" placeholder=""></textarea>
             </div>
@@ -345,7 +345,7 @@
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
-            <div class="slider-followup" id="q7Follow" data-low-label="What went wrong with the food?" data-low-placeholder="Tell us what didn’t work for you…" data-high-label="Awesome! What did you love most about the food?" data-high-placeholder="Share the highlights of your meal…" data-neutral-display="show" data-neutral-label="How could the food be better next time?" data-neutral-placeholder="Share any tips or tweaks…">
+            <div class="slider-followup" id="q7Follow" data-low-max="6" data-high-min="9" data-low-label="What was wrong with the food?" data-low-placeholder="Tell us what didn’t work for you…" data-high-label="Awesome! What did you love most about the food?" data-high-placeholder="Share the highlights of your meal…" data-neutral-display="show" data-neutral-label="How could the food be better next time?" data-neutral-placeholder="Share any tips or tweaks…">
               <label for="q7FollowText" id="q7FollowLabel">Tell us more about your rating</label>
               <textarea id="q7FollowText" name="q7_follow" placeholder=""></textarea>
             </div>
@@ -364,7 +364,7 @@
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
-            <div class="slider-followup" id="q8Follow" data-low-label="What went wrong with the service?" data-low-placeholder="Let us know what didn’t feel welcoming…" data-high-label="Awesome! Who made your visit great?" data-high-placeholder="We’d love to celebrate your experience…" data-neutral-display="show" data-neutral-label="How could the service be better?" data-neutral-placeholder="Share any tips or tweaks…">
+            <div class="slider-followup" id="q8Follow" data-low-max="6" data-high-min="9" data-low-label="What was wrong with the service?" data-low-placeholder="Let us know what didn’t feel welcoming…" data-high-label="Awesome! Who made your visit great?" data-high-placeholder="We’d love to celebrate your experience…" data-neutral-display="show" data-neutral-label="How could the service be better next time?" data-neutral-placeholder="Share any tips or tweaks…">
               <label for="q8FollowText" id="q8FollowLabel">Tell us more about your rating</label>
               <textarea id="q8FollowText" name="q8_follow" placeholder=""></textarea>
             </div>
@@ -390,7 +390,7 @@
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
-            <div class="slider-followup" id="q10Follow" data-low-label="What went wrong with the speed?" data-low-placeholder="Tell us what slowed things down…" data-high-label="Awesome! What impressed you about our speed?" data-high-placeholder="Let us know what stood out…" data-neutral-display="show" data-neutral-label="How could our speed be better?" data-neutral-placeholder="Share any ideas to help us move faster…">
+            <div class="slider-followup" id="q10Follow" data-low-max="6" data-high-min="9" data-low-label="What made you feel the service was too slow?" data-low-placeholder="Tell us what slowed things down…" data-high-label="We're thrilled! Anything in particular stood out for you?" data-high-placeholder="Let us know what stood out…" data-neutral-display="show" data-neutral-label="What could have made it better?" data-neutral-placeholder="Share any ideas to help us move faster…">
               <label for="q10FollowText" id="q10FollowLabel">Tell us more about your rating</label>
               <textarea id="q10FollowText" name="q10_follow" placeholder=""></textarea>
             </div>
@@ -409,7 +409,7 @@
               </div>
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
-            <div class="slider-followup" id="q11Follow" data-low-label="What went wrong with the cleanliness?" data-low-placeholder="Let us know what needs more attention…" data-high-label="Awesome! What looked spotless to you?" data-high-placeholder="Share what impressed you…" data-neutral-display="show" data-neutral-label="How could the cleanliness be better?" data-neutral-placeholder="Share any suggestions for tidier spaces…">
+            <div class="slider-followup" id="q11Follow" data-low-max="6" data-high-min="9" data-low-label="What specific area did you find unclean or poorly maintained?" data-low-placeholder="Let us know what needs more attention…" data-high-label="What stood out to you about the orderliness today?" data-high-placeholder="Share what impressed you…" data-neutral-display="show" data-neutral-label="What improvement could have made the space feel more tidy?" data-neutral-placeholder="Share any suggestions for tidier spaces…">
               <label for="q11FollowText" id="q11FollowLabel">Tell us more about your rating</label>
               <textarea id="q11FollowText" name="q11_follow" placeholder=""></textarea>
             </div>
@@ -429,32 +429,32 @@
             </div>
             <div id="npsFollowups" style="margin-top:16px">
               <div id="npsPromoter" style="display:none">
-                <label for="q12a">What is the main reason you would recommend us?</label>
-                <textarea name="q12a" id="q12a" placeholder="Your reason…"></textarea>
+                <label for="q12a">What made your experience worth recommending to others?</label>
+                <textarea name="q12a" id="q12a" placeholder="Share what stood out about your visit…"></textarea>
               </div>
               <div id="npsPassive" style="display:none">
-                <label for="q12b">What would make you more likely to recommend us?</label>
-                <textarea name="q12b" id="q12b" placeholder="Price, portion, taste, service…"></textarea>
+                <label for="q12b">What could we improve to make your experience truly recommendable?</label>
+                <textarea name="q12b" id="q12b" placeholder="Tell us what would make it truly recommendable…"></textarea>
               </div>
               <div id="npsDetractor" style="display:none">
-                <label for="q12c">What can we do better to improve your satisfaction?</label>
-                <textarea name="q12c" id="q12c" placeholder="Your feedback…"></textarea>
+                <label for="q12c">What held you back from wanting to recommend us?</label>
+                <textarea name="q12c" id="q12c" placeholder="Let us know what held you back…"></textarea>
               </div>
             </div>
           </section>
-          <section class="step" data-qid="14" data-title="14) Feedback on Current Menu: Toppings or side dishes you'd like to see?">
+          <section class="step" data-qid="14" data-title="">
             <textarea name="q14" placeholder="Your ideas…"></textarea>
           </section>
-          <section class="step" data-qid="15" data-required="false" data-title="15) Testing New Ideas: Suggestions for local/seasonal ingredients to incorporate?">
+          <section class="step" data-qid="15" data-required="false" data-title="">
             <textarea name="q15" placeholder="Your suggestions…"></textarea>
           </section>
-          <section class="step" data-qid="16" data-title="16) Location: Where do you want us to open next?">
+          <section class="step" data-qid="16" data-title="">
             <div class="typeahead">
               <input id="q16" name="q16" type="text" placeholder="City / Mall / Area" autocomplete="off">
               <div class="ta-list" id="q16List"></div>
             </div>
           </section>
-          <section class="step" data-qid="17" data-title="17) What are the last five restaurants you've visited?">
+          <section class="step" data-qid="17" data-title="17) What were the last five restaurants you've visited?">
             <div class="restaurant-list">
               <label class="restaurant-item">
                 <span>1</span>
@@ -506,6 +506,12 @@
     const $$ = s=>Array.from(document.querySelectorAll(s));
     const form = $('#surveyForm');
     const steps = $$('.step');
+    steps.forEach(step=>{
+      const rawTitle = step.dataset.title || '';
+      const match = rawTitle.match(/^\s*\d+\)\s*(.*)$/);
+      const baseTitle = match ? match[1] : rawTitle;
+      step.dataset.baseTitle = baseTitle;
+    });
     const stage = $('#stage');
     const stepTitleEl = $('#stepTitle');
     const stepChipEl = $('#stepChip');
@@ -900,7 +906,7 @@
       const visible = visibleSteps();
       const current = steps[i];
       const total = visible.length || 1;
-      const position = visible.indexOf(current);
+      const position = current ? visible.indexOf(current) : -1;
       const at = position === -1 ? total : position + 1;
       bar.style.width = ((at / total) * 100) + '%';
       if(stepMiniBarEl){
@@ -909,6 +915,7 @@
       if(stepChipEl){
         stepChipEl.textContent = `Question ${at} of ${total}`;
       }
+      return { at, total, current };
     }
     function stepValid(stepEl){
       if(stepEl.dataset.required === 'false') return true;
@@ -929,8 +936,12 @@
       const valid = stepValid(steps[idx]);
       if(nextBtn.style.display!=='none') nextBtn.disabled = !valid;
       state.textContent = valid ? '' : 'Select an answer to continue.';
-      stepTitleEl.textContent = steps[idx].dataset.title || '';
-      setProgress(idx);
+      const progress = setProgress(idx);
+      if(stepTitleEl){
+        const titleSource = progress.current ? (progress.current.dataset.baseTitle || progress.current.dataset.title || '') : '';
+        const trimmed = titleSource.trim();
+        stepTitleEl.textContent = trimmed && progress.current ? `${progress.at}) ${trimmed}` : trimmed;
+      }
       backBtn.textContent = (idx===0) ? '← Back to start' : '← Back';
       nextBtn.style.display = (idx < steps.length-1) ? 'inline-block' : 'none';
       submitBtn.style.display = (idx === steps.length-1) ? 'inline-block' : 'none';
