@@ -304,7 +304,7 @@
               <button type="button" class="pill" data-name="q13" data-value="Not applicable">Not applicable</button>
               <button type="button" class="pill" data-name="q13" data-value="__other" id="q13OtherBtn">Other</button>
               <input type="hidden" name="q13">
-                        </div>
+            </div>
             <button type="button" class="pill pill-clear" id="q13Clear">Clear selection</button>
             <input id="q13OtherTxt" type="text" placeholder="Please specify…" style="display:none;margin-top:8px">
             <div class="hint" style="text-align:center;margin-top:6px">We’ll use this to improve menu options and suggestions.</div>
@@ -725,31 +725,20 @@
           const name = btn.dataset.name;
           const value = btn.dataset.value;
           const hidden = form.querySelector('input[type="hidden"][name="'+name+'"]');
+          if(name==='q13'){
+            handleQ13Selection(btn);
+            return;
+          }
           $$('.row .pill[data-name="'+name+'"]').forEach(b=>b.setAttribute('aria-pressed','false'));
           btn.setAttribute('aria-pressed','true');
           let handledBySync = false;
-          if(name==='q13'){
-            const otherTxt = $('#q13OtherTxt');
-            if(value==='__other'){
-              otherTxt.style.display='block';
-              otherTxt.focus();
-              hidden.value = otherTxt.value.trim();
-              otherTxt.addEventListener('input', ()=>{ hidden.value = otherTxt.value.trim(); updateUI(); });
-            }else{
-              otherTxt.style.display='none';
-              otherTxt.value='';
-              hidden.value = value;
-            }
-            refreshStageHeight();
-          }else{
-            if(hidden){
-              hidden.value = value;
-              if(name==='q4'){ delete hidden.dataset.autofill; }
-            }
-            if(name==='q2'){
-              handledBySync = true;
-              syncVisitFrequencyStep();
-            }
+          if(hidden){
+            hidden.value = value;
+            if(name==='q4'){ delete hidden.dataset.autofill; }
+          }
+          if(name==='q2'){
+            handledBySync = true;
+            syncVisitFrequencyStep();
           }
           if(!handledBySync){ updateUI(); }
         });
