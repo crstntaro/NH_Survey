@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blue Truck Pop-up Survey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+      --bg:#f8fafc; --surface:#ffffff; --accent:#2563eb; --accent-dk:#1d4ed8;
+      --radius:14px;
+    }
+    *{ box-sizing:border-box; margin:0; padding:0 }
+    body{
+      font-family:var(--font); background:var(--bg); color:var(--ink);
+      line-height:1.6; padding:18px; display:flex; justify-content:center;
+    }
+    .shell{ width:min(900px,100%); background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:22px; box-shadow:0 16px 46px rgba(37,99,235,.08); }
+    h1{ font:800 26px/1.2 var(--font); margin-bottom:6px }
+    .lead{ color:var(--muted); margin-bottom:14px }
+    form{ display:grid; gap:18px }
+    .q{ border:1px solid var(--line); border-radius:var(--radius); padding:14px 14px 12px; background:#fff }
+    .q h3{ font:800 16px/1.3 var(--font); margin-bottom:8px }
+    .hint{ color:var(--muted); font-size:13px; margin-top:4px }
+    .row{ display:flex; flex-wrap:wrap; gap:8px }
+    .pill{
+      appearance:none; border:1px solid var(--line); background:#fff; color:var(--ink);
+      padding:10px 14px; border-radius:12px; font:700 14px var(--font); cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .pill:hover{ transform:translateY(-1px); }
+    .pill[aria-pressed="true"]{ background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 12px 24px rgba(37,99,235,.18); }
+    textarea, input[type="text"], input[type="range"]{
+      width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font:600 14px var(--font);
+      background:#fff; color:var(--ink);
+    }
+    textarea{ min-height:86px; resize:vertical }
+    .follow{ margin-top:10px; display:none }
+    label{ font:700 13px var(--font); display:block; margin-bottom:6px }
+    .slider-box{ padding:10px 12px; border:1px dashed var(--line); border-radius:12px; background:color-mix(in srgb, var(--accent) 6%, #fff); }
+    .range-row{ display:flex; align-items:center; gap:10px }
+    .range-val{ font:800 22px var(--font); width:48px; text-align:center; color:var(--accent) }
+    .cta{
+      padding:14px 18px; border:none; border-radius:14px; font:800 15px var(--font); color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-dk));
+      cursor:pointer; box-shadow:0 14px 28px rgba(37,99,235,.22); transition:transform .14s ease;
+    }
+    .cta:hover{ transform:translateY(-1px); }
+    .social{ display:none; margin-top:10px; gap:10px }
+    .social a{ padding:10px 14px; border-radius:10px; background:color-mix(in srgb,var(--accent) 12%, #eef2ff); color:var(--accent-dk); font-weight:700; text-decoration:none; display:inline-block }
+    .typeahead{ position:relative }
+    .ta-list{
+      position:absolute; left:0; right:0; top:calc(100% + 4px);
+      background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 20px rgba(0,0,0,.08);
+      max-height:240px; overflow:auto; display:none; z-index:10;
+    }
+    .ta-item{ padding:10px 12px; cursor:pointer; font-size:14px }
+    .ta-item:hover, .ta-item.active{ background:color-mix(in srgb,var(--accent) 14%, #eef2ff); color:var(--accent-dk) }
+    @media (max-width:640px){ body{ padding:12px } .shell{ padding:16px } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1>Blue Truck Pop-up Survey</h1>
+    <p class="lead">Help us shape the next stop for Blue Truck. This takes about 3 minutes.</p>
+    <form id="form" novalidate>
+
+      <div class="q" data-qid="1">
+        <h3>1) Did you enjoy your Blue Truck Pop-up experience?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q1" data-value="Yes">Yes</button>
+          <button type="button" class="pill" data-name="q1" data-value="No">No</button>
+        </div>
+        <input type="hidden" name="q1" required>
+        <div id="q1Follow" class="follow">
+          <label for="q1Comment" id="q1FollowLabel">Tell us more about what you enjoyed.</label>
+          <textarea id="q1Comment" name="q1_comment" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="2">
+        <h3>2) Where did you hear about our Blue Truck Pop-up?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q2" data-value="Official Website">Official Website</button>
+          <button type="button" class="pill" data-name="q2" data-value="Official Social Media Pages">Official Social Media Pages</button>
+          <button type="button" class="pill" data-name="q2" data-value="Content Creator / Influencer">Content Creator / Influencer</button>
+          <button type="button" class="pill" data-name="q2" data-value="Friend or Family">Friend or Family</button>
+          <button type="button" class="pill" data-name="q2" data-value="On-site Discovery">On-site Discovery</button>
+          <button type="button" class="pill" data-name="q2" data-value="Mall or Event Poster">Mall or Event Poster</button>
+          <button type="button" class="pill" data-name="q2" data-value="Others">Others</button>
+        </div>
+        <input type="hidden" name="q2" required>
+        <div id="q2Other" class="follow">
+          <label for="q2Comment">Please specify:</label>
+          <textarea id="q2Comment" name="q2_comment" placeholder="Tell us where you heard about us"></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="3">
+        <h3>3) Which type of cuisine are you typically most interested in?</h3>
+        <div class="row" data-multi="true" data-name="q3">
+          <button type="button" class="pill" data-value="Filipino">Filipino</button>
+          <button type="button" class="pill" data-value="Chinese">Chinese</button>
+          <button type="button" class="pill" data-value="Italian">Italian</button>
+          <button type="button" class="pill" data-value="Mexican">Mexican</button>
+          <button type="button" class="pill" data-value="South American">South American</button>
+          <button type="button" class="pill" data-value="Japanese">Japanese</button>
+        </div>
+        <input type="hidden" name="q3" required>
+      </div>
+
+      <div class="q" data-qid="4">
+        <h3>4) Have you been to one of our branches before?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q4" data-value="Yes">Yes</button>
+          <button type="button" class="pill" data-name="q4" data-value="No">No</button>
+        </div>
+        <input type="hidden" name="q4" required>
+      </div>
+
+      <div class="q" data-qid="5" id="branchShell">
+        <h3>5) Which branch did you visit?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q5" data-value="Mendokoro">Mendokoro</button>
+          <button type="button" class="pill" data-name="q5" data-value="Yushoken">Yushoken</button>
+          <button type="button" class="pill" data-name="q5" data-value="Other / Not listed">Other / Not listed</button>
+        </div>
+        <input type="hidden" name="q5">
+      </div>
+
+      <div class="q" data-qid="6" id="branchListShell">
+        <h3>6) Which Mendokoro/Yushoken branch?</h3>
+        <div class="row" id="branchList"></div>
+        <input type="hidden" name="q6">
+        <div class="hint">Shown only after picking Mendokoro or Yushoken.</div>
+      </div>
+
+      <div class="q" data-qid="7">
+        <h3>7) Where do you want to see our Blue Truck next?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q7_type" data-value="City">City</button>
+          <button type="button" class="pill" data-name="q7_type" data-value="Mall">Mall</button>
+          <button type="button" class="pill" data-name="q7_type" data-value="Other">Other</button>
+        </div>
+        <input type="hidden" name="q7_type" required>
+        <div class="follow" id="q7InputShell">
+          <label for="q7Input" id="q7Label">Tell us the city</label>
+          <div class="typeahead">
+            <input id="q7Input" name="q7" type="text" autocomplete="off" placeholder="">
+            <div class="ta-list" id="q7List"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="q" data-qid="8">
+        <h3>8) Are you working near or living near here?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q8" data-value="Working">Working</button>
+          <button type="button" class="pill" data-name="q8" data-value="Living">Living</button>
+          <button type="button" class="pill" data-name="q8" data-value="Neither">Neither</button>
+        </div>
+        <input type="hidden" name="q8" required>
+        <div class="follow" id="q8Follow">
+          <label for="q8Comment" id="q8Label"></label>
+          <textarea id="q8Comment" name="q8_comment" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="9">
+        <h3>9) How much do you usually spend when dining out?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q9" data-value="Below PHP 300">Below PHP 300</button>
+          <button type="button" class="pill" data-name="q9" data-value="PHP 300 - 500">PHP 300 - 500</button>
+          <button type="button" class="pill" data-name="q9" data-value="PHP 500 - 800">PHP 500 - 800</button>
+          <button type="button" class="pill" data-name="q9" data-value="PHP 800 and above">PHP 800 and above</button>
+        </div>
+        <input type="hidden" name="q9" required>
+      </div>
+
+      <div class="q" data-qid="10">
+        <h3>10) How would you rate our food?</h3>
+        <div class="slider-box">
+          <div class="range-row">
+            <span class="range-val" id="q10Val">5</span>
+            <input id="q10" name="q10" type="range" min="1" max="10" step="1" value="5">
+          </div>
+        </div>
+        <div class="follow" id="q10Follow">
+          <label for="q10Comment" id="q10Label"></label>
+          <textarea id="q10Comment" name="q10_comment" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="11">
+        <h3>11) How would you rate our service?</h3>
+        <div class="slider-box">
+          <div class="range-row">
+            <span class="range-val" id="q11Val">5</span>
+            <input id="q11" name="q11" type="range" min="1" max="10" step="1" value="5">
+          </div>
+        </div>
+        <div class="follow" id="q11Follow">
+          <label for="q11Comment" id="q11Label"></label>
+          <textarea id="q11Comment" name="q11_comment" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="12">
+        <h3>12) How would you rate the value for price?</h3>
+        <div class="slider-box">
+          <div class="range-row">
+            <span class="range-val" id="q12Val">5</span>
+            <input id="q12" name="q12" type="range" min="1" max="10" step="1" value="5">
+          </div>
+        </div>
+        <div class="follow" id="q12Follow">
+          <label for="q12Comment" id="q12Label"></label>
+          <textarea id="q12Comment" name="q12_comment" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="13">
+        <h3>13) How likely is it that you would recommend this pop-up experience to others?</h3>
+        <div class="slider-box">
+          <div class="range-row">
+            <span class="range-val" id="q13Val">5</span>
+            <input id="q13" name="q13" type="range" min="1" max="10" step="1" value="5">
+          </div>
+        </div>
+        <div class="follow" id="q13Follow">
+          <label for="q13Comment" id="q13Label"></label>
+          <textarea id="q13Comment" name="q13_comment" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="14">
+        <h3>14) Based on your visit, when do you think you will dine with us again?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q14" data-value="Within 1 week">Within 1 week</button>
+          <button type="button" class="pill" data-name="q14" data-value="Within 2 weeks">Within 2 weeks</button>
+          <button type="button" class="pill" data-name="q14" data-value="Within 3 weeks">Within 3 weeks</button>
+          <button type="button" class="pill" data-name="q14" data-value="After a month">After a month</button>
+          <button type="button" class="pill" data-name="q14" data-value="I'm not sure yet">I'm not sure yet</button>
+          <button type="button" class="pill" data-name="q14" data-value="Others">Others</button>
+        </div>
+        <input type="hidden" name="q14" required>
+        <div id="q14Other" class="follow">
+          <label for="q14Comment">Please specify:</label>
+          <textarea id="q14Comment" name="q14_comment" placeholder="Tell us your timing"></textarea>
+        </div>
+      </div>
+
+      <div class="q" data-qid="15">
+        <h3>15) Would you love to hear more about us and where we are headed?</h3>
+        <div class="row">
+          <button type="button" class="pill" data-name="q15" data-value="Yes">Yes</button>
+          <button type="button" class="pill" data-name="q15" data-value="No">No</button>
+        </div>
+        <input type="hidden" name="q15" required>
+        <div class="social" id="socialLinks">
+          <a href="https://www.facebook.com" target="_blank" rel="noreferrer">Facebook</a>
+          <a href="https://www.instagram.com" target="_blank" rel="noreferrer">Instagram</a>
+        </div>
+      </div>
+
+      <div style="text-align:center">
+        <button class="cta" type="submit">Submit survey</button>
+      </div>
+    </form>
+    <div id="state" class="hint" role="status" aria-live="polite"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const state = document.getElementById('state');
+    const $  = s=>document.querySelector(s);
+    const $$ = s=>Array.from(document.querySelectorAll(s));
+
+    const MENDO_BRANCHES = ["Salcedo (Makati)","Bonifacio Global City","Molito (Alabang)","Pasay","Cebu","Katipunan"];
+    const YUSHO_BRANCHES = ["Molito (Alabang)","Cebu","Panay","Ortigas"];
+
+    const PH_CITIES = [
+      "Caloocan","Las Piñas","Makati","Malabon","Mandaluyong","Manila","Marikina","Muntinlupa","Navotas","Parañaque","Pasay","Pasig","Quezon City","San Juan","Taguig","Valenzuela","Pateros",
+      "Alaminos","Angeles","Antipolo","Bacoor","Balanga","Batac","Batangas City","Baguio","Cabanatuan","Cabuyao","Candon","Cauayan","Cavite City","Dagupan","Dasmariñas","Gapan","General Trias","Iriga","Laoag","Legazpi","Ligao","Lipa","Lucena","Malolos","Meycauayan","Naga","Olongapo","Palayan","Puerto Princesa","San Carlos (Pangasinan)","San Fernando (La Union)","San Fernando (Pampanga)","San Jose (Nueva Ecija)","San Jose del Monte","San Pablo","Santa Rosa","Santiago","Sorsogon City","Tabuk","Tacurong","Tarlac City","Tayabas","Trece Martires","Vigan",
+      "Bacolod","Bago","Bais","Bayawan","Baybay","Borongan","Calbayog","Catbalogan","Cebu City","Danao","Dumaguete","Guihulngan","Iloilo City","Kabankalan","Kananga","Lapu-Lapu","Maasin","Mandaue","Ormoc","Passi","Roxas City","Silay","Sipalay","Tagbilaran","Tacloban","Talisay (Cebu)","Talisay (Negros Occidental)","Toledo","Victorias",
+      "Butuan","Cabadbaran","Cagayan de Oro","Cotabato City","Davao City","Digos","Dipolog","Dapitan","El Salvador","Gingoog","General Santos","Iligan","Isabela City","Kidapawan","Koronadal","Mati","Malaybalay","Marawi","Oroquieta","Ozamiz","Pagadian","Panabo","Samal","San Carlos (Negros Occidental)","Surigao City","Tagum","Tangub","Tandag","Valencia","Zamboanga City"
+    ];
+
+    const PH_MALLS = [
+      "SM Mall of Asia","SM Megamall","SM North EDSA","SM Aura Premier","SM Southmall","SM Fairview","SM Manila","SM San Lazaro","SM Marikina","SM BF Parañaque","SM Bicutan","SM Sucat","SM Sta. Mesa","SM East Ortigas","SM City Taytay","SM City Sta. Rosa","SM City Calamba","SM Seaside City Cebu","SM City Cebu","SM Lanang Premier","SM City Davao","SM City Clark","SM City Baguio","SM City Pampanga","SM City Iloilo","SM City Bacolod","SM City Cagayan de Oro","SM City Consolacion","SM City Dasmariñas","SM City Tarlac","SM City Naga","SM City Legazpi","SM City Laoag","SM City Tuguegarao",
+      "Ayala Malls Glorietta","Greenbelt","Ayala Malls Manila Bay","Ayala Malls Trinoma","UP Town Center","Market! Market!","Bonifacio High Street","One Bonifacio/High Street South","Ayala Malls Vertis North","Ayala Malls Circuit","Ayala Malls Feliz","Ayala Malls Cloverleaf","Ayala Malls Serin","Ayala Malls Solenad","Ayala Center Cebu",
+      "Power Plant Mall","Shangri-La Plaza","The Podium","Estancia at Capitol Commons","Venice Grand Canal Mall","Newport Mall","Eastwood Mall","Uptown Mall","Gateway Mall","Festival Mall","Alabang Town Center","Greenhills Shopping Center","Lucky Chinatown Mall","Fisher Mall",
+      "Robinsons Galleria","Robinsons Place Manila","Robinsons Magnolia","Robinsons Galleria South","Robinsons Metro East","Robinsons Galleria Cebu","Robinsons Ilocos Norte","Robinsons Place Bacolod","Robinsons Place Iloilo","Robinsons Place Dumaguete","Robinsons Place Malolos","Robinsons Place Dasmariñas",
+      "Il Corso Lifemalls","Island Central Mactan","Centrio Mall CDO","SM CDO Downtown Premier","Limketkai Center",
+    ];
+
+    function setHidden(name, value){ const el = form.querySelector(`input[type="hidden"][name="${name}"]`); if(el) el.value = value || ''; }
+    function getHidden(name){ const el = form.querySelector(`input[type="hidden"][name="${name}"]`); return el ? el.value : ''; }
+
+    function setPill(name, value){
+      $$('.pill[data-name="'+name+'"]').forEach(btn=>{
+        const on = btn.dataset.value === value;
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      setHidden(name, value);
+    }
+
+    // Single-select pills
+    $$('.pill[data-name]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const name = btn.dataset.name;
+        const value = btn.dataset.value;
+        setPill(name, value);
+        handleLogic(name, value);
+        validate();
+      });
+    });
+
+    // Multi-select cuisines
+    $$('[data-multi="true"]').forEach(wrap=>{
+      const name = wrap.dataset.name;
+      wrap.querySelectorAll('.pill').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const active = btn.getAttribute('aria-pressed') === 'true';
+          btn.setAttribute('aria-pressed', active ? 'false' : 'true');
+          const values = Array.from(wrap.querySelectorAll('.pill[aria-pressed="true"]')).map(b=>b.dataset.value);
+          setHidden(name, values.join(', '));
+          validate();
+        });
+      });
+    });
+
+    // Q1 follow-up
+    function handleQ1(val){
+      const follow = $('#q1Follow');
+      const label = $('#q1FollowLabel');
+      if(!follow || !label) return;
+      if(val === 'Yes'){
+        label.textContent = 'Tell us more about what you enjoyed.';
+        follow.style.display='block';
+      }else if(val === 'No'){
+        label.textContent = 'Sorry to hear that. What went wrong?';
+        follow.style.display='block';
+      }else{
+        follow.style.display='none';
+      }
+    }
+
+    // Q2 Others
+    function handleQ2(val){
+      const box = $('#q2Other');
+      if(!box) return;
+      box.style.display = (val === 'Others') ? 'block' : 'none';
+    }
+
+    // Q4 skip Q5/Q6
+    function handleQ4(val){
+      const show = (val === 'Yes');
+      $('#branchShell').style.display = show ? 'block' : 'none';
+      $('#branchListShell').style.display = show ? 'block' : 'none';
+      if(!show){
+        setHidden('q5',''); setHidden('q6','');
+        $('#branchList').innerHTML = '';
+        $$('.pill[data-name="q5"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+      }
+    }
+
+    // Q5 populate branches
+    function handleQ5(val){
+      const list = $('#branchList');
+      if(!list) return;
+      list.innerHTML = '';
+      let items = [];
+      if(val === 'Mendokoro') items = MENDO_BRANCHES;
+      if(val === 'Yushoken') items = YUSHO_BRANCHES;
+      if(items.length){
+        items.forEach(branch=>{
+          const btn = document.createElement('button');
+          btn.type='button'; btn.className='pill'; btn.textContent=branch; btn.dataset.value=branch;
+          btn.addEventListener('click', ()=>{
+            list.querySelectorAll('.pill').forEach(p=>p.setAttribute('aria-pressed','false'));
+            btn.setAttribute('aria-pressed','true');
+            setHidden('q6', branch); validate();
+          });
+          list.appendChild(btn);
+        });
+      }
+    }
+
+    // Q7 location typeahead
+    function attachTypeahead(input, list, onPick){
+      const shell = input.closest('.typeahead');
+      const ul = shell.querySelector('.ta-list');
+      let active = -1;
+      function open(){ ul.style.display='block'; }
+      function close(){ ul.style.display='none'; }
+      function render(q){
+        const qv = (q||'').trim().toLowerCase();
+        const src = (list||[]).slice().sort((a,b)=>a.localeCompare(b));
+        const matches = qv ? src.filter(x=>x.toLowerCase().includes(qv)).slice(0,40) : src.slice(0,40);
+        ul.innerHTML='';
+        active=-1;
+        if(!matches.length){ close(); return; }
+        matches.forEach(txt=>{
+          const li=document.createElement('div'); li.className='ta-item'; li.textContent=txt;
+          li.addEventListener('mousedown',e=>{ e.preventDefault(); pick(txt); });
+          ul.appendChild(li);
+        });
+        open();
+      }
+      function highlight(){
+        [...ul.children].forEach((c,i)=> c.classList.toggle('active', i===active));
+        if(active>-1){
+          const el=ul.children[active]; const top=el.offsetTop; const bottom=top+el.offsetHeight;
+          if(ul.scrollTop>top) ul.scrollTop=top;
+          else if(ul.scrollTop+ul.clientHeight<bottom) ul.scrollTop=bottom-ul.clientHeight;
+        }
+      }
+      function pick(val){ input.value=val; close(); onPick?.(val); }
+      input.addEventListener('input', ()=> render(input.value));
+      input.addEventListener('focus', ()=> render(input.value));
+      input.addEventListener('blur', ()=> setTimeout(()=>close(), 120));
+      input.addEventListener('keydown', e=>{
+        const n=ul.children.length; if(!n) return;
+        if(e.key==='ArrowDown'){ active=(active+1)%n; highlight(); e.preventDefault(); }
+        else if(e.key==='ArrowUp'){ active=(active-1+n)%n; highlight(); e.preventDefault(); }
+        else if(e.key==='Enter' && active>-1){ e.preventDefault(); pick(ul.children[active].textContent); }
+      });
+    }
+
+    function handleQ7(type){
+      const shell = $('#q7InputShell');
+      const input = $('#q7Input');
+      const label = $('#q7Label');
+      if(!shell || !input || !label) return;
+      if(!type){
+        shell.style.display='none';
+        input.value=''; return;
+      }
+      shell.style.display='block';
+      const isCity = type === 'City';
+      const isMall = type === 'Mall';
+      label.textContent = isCity ? 'Tell us the city' : isMall ? 'Tell us the mall' : 'Tell us where to open next';
+      input.placeholder = isCity ? 'e.g., Makati, Taguig' : isMall ? 'e.g., SM Megamall, Greenbelt' : 'Type your answer';
+      const list = isCity ? PH_CITIES : (isMall ? PH_MALLS : []);
+      attachTypeahead(input, list, ()=>validate());
+    }
+
+    // Q8 follow-up
+    function handleQ8(val){
+      const shell = $('#q8Follow');
+      const label = $('#q8Label');
+      const input = $('#q8Comment');
+      if(!shell || !label || !input) return;
+      if(val === 'Working'){
+        shell.style.display='block';
+        label.textContent='Which office or company?';
+        input.placeholder='Tell us where you work';
+      }else if(val === 'Living'){
+        shell.style.display='block';
+        label.textContent='Which village or subdivision?';
+        input.placeholder='Tell us where you live nearby';
+      }else{
+        shell.style.display='none';
+        input.value='';
+      }
+    }
+
+    // Slider helpers
+    function setupSlider(id, followId, labels){
+      const range = document.getElementById(id);
+      const valEl = document.getElementById(id+'Val');
+      const follow = document.getElementById(followId);
+      const label = document.getElementById(id+'Label') || document.getElementById(followId.replace('Follow','Label'));
+      if(!range || !valEl || !follow || !label) return;
+      const textarea = follow.querySelector('textarea');
+      function apply(value, touched=true){
+        valEl.textContent = value;
+        const v = Number(value);
+        let txt='', ph='';
+        if(v <= 6){ txt = labels.low; ph = labels.lowPH; follow.style.display='block'; }
+        else if(v >= 9){ txt = labels.high; ph = labels.highPH; follow.style.display='block'; }
+        else { txt = labels.mid; ph = labels.midPH; follow.style.display='block'; }
+        label.textContent = txt;
+        if(textarea) textarea.placeholder = ph || '';
+      }
+      apply(range.value, false);
+      range.addEventListener('input', ()=>{ apply(range.value); validate(); });
+    }
+
+    function handleLogic(name, val){
+      if(name==='q1') handleQ1(val);
+      if(name==='q2') handleQ2(val);
+      if(name==='q4') handleQ4(val);
+      if(name==='q5') handleQ5(val);
+      if(name==='q7_type') handleQ7(val);
+      if(name==='q8') handleQ8(val);
+      if(name==='q14') $('#q14Other').style.display = (val==='Others') ? 'block' : 'none';
+      if(name==='q15') $('#socialLinks').style.display = (val==='Yes') ? 'flex' : 'none';
+    }
+
+    // Init sliders
+    setupSlider('q10','q10Follow',{
+      low:'What went wrong with the food?', lowPH:'Tell us what didn’t work',
+      mid:'What could make the food better?', midPH:'Share any ideas',
+      high:'Awesome! What did you love most?', highPH:'Tell us the highlights'
+    });
+    setupSlider('q11','q11Follow',{
+      low:'What went wrong with the service?', lowPH:'Tell us what felt off',
+      mid:'How can we serve you better?', midPH:'Share any suggestions',
+      high:'Amazing! What stood out in our service?', highPH:'Tell us what impressed you'
+    });
+    setupSlider('q12','q12Follow',{
+      low:'What felt off about the value?', lowPH:'Tell us what felt lacking',
+      mid:'How could we give you better value?', midPH:'Share any ideas',
+      high:'Great! What made it worth it?', highPH:'Tell us what made it worth it'
+    });
+    setupSlider('q13','q13Follow',{
+      low:'What can we do better to improve your satisfaction?', lowPH:'Tell us what to fix',
+      mid:'What would make you more likely to recommend us?', midPH:'Share what would help',
+      high:'What is the main reason you would recommend us?', highPH:'Tell us why you’d recommend us'
+    });
+
+    // Simple validation
+    function validate(){
+      let ok = true;
+      // Required hidden inputs
+      ['q1','q2','q3','q4','q7_type','q8','q9','q10','q11','q12','q13','q14','q15'].forEach(name=>{
+        const v = getHidden(name);
+        if(!v) ok=false;
+      });
+      // Branch if shown
+      if($('#branchShell').style.display!=='none' && !getHidden('q5')) ok=false;
+      if($('#branchListShell').style.display!=='none'){
+        if(getHidden('q5')==='Mendokoro' || getHidden('q5')==='Yushoken'){
+          if(!getHidden('q6')) ok=false;
+        }
+      }
+      // Location input if shown
+      if($('#q7InputShell').style.display!=='none' && !$('#q7Input').value.trim()) ok=false;
+      // Q8 follow if shown
+      if($('#q8Follow').style.display!=='none' && !$('#q8Comment').value.trim()) ok=false;
+      // Q1 follow if shown
+      if($('#q1Follow').style.display!=='none' && !$('#q1Comment').value.trim()) ok=false;
+      // Q2 other
+      if($('#q2Other').style.display!=='none' && !$('#q2Comment').value.trim()) ok=false;
+      // Q14 other
+      if($('#q14Other').style.display!=='none' && !$('#q14Comment').value.trim()) ok=false;
+      state.textContent = ok ? 'Ready to submit' : 'Please answer all required items.';
+      return ok;
+    }
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      if(!validate()){ state.textContent='Please complete required fields.'; return; }
+      state.textContent = 'Thank you! Your responses have been recorded.';
+      form.querySelectorAll('button, input, textarea').forEach(el=> el.disabled = true);
+    });
+
+    // Defaults
+    handleQ4(getHidden('q4'));
+    handleQ7(getHidden('q7_type'));
+  </script>
+</body>
+</html>
