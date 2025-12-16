@@ -169,12 +169,25 @@
 
     .progress{ display:none }
 
-    .step-meta{display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:14px}
+    .step-meta{
+      display:flex; align-items:center; gap:8px 12px; justify-content:center; margin-bottom:12px; flex-wrap:wrap;
+    }
     .step-chip{font:800 12px var(--font); color:#0f4b49; padding:6px 12px; border-radius:999px; background:#e8fffb; border:1px solid #b8f3e8; letter-spacing:.08em; text-transform:uppercase}
     .step-mini{flex:1; max-width:200px; height:8px; background:#dffcf7; border-radius:999px; overflow:hidden}
     .step-mini div{height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-dk)); transition:width .25s var(--ease)}
     .step-hdr{ display:flex; align-items:center; justify-content:center; margin-bottom:8px; text-align:center }
     .step-title{ font:800 clamp(18px,2.8vw,22px)/1.25 var(--font); max-width:680px }
+
+    .branch-chip{
+      display:inline-flex; align-items:center; gap:6px; justify-content:center;
+      padding:6px 12px; border-radius:999px; margin:0;
+      font:700 12px/1.1 var(--font); color:#0f5132;
+      background:color-mix(in srgb,var(--accent) 12%, #fff8e6);
+      border:1px solid color-mix(in srgb,var(--accent) 28%, transparent);
+      box-shadow:0 6px 14px rgba(0,0,0,.04);
+      width:fit-content; min-height:32px;
+    }
+    .branch-chip.warn{ color:#92400e; background:#fff7ed; border-color:#fdba74; box-shadow:none }
 
     /* Stage auto-sizes; allow overflow only when dropdown open */
     .stage{
@@ -336,24 +349,14 @@
       <div class="step-meta" aria-live="polite">
         <span id="stepChip" class="step-chip">Question 1 of 1</span>
         <div class="step-mini"><div id="stepMiniBar"></div></div>
+        <div class="branch-chip" id="branchBadge">Detecting branch from your receipt…</div>
       </div>
-      <div class="step-hdr"><div id="stepTitle" class="step-title">1) What branch did you go to?</div></div>
+      <div class="step-hdr"><div id="stepTitle" class="step-title">1) Was this your first time at this restaurant's branch?</div></div>
 
       <form id="surveyForm" novalidate>
+        <input type="hidden" name="q1" id="branchField">
         <div class="stage" id="stage">
-          <section class="step active" data-qid="1" data-required="true" data-title="1) What branch did you go to?">
-            <div class="row">
-              <button type="button" class="pill" data-name="q1" data-value="Salcedo Village (Makati)">Salcedo Village (Makati)</button>
-              <button type="button" class="pill" data-name="q1" data-value="Bonifacio Global City">Bonifacio Global City</button>
-              <button type="button" class="pill" data-name="q1" data-value="Molito (Alabang)">Molito (Alabang)</button>
-              <button type="button" class="pill" data-name="q1" data-value="Pasay">Pasay</button>
-              <button type="button" class="pill" data-name="q1" data-value="Cebu">Cebu</button>
-              <button type="button" class="pill" data-name="q1" data-value="Katipunan">Katipunan</button>
-              <input type="hidden" name="q1" required>
-            </div>
-          </section>
-
-          <section class="step" data-qid="2" data-required="true" data-title="2) Was this your first time at this restaurant's branch?">
+          <section class="step active" data-qid="2" data-required="true" data-title="2) Was this your first time at this restaurant's branch?">
             <div class="row">
               <button type="button" class="pill" data-name="q2" data-value="Yes">Yes</button>
               <button type="button" class="pill" data-name="q2" data-value="No">No</button>
@@ -625,7 +628,39 @@
     const form = $('#surveyForm');
     const urlParams = new URLSearchParams(window.location.search);
     const receiptParam = urlParams.get("receipt") || "";
+    const branchParam = urlParams.get("branch") || "";
     const responseId = urlParams.get("response_id") || "";
+    const branchBadge = document.getElementById('branchBadge');
+    const branchField = document.getElementById('branchField');
+    const RECEIPT_BRANCHES = {
+      MDKA:'Molito (Alabang)',
+      MDKB:'Bonifacio Global City',
+      MDKC:'Cebu',
+      MDKK:'Katipunan',
+      MDKM:'Salcedo Village (Makati)',
+      MDKP:'Pasay',
+      YSKA:'Molito (Alabang)',
+      YSKC:'Cebu',
+      YSKO:'Ortigas',
+      YSKP:'Pasay',
+      MRDR:'Rockwell',
+      MRDV:'Vertis North',
+      KZCF:'Kazu Café (Makati)',
+      KZNM:'Kazunori (Makati)'
+    };
+    function detectBranch(receipt, hinted){
+      if(hinted) return hinted;
+      const prefix = (receipt.match(/^[A-Za-z]{4}/)?.[0] || '').toUpperCase();
+      return RECEIPT_BRANCHES[prefix] || '';
+    }
+    const detectedBranch = detectBranch(receiptParam, branchParam);
+    if(branchField){
+      branchField.value = detectedBranch || '';
+    }
+    if(branchBadge){
+      branchBadge.textContent = detectedBranch ? `Branch: ${detectedBranch} • from receipt` : 'Branch not detected from receipt — please confirm your code.';
+      branchBadge.classList.toggle('warn', !detectedBranch);
+    }
     const steps = $$('.step');
     steps.forEach(step=>{
       const rawTitle = step.dataset.title || '';

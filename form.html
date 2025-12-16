@@ -146,11 +146,11 @@
         <input id="receipt" name="receipt" type="text" inputmode="text" maxlength="18"
                placeholder="e.g., MDKB-123456-789101" required aria-describedby="receiptHelp receiptErr">
         <div id="receiptHelp" class="hint">
-          Format: <code>AAAA-000000-000000</code> (starts with 4 letters). Routes:
-          <b>MD</b> → Mendokoro, <b>YS</b> → Yushoken, <b>MR</b> → Marudori,
-          <b>KZCF</b> → Kazu Café, <b>KZNM</b> → Kazunori.
+          Format: <code>AAAA-000000-000000</code> (starts with 4 letters). Branch is auto-detected from your receipt:
+          MDKA/B/C/K/M/P, YSKA/C/O/P, MRDR/V, KZCF, KZNM.
         </div>
-        <div id="receiptErr" class="err">Unrecognized receipt code. Try MD / YS / MR / KZCF / KZNM.</div>
+        <div id="branchPreview" class="hint" aria-live="polite">Branch will auto-detect as you type your receipt code.</div>
+        <div id="receiptErr" class="err">Unrecognized receipt code. Try MDKA / MDKB / MDKC / MDKK / MDKM / MDKP / YSKA / YSKC / YSKO / YSKP / MRDR / MRDV / KZCF / KZNM.</div>
 
         <div class="row">
           <div class="col">
@@ -210,6 +210,50 @@
     const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const branchPreview = document.getElementById('branchPreview');
+
+    // Receipt → brand/branch routing (front-end only; can be reused server-side later)
+    const RECEIPT_META = {
+      MDKA:{ brand:'Mendokoro', branch:'Molito (Alabang)', target:'mdsurvey.html' },
+      MDKB:{ brand:'Mendokoro', branch:'Bonifacio Global City', target:'mdsurvey.html' },
+      MDKC:{ brand:'Mendokoro', branch:'Cebu', target:'mdsurvey.html' },
+      MDKK:{ brand:'Mendokoro', branch:'Katipunan', target:'mdsurvey.html' },
+      MDKM:{ brand:'Mendokoro', branch:'Salcedo Village (Makati)', target:'mdsurvey.html' },
+      MDKP:{ brand:'Mendokoro', branch:'Pasay', target:'mdsurvey.html' },
+      YSKA:{ brand:'Yushoken', branch:'Molito (Alabang)', target:'yksurvey.html' },
+      YSKC:{ brand:'Yushoken', branch:'Cebu', target:'yksurvey.html' },
+      YSKO:{ brand:'Yushoken', branch:'Ortigas', target:'yksurvey.html' },
+      YSKP:{ brand:'Yushoken', branch:'Pasay', target:'yksurvey.html' },
+      MRDR:{ brand:'Marudori', branch:'Rockwell', target:'mrsurvey.html' },
+      MRDV:{ brand:'Marudori', branch:'Vertis North', target:'mrsurvey.html' },
+      KZCF:{ brand:'Kazu Café', branch:'Makati', target:'kzcsurvey.html' },
+      KZNM:{ brand:'Kazunori', branch:'Makati', target:'kzsurvey.html' },
+    };
+    const RECEIPT_FALLBACK = {
+      MD:{ brand:'Mendokoro', target:'mdsurvey.html' },
+      YS:{ brand:'Yushoken', target:'yksurvey.html' },
+      MR:{ brand:'Marudori', target:'mrsurvey.html' },
+      KZ:{ brand:'Kazunori', target:'kzsurvey.html' },
+    };
+    function getReceiptMeta(raw){
+      const prefix = (raw.match(/^[A-Za-z]{4}/)?.[0] || '').toUpperCase();
+      if(prefix && RECEIPT_META[prefix]) return { prefix, ...RECEIPT_META[prefix] };
+      const code2 = prefix.slice(0,2);
+      if(code2 && RECEIPT_FALLBACK[code2]) return { prefix, ...RECEIPT_FALLBACK[code2] };
+      return null;
+    }
+    function renderBranchPreview(raw){
+      if(!branchPreview) return;
+      const meta = getReceiptMeta(raw);
+      if(meta){
+        const branchText = meta.branch ? ` — ${meta.branch}` : '';
+        branchPreview.textContent = `Auto-detected: ${meta.brand}${branchText}`;
+        branchPreview.style.color = 'var(--ink)';
+      }else{
+        branchPreview.textContent = 'Branch will auto-detect from your receipt code (e.g., MDKA, YSKA, MRDR, KZCF).';
+        branchPreview.style.color = '#b45309';
+      }
+    }
 
     // -------- Receipt formatter + validation ----------
     (function(){
@@ -236,9 +280,13 @@
         if(receipt.value.length>before.length && receipt.value[caret]==='-'){
           receipt.setSelectionRange(caret+1, caret+1);
         }
-        validateReceipt(); window.dispatchEvent(new Event('nh-validate'));
+        validateReceipt(); renderBranchPreview(receipt.value.trim()); window.dispatchEvent(new Event('nh-validate'));
       });
-      receipt.addEventListener('blur', validateReceipt);
+      receipt.addEventListener('blur', ()=>{
+        validateReceipt();
+        renderBranchPreview(receipt.value.trim());
+      });
+      renderBranchPreview(receipt.value.trim());
     })();
 
     // Email message
@@ -311,26 +359,6 @@
       window.addEventListener('nh-validate', validate);
       document.addEventListener('DOMContentLoaded', validate);
 
-      function routeForReceipt(rcpt){
-        const code = (rcpt.match(/^[A-Z]{4}/i)?.[0] || '').toUpperCase(); // first 4 letters
-        const code2 = code.slice(0,2);                                   // first 2 letters (fallback)
-
-        // 4-letter specific routes
-        const map4 = {
-          KZCF: 'kzcsurvey.html', // Kazu Café
-          KZNM: 'kzsurvey.html',  // Kazunori
-        };
-
-        // legacy / other 2-letter routes
-        const map2 = {
-          MD: 'mdsurvey.html',    // Mendokoro
-          YS: 'yksurvey.html',    // Yushoken
-          MR: 'mrsurvey.html',    // Marudori
-        };
-
-        return map4[code] || map2[code2] || null;
-      }
-
       form.addEventListener('submit', async (e)=>{
         e.preventDefault();
         validate();
@@ -340,8 +368,8 @@
           return;
         }
 
-        const target = routeForReceipt(receipt.value.trim());
-        if(!target){
+        const meta = getReceiptMeta(receipt.value.trim());
+        if(!meta || !meta.target){
           errEl.classList.add('show');
           setState('Please check your receipt code.');
           receipt.focus();
@@ -407,10 +435,13 @@
           const params = new URLSearchParams({
             response_id: record.id,
             receipt: record.receipt
-          }).toString();
+          });
+          if(meta.brand){ params.set('brand', meta.brand); }
+          if(meta.branch){ params.set('branch', meta.branch); }
+          const paramsStr = params.toString();
 
           overlay.querySelector('.window').textContent = 'Loading brand survey…';
-          window.location.href = `${target}?${params}`;
+          window.location.href = paramsStr ? `${meta.target}?${paramsStr}` : meta.target;
         }catch(err){
           console.error(err);
           setState(err?.message || 'Network error. Please try again.');
