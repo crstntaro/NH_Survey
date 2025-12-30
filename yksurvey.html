@@ -266,7 +266,6 @@
       <div class="step-meta" aria-live="polite">
         <span id="stepChip" class="step-chip">Question 1 of 1</span>
         <div class="step-mini"><div id="stepMiniBar"></div></div>
-        <div class="branch-chip" id="branchBadge">Detecting branch from your receipt…</div>
       </div>
       <div class="step-hdr"><div id="stepTitle" class="step-title">1) Was this your first time at this restaurant's branch?</div></div>
       <form id="surveyForm" novalidate>
@@ -540,7 +539,6 @@
     const receiptParam = urlParams.get("receipt") || "";
     const branchParam = urlParams.get("branch") || "";
     const responseId = urlParams.get("response_id") || "";
-    const branchBadge = document.getElementById('branchBadge');
     const branchField = document.getElementById('branchField');
     const RECEIPT_BRANCHES = {
       MDKA:'Molito (Alabang)',
@@ -566,10 +564,6 @@
     const detectedBranch = detectBranch(receiptParam, branchParam);
     if(branchField){
       branchField.value = detectedBranch || '';
-    }
-    if(branchBadge){
-      branchBadge.textContent = detectedBranch ? `Branch: ${detectedBranch} • from receipt` : 'Branch not detected from receipt — please confirm your code.';
-      branchBadge.classList.toggle('warn', !detectedBranch);
     }
     const steps = $$('.step');
     steps.forEach(step=>{
