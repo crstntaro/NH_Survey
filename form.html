@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nippon Hasha — Start Survey</title>
+  <title>Nippon Hasha — Customer Satisfaction Survey</title>
 
   <!-- Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,7 +68,6 @@
       box-shadow:0 20px 60px rgba(0,0,0,.10);
       padding:22px;
     }
-    .card h1{ font:800 clamp(20px,3.6vw,26px)/1.18 var(--font); margin-bottom:2px }
     .sub{ color:var(--muted); font-size:13px; margin-bottom:14px }
 
     label{ display:block; font:800 14px/1 var(--font); margin:16px 0 6px }
@@ -121,6 +120,14 @@
     }
     .err{ color:#b91c1c; font-size:12px; margin-top:8px; display:none }
     .err.show{ display:block }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    #overlayLogo {
+      animation: pulse 1.5s infinite ease-in-out;
+    }
   </style>
 </head>
 <body>
@@ -138,7 +145,10 @@
   <!-- Form -->
   <main class="stage">
     <section class="card" role="form">
-      <h1>Start your survey</h1>
+      <div class="form-header" style="display: flex; align-items: center; gap: 12px; font:800 clamp(20px,3.6vw,26px)/1.18 var(--font); margin-bottom:2px">
+        <span>Customer Satisfaction Survey</span>
+        <img id="branchLogo" src="" alt="Branch logo" style="height: 32px; width: auto; display: none;">
+      </div>
       <p class="sub">Enter your details to proceed.</p>
 
       <form id="gateForm" novalidate>
@@ -146,10 +156,9 @@
         <input id="receipt" name="receipt" type="text" inputmode="text" maxlength="18"
                placeholder="e.g., MDKB-123456-789101" required aria-describedby="receiptHelp receiptErr">
         <div id="receiptHelp" class="hint">
-          Format: <code>AAAA-000000-000000</code> (starts with 4 letters). Branch is auto-detected from your receipt:
+          Branch is auto-detected from your receipt:
           MDKA/B/C/K/M/P, YSKA/C/O/P, MRDR/V, KZCF, KZNM.
         </div>
-        <div id="branchPreview" class="hint" aria-live="polite">Branch will auto-detect as you type your receipt code.</div>
         <div id="receiptErr" class="err">Unrecognized receipt code. Try MDKA / MDKB / MDKC / MDKK / MDKM / MDKP / YSKA / YSKC / YSKO / YSKP / MRDR / MRDV / KZCF / KZNM.</div>
 
         <div class="row">
@@ -171,13 +180,13 @@
 
         <div class="checks" aria-label="Consent options">
           <label class="check">
-            <input id="dpa" name="dpa" type="checkbox" required>
+            <input  id="dpa" name="dpa" type="checkbox" required>
             <div>
               I agree to the Philippine Data Privacy Act and consent to the processing of my responses for service improvement.
               <small>Required to proceed.</small>
             </div>
           </label>
-
+ 
           <label class="check">
             <input id="promo" name="promo" type="checkbox">
             <div>
@@ -199,7 +208,10 @@
 
   <!-- loading overlay -->
   <div class="overlay" id="overlay">
-    <div class="window">Submitting…</div>
+    <div class="window">
+      <img id="overlayLogo" src="" alt="loading..." style="width: 100px; height: auto; display: none; margin: 0 auto 16px;">
+      Submitting…
+    </div>
   </div>
 
   <!-- Supabase JS — UMD build -->
@@ -210,7 +222,6 @@
     const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const branchPreview = document.getElementById('branchPreview');
 
     // Receipt → brand/branch routing (front-end only; can be reused server-side later)
     const RECEIPT_META = {
@@ -243,15 +254,24 @@
       return null;
     }
     function renderBranchPreview(raw){
-      if(!branchPreview) return;
+      const branchLogo = document.getElementById('branchLogo');
+      if(!branchLogo) return;
+
       const meta = getReceiptMeta(raw);
-      if(meta){
-        const branchText = meta.branch ? ` — ${meta.branch}` : '';
-        branchPreview.textContent = `Auto-detected: ${meta.brand}${branchText}`;
-        branchPreview.style.color = 'var(--ink)';
+      const brandLogos = {
+          'Mendokoro': 'mendokorologo.png',
+          'Yushoken': 'yushokenlogo.png',
+          'Marudori': 'marudorilogo.png',
+          'Kazu Café': 'kzclogo.png',
+          'Kazunori': 'kazunorilogo.png'
+      };
+
+      if(meta && meta.brand && brandLogos[meta.brand]){
+        branchLogo.src = brandLogos[meta.brand];
+        branchLogo.alt = `${meta.brand} logo`;
+        branchLogo.style.display = 'inline';
       }else{
-        branchPreview.textContent = 'Branch will auto-detect from your receipt code (e.g., MDKA, YSKA, MRDR, KZCF).';
-        branchPreview.style.color = '#b45309';
+        branchLogo.style.display = 'none';
       }
     }
 
@@ -376,6 +396,21 @@
           return;
         }
         errEl.classList.remove('show');
+
+        const logoEl = document.getElementById('overlayLogo');
+        if (logoEl) {
+            const brandLogos = {
+                'Mendokoro': 'mendokorologo.png',
+                'Yushoken': 'yushokenlogo.png',
+                'Marudori': 'marudorilogo.png',
+                'Kazu Café': 'kzclogo.png',
+                'Kazunori': 'kazunorilogo.png'
+            };
+            if (meta.brand && brandLogos[meta.brand]) {
+                logoEl.src = brandLogos[meta.brand];
+                logoEl.style.display = 'block';
+            }
+        }
 
         overlay.classList.add('show');
         setState('Submitting…');

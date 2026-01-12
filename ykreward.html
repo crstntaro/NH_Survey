@@ -157,152 +157,142 @@
 
   <!-- html2canvas for “save as image” -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script>
-    (function(){
-      const qs = new URLSearchParams(location.search);
+    (async function(){
+      const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      function makeCode(prefix="YS"){
-        const chars="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        let c=""; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)];
-        return prefix + "-" + c.slice(0,4) + "-" + c.slice(4,8);
-      }
-      const reward = (qs.get('reward') || makeCode('YS')).toUpperCase();
-      const receipt = qs.get('receipt') || '—';
+      const qs = new URLSearchParams(location.search);
+      const responseId = qs.get('response_id');
+      const rewardCodeFromUrl = qs.get('reward_code');
 
       const codeEl = document.getElementById('code');
+      const cardEl = document.querySelector('.card');
       const recCode = document.getElementById('recCode');
       const recNo   = document.getElementById('recNo');
       const recDate = document.getElementById('recDate');
 
-      codeEl.textContent = reward;
-      recCode.textContent = reward;
-      recNo.textContent = receipt;
-      recDate.textContent = new Date().toLocaleString();
-
-      // Tiny toast for copy
-      document.getElementById('copyBtn').addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(reward);
-          const msg = document.createElement('div');
-          msg.textContent = 'Code copied';
-          Object.assign(msg.style,{
-            position:'fixed', left:'50%', bottom:'20px', transform:'translateX(-50%)',
-            background:'#101010', color:'#fff', padding:'8px 12px', borderRadius:'10px',
-            font:'700 12px/1 Montserrat, sans-serif', zIndex:9999, opacity:'0',
-            transition:'opacity .18s ease'
-          });
-          document.body.appendChild(msg);
-          requestAnimationFrame(()=>{ msg.style.opacity='1'; });
-          setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 1100);
-        }catch(e){
-          alert('Copy failed');
-        }
-      });
-
-      // --- Helpers to inline images as data URLs (avoids canvas taint) ---
-      async function toDataURLFromImageElement(img){
-        // If already a data URL, nothing to do
-        if(/^data:/i.test(img.src)) return img.src;
-
-        // Try the clean CORS path first
-        try{
-          // Ensure CORS request for same-origin-friendly servers
-          const fetched = await fetch(img.src, {mode:'cors', cache:'no-cache'});
-          const blob = await fetched.blob();
-          const reader = new FileReader();
-          const dataURL = await new Promise((res, rej)=>{
-            reader.onload = ()=>res(reader.result);
-            reader.onerror = rej;
-            reader.readAsDataURL(blob);
-          });
-          return dataURL;
-        }catch(e){
-          // Fallback: draw into temp canvas (works if same-origin / file:)
-          try{
-            await img.decode?.().catch(()=>{});
-          }catch{}
-          return new Promise((resolve, reject)=>{
-            const tmp = new Image();
-            tmp.crossOrigin = 'anonymous';
-            tmp.onload = ()=>{
-              try{
-                const c = document.createElement('canvas');
-                c.width = tmp.naturalWidth || tmp.width;
-                c.height = tmp.naturalHeight || tmp.height;
-                const ctx = c.getContext('2d');
-                ctx.drawImage(tmp, 0, 0);
-                resolve(c.toDataURL('image/png'));
-              }catch(err){
-                reject(err);
-              }
-            };
-            tmp.onerror = reject;
-            tmp.src = img.src;
-          });
-        }
+      if (!responseId || !rewardCodeFromUrl) {
+          cardEl.innerHTML = '<h1>Error</h1><p>Invalid reward link. Please complete a survey to get a reward.</p>';
+          return;
       }
 
-      async function inlineImagesWithin(node){
-        const imgs = Array.from(node.querySelectorAll('img'));
-        const originals = new Map();
-        // set crossOrigin pre-emptively
-        imgs.forEach(i=> i.setAttribute('crossorigin','anonymous'));
+      try {
+          const { data, error } = await supabase
+              .from('survey_responses')
+              .select('reward_code, receipt, completed_at')
+              .eq('id', responseId)
+              .single();
 
-        for(const img of imgs){
-          originals.set(img, img.src);
-          try{
-            const dataURL = await toDataURLFromImageElement(img);
-            img.src = dataURL;
-          }catch(e){
-            console.warn('Failed to inline image:', img.src, e);
+          if (error || !data) {
+              throw new Error('Survey response not found.');
           }
-        }
-        return () => { // restore function
-          for(const [img, src] of originals.entries()){ img.src = src; }
-        };
-      }
 
-      // Save-as-image
-      document.getElementById('saveBtn').addEventListener('click', async ()=>{
-        const node = document.getElementById('receiptCard');
+          if (!data.completed_at) {
+              throw new Error('Survey not yet completed.');
+          }
 
-        // Wait for webfonts
-        if (document.fonts && document.fonts.ready) {
-          try { await document.fonts.ready; } catch {}
-        }
-        // Wait for images in DOM (decode best-effort)
-        const allImgs = Array.from(document.images);
-        await Promise.all(allImgs.map(img =>
-          img.decode ? img.decode().catch(()=>{}) :
-          new Promise(r => (img.complete ? r() : (img.onload = img.onerror = r)))
-        ));
+          if (data.reward_code !== rewardCodeFromUrl) {
+              throw new Error('Invalid reward code.');
+          }
 
-        // Inline images to prevent canvas taint
-        let restoreImages = ()=>{};
-        try{
-          restoreImages = await inlineImagesWithin(node);
+          const reward = data.reward_code;
+          const receipt = data.receipt;
 
-          const canvas = await html2canvas(node, {
-            backgroundColor:'#ffffff',
-            scale: Math.min(2, window.devicePixelRatio || 1),
-            useCORS: true,
-            allowTaint: false,
-            logging: false,
-            removeContainer: true
+          codeEl.textContent = reward;
+          recCode.textContent = reward;
+          recNo.textContent = receipt;
+          recDate.textContent = new Date().toLocaleString();
+
+          // Copy toast
+          document.getElementById('copyBtn').addEventListener('click', async ()=>{
+            try{
+              await navigator.clipboard.writeText(reward);
+              const msg = document.createElement('div');
+              msg.textContent = 'Code copied';
+              Object.assign(msg.style,{
+                position:'fixed', left:'50%', bottom:'20px', transform:'translateX(-50%)',
+                background:'#101010', color:'#fff', padding:'8px 12px', borderRadius:'10px',
+                font:'700 12px/1 Montserrat, sans-serif', zIndex:9999, opacity:'0',
+                transition:'opacity .18s ease'
+              });
+              document.body.appendChild(msg);
+              requestAnimationFrame(()=>{ msg.style.opacity='1'; });
+              setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 1100);
+            }catch(e){
+              alert('Copy failed');
+            }
           });
 
-          const link = document.createElement('a');
-          link.download = `Yushoken-Reward-${reward}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        }catch(err){
-          console.error('Save-as-image failed:', err);
-          alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
-        }finally{
-          // Put original image src back
-          try{ restoreImages(); }catch{}
-        }
-      });
+          // Save-as-image
+          document.getElementById('saveBtn').addEventListener('click', async ()=>{
+            const node = document.getElementById('receiptCard');
+            node.querySelectorAll('img').forEach(img => img.setAttribute('crossorigin','anonymous'));
+            if (document.fonts && document.fonts.ready) {
+              try { await document.fonts.ready; } catch {}
+            }
+            const imgs = Array.from(node.querySelectorAll('img'));
+            await Promise.all(
+              imgs.map(img => (img.decode ? img.decode().catch(()=>{}) :
+                               new Promise(r => (img.complete ? r() : (img.onload = img.onerror = r)))))
+            );
+
+            try{
+              const canvas = await html2canvas(node, {
+                backgroundColor:'#ffffff',
+                scale: Math.min(2, (window.devicePixelRatio || 1)),
+                useCORS: true,
+                allowTaint: false,
+                logging: false
+              });
+              const downloadFile = (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.download = `Yushoken-Reward-${reward}.png`;
+                a.href = url;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(()=>URL.revokeObjectURL(url), 1000);
+              };
+              if (canvas.toBlob) {
+                canvas.toBlob((blob)=>{
+                  if (blob) downloadFile(blob);
+                  else throw new Error('toBlob produced null');
+                }, 'image/png');
+              } else {
+                const dataUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.download = `Yushoken-Reward-${reward}.png`;
+                a.href = dataUrl;
+                if (typeof a.download === 'string') {
+                  a.click();
+                } else {
+                  window.open(dataUrl, '_blank');
+                }
+              }
+            }catch(err){
+              try{
+                const canvas = await html2canvas(node, { backgroundColor:'#ffffff', scale:1 });
+                const dataUrl = canvas.toDataURL('image/png');
+                const win = window.open();
+                if (win) {
+                  win.document.write('<iframe src="'+dataUrl+'" frameborder="0" style="border:0;top:0;left:0;bottom:0;right:0;width:100%;height:100%;position:fixed;"></iframe>');
+                } else {
+                  alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+                }
+              }catch(e){
+                alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+              }
+            }
+          });
+
+      } catch (error) {
+          console.error('Error verifying reward:', error);
+          cardEl.innerHTML = `<h1>Error</h1><p>${error.message}</p><p>Could not verify your reward. Please try again or contact support.</p>`;
+      }
     })();
   </script>
 </body>

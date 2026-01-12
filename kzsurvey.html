@@ -121,6 +121,11 @@
     }
     @keyframes underline{ to{ width:180px } }
     @keyframes rise{ to{ opacity:1; transform:none } }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+      100% { transform: scale(1); opacity: 1; }
+    }
 
     .strap-hero{
       display:inline-flex; gap:10px; align-items:center; margin:14px 0 22px; color:var(--accent);
@@ -175,7 +180,7 @@
     .step-chip{font:800 12px var(--font); color:#0f4b49; padding:6px 12px; border-radius:999px; background:#e8fffb; border:1px solid #b8f3e8; letter-spacing:.08em; text-transform:uppercase}
     .step-mini{flex:1; max-width:200px; height:8px; background:#dffcf7; border-radius:999px; overflow:hidden}
     .step-mini div{height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-dk)); transition:width .25s var(--ease)}
-    .step-hdr{ display:flex; align-items:center; justify-content:center; margin-bottom:8px; text-align:center }
+    .step-hdr{ display:flex; align-items:center; justify-content:center; margin-bottom:8px; text-align:center; min-height: 90px; }
     .step-title{ font:800 clamp(18px,2.8vw,22px)/1.25 var(--font); max-width:680px }
 
     .branch-chip{
@@ -607,6 +612,11 @@
     </div>
   </main>
 
+  <div id="submittingOverlay" style="display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; text-align: center;">
+    <img src="kazunorilogo.png" alt="Submitting..." style="width: 150px; height: auto; animation: pulse 1.5s infinite ease-in-out;">
+    <p style="margin-top: 16px; font-weight: 700; color: var(--ink);">Submitting your answers...</p>
+  </div>
+
   <!-- Supabase JS — UMD (not used for submit here) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
@@ -618,11 +628,26 @@
       e.preventDefault();
       hero.style.transition='opacity .26s var(--ease), transform .26s var(--ease)';
       hero.style.opacity='0'; hero.style.transform='translateY(-6px)';
-      setTimeout(()=>{ hero.style.display='none'; viewport.style.display='flex'; requestAnimationFrame(()=>{ refreshStageHeight(true); updateUI(); }); }, 200);
+      
+      setTimeout(()=>{
+        hero.style.display='none';
+        viewport.style.display='flex';
+        viewport.style.transition='opacity .26s var(--ease), transform .26s var(--ease)';
+        requestAnimationFrame(()=>{
+          viewport.style.opacity='1';
+          viewport.style.transform='none';
+          refreshStageHeight(true);
+          updateUI();
+        });
+      }, 260);
     });
 
     const $  = s=>document.querySelector(s);
     const $$ = s=>Array.from(document.querySelectorAll(s));
+
+    const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const form = $('#surveyForm');
     const urlParams = new URLSearchParams(window.location.search);
@@ -767,6 +792,51 @@
       }
       return next;
     }
+    function resetSurveyState() {
+      form.reset();
+      idx = 0;
+
+      // Reset pills
+      $$('.row .pill[aria-pressed="true"]').forEach(btn => btn.setAttribute('aria-pressed', 'false'));
+      q13Hidden.value = '';
+      if (q13OtherTxt) {
+        q13OtherTxt.value = '';
+        q13OtherTxt.style.display = 'none';
+      }
+
+
+      // Reset sliders
+      ratingSliderInstances.forEach(inst => {
+          inst.touched = false;
+          const defaultVal = inst.shell.dataset.sliderDefault ?? inst.min;
+          inst.range.value = defaultVal;
+          inst.update(defaultVal);
+          const applyFollowup = configureSliderFollowup(inst);
+          if (applyFollowup) {
+              applyFollowup(defaultVal, false);
+          }
+      });
+
+      if (npsSliderInst) {
+          npsSliderInst.touched = false;
+          const defaultVal = npsSliderInst.shell.dataset.sliderDefault ?? npsSliderInst.min;
+          npsRange.value = defaultVal;
+          updateNPSUI(Number(defaultVal));
+      }
+
+      // Reset steps
+      steps.forEach((step, i) => {
+          step.classList.remove('exiting-left', 'exiting-right', 'entering-left', 'entering-right', 'active');
+          step.classList.toggle('active', i === 0);
+          step.style.display = i === 0 ? 'block' : 'none';
+      });
+
+      // Reset other UI elements
+      syncVisitFrequencyStep();
+      updateUI();
+      refreshStageHeight(true);
+    }
+
     function syncVisitFrequencyStep(){
       if(!q4Step || !q4Hidden) return;
       const answer = (q2Hidden?.value || '').toLowerCase();
@@ -888,7 +958,7 @@
       "Limketkai Center"
     ];
 
-    /* ===== Typeahead helper (unified) ===== */
+    /* ===== Typeahead helper (food-truck style) ===== */
         function attachTypeahead(input, listOrFn, onPick){
       const wrap = input.closest('.typeahead') || input.parentElement;
       const ul = wrap.querySelector('.ta-list') || (()=>{ const d=document.createElement('div'); d.className='ta-list'; wrap.appendChild(d); return d; })();
@@ -935,36 +1005,36 @@
         else if(e.key==='Enter' && active>-1){ e.preventDefault(); pick(ul.children[active].textContent) }
       });
     }
-    function setupPills(){
-      $$('.row .pill').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const name = btn.dataset.name;
-          const value = btn.dataset.value;
-          const hidden = form.querySelector('input[type="hidden"][name="'+name+'"]');
+    
+    function setupSingleChoicePills(name) {
+      const pills = $$(`.row .pill[data-name="${name}"]`);
+      const hidden = form.querySelector(`input[type="hidden"][name="${name}"]`);
+      if (!pills.length || !hidden) return;
 
-          if(name==='q13'){
-            handleQ13Selection(btn);
-            return;
-          }
-
-          $$('.row .pill[data-name="'+name+'"]').forEach(b=>b.setAttribute('aria-pressed','false'));
-          btn.setAttribute('aria-pressed','true');
-          let handledBySync = false;
-
-          if(hidden){
-            hidden.value = value;
-            if(name==='q4'){ delete hidden.dataset.autofill; }
-          }
-          if(name==='q2'){
-            handledBySync = true;
+      pills.forEach(pill => {
+        pill.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const value = pill.dataset.value;
+          pills.forEach(p => p.setAttribute('aria-pressed', 'false'));
+          pill.setAttribute('aria-pressed', 'true');
+          hidden.value = value;
+          
+          if (name === 'q2') {
             syncVisitFrequencyStep();
           }
-          if(!handledBySync){ updateUI(); }
+          updateUI();
         });
       });
-      $$('.row .pill').forEach(b=>b.setAttribute('aria-pressed','false'));
     }
-    setupPills();
+
+    setupSingleChoicePills('q2');
+    setupSingleChoicePills('q3');
+    setupSingleChoicePills('q4');
+
+    q13Buttons.forEach(btn => {
+      btn.addEventListener('click', () => handleQ13Selection(btn));
+    });
+
     function createSliderInstance(shell){
   if(!shell) return null;
   const range = shell.querySelector('input[type="range"]');
@@ -1193,7 +1263,7 @@
     if(npsRange){ npsRange.addEventListener('input', ()=>{ if(npsSliderInst){ npsSliderInst.touched = true; } updateNPSUI(Number(npsRange.value)); updateUI(); }); }
     syncVisitFrequencyStep();
 
-    /* ===== Auto-height per step (matching others) ===== */
+    /* ===== Auto-height per step (no empty space) ===== */
     function measureStepHeight(i){
       const step = steps[i];
       if(!step) return 0;
@@ -1202,7 +1272,7 @@
       step.style.position = 'relative';
       step.style.visibility = 'hidden';
       step.style.display = 'block';
-      const h = step.scrollHeight + 10; // cushion
+      const h = step.scrollHeight + 10;
       step.style.display = wasActive ? 'block' : 'none';
       step.style.position = prevPos || '';
       step.style.visibility = wasActive ? '' : 'hidden';
@@ -1261,7 +1331,7 @@
       refreshStageHeight();
     }
 
-    /* Smooth slide between steps */
+    /* Smooth crossfade/slide with no ghosting */
     let animating = false;
     function show(target, dir=1){
       if(animating) return;
@@ -1293,22 +1363,45 @@
       }, 260);
     }
 
-    const heroEl = document.getElementById('hero');
-    backBtn.addEventListener('click', ()=>{
-      if(idx===0){
-        viewport.style.transition='opacity .22s var(--ease), transform .22s var(--ease)';
-        viewport.style.opacity='0'; viewport.style.transform='translateY(6px)';
-        setTimeout(()=>{
-          viewport.style.display='none';
-          heroEl.style.display='grid';
-          requestAnimationFrame(()=>{
-            heroEl.style.opacity='1'; heroEl.style.transform='none';
-          });
-        }, 200);
-        return;
-      }
-      show(idx-1,-1);
-    });
+        const heroEl = document.getElementById('hero');
+
+        backBtn.addEventListener('click', ()=>{
+
+          if(idx===0){
+
+            viewport.style.transition='opacity .22s var(--ease), transform .22s var(--ease)';
+
+            viewport.style.opacity='0'; viewport.style.transform='translateY(6px)';
+
+            setTimeout(()=>{
+
+              viewport.style.display='none';
+
+              viewport.style.opacity='';
+
+              viewport.style.transform='';
+
+              heroEl.style.display='grid';
+
+              resetSurveyState();
+
+              requestAnimationFrame(()=>{
+
+                heroEl.style.opacity='1';
+
+                heroEl.style.transform='none';
+
+              });
+
+            }, 220);
+
+            return;
+
+          }
+
+          show(idx-1,-1);
+
+        });
 
     nextBtn.addEventListener('click', ()=>{ if(!nextBtn.disabled) show(idx+1,+1) });
     form.addEventListener('input',updateUI);
@@ -1324,21 +1417,25 @@
     });
 
     /* Attach typeahead to Q16 using combined list */
-        function setupLocationQuestion(){
+    function setupLocationQuestion(){
       const typeButtons = $$('.row .pill[data-name="q16_type"]');
       const typeHidden = form.querySelector('input[name="q16_type"]');
       const input = $('#q16');
       const shell = document.getElementById('q16Typeahead');
-      if(!input || !shell || !typeButtons.length) return;
+      if(!input || !shell || !typeButtons.length || !typeHidden) return;
+
       const cities = [...PH_CITIES].sort((a,b)=>a.localeCompare(b));
       const malls = [...PH_MALLS].sort((a,b)=>a.localeCompare(b));
       let activeList = [];
+
       const getList = ()=>activeList;
       attachTypeahead(input, getList, ()=>{ updateUI(); });
+
       function choose(type){
         typeButtons.forEach(btn=> btn.setAttribute('aria-pressed', btn.dataset.value===type ? 'true' : 'false'));
-        if(typeHidden){ typeHidden.value = type || ''; }
+        typeHidden.value = type || '';
         input.value = '';
+
         if(type){
           shell.style.display='block';
           const placeholder = type === 'City' ? 'Type a city' : (type === 'Mall' ? 'Type a mall' : 'Tell us where to open next');
@@ -1353,28 +1450,90 @@
         refreshStageHeight();
         updateUI();
       }
+
       typeButtons.forEach(btn=>{
-        btn.addEventListener('click', ()=> choose(btn.dataset.value));
+        btn.addEventListener('click', (e)=> {
+          e.stopPropagation();
+          choose(btn.dataset.value)
+        });
       });
     }
 
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
+      
+      const overlay = document.getElementById('submittingOverlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+      }
+
       state.textContent = 'Submitting…';
       submitBtn.disabled = true; nextBtn.disabled = true; backBtn.disabled = true;
 
-      // tiny pulse
-      submitBtn.textContent = 'Submitting…';
-      submitBtn.style.filter = 'brightness(1.05)';
-      setTimeout(()=>{ submitBtn.style.filter=''; }, 300);
+      try {
+        const formData = new FormData(form);
+        const payload = {};
+        for (const [key, value] of formData.entries()) {
+          payload[key] = value;
+        }
 
-      setTimeout(()=>{
-        const params = new URLSearchParams();
-        if(receiptParam) params.set('receipt', receiptParam);
-        if(responseId) params.set('response_id', responseId);
-        const dest = params.toString() ? 'kzreward.html?'+params.toString() : 'kzreward.html';
-        window.location.href = dest;
-      }, 900);
+        // Map q1 to branch and get brand from URL
+        payload.branch = payload.q1;
+        payload.brand = urlParams.get("brand");
+        delete payload.q1;
+
+        const q17_restaurants = [];
+        for (let i = 1; i <= 5; i++) {
+          const restaurant = payload['q17_' + i];
+          if (restaurant) {
+            q17_restaurants.push(restaurant);
+          }
+          delete payload['q17_' + i];
+        }
+        if (q17_restaurants.length > 0) {
+          payload.q17 = q17_restaurants;
+        }
+
+        payload.q12_follow = payload.q12a || payload.q12b || payload.q12c;
+        delete payload.q12a;
+        delete payload.q12b;
+        delete payload.q12c;
+
+        if (payload.q16_type && payload.q16) {
+          payload.q16 = `${payload.q16_type}: ${payload.q16}`;
+        } else if (payload.q16_type) {
+          payload.q16 = payload.q16_type;
+        }
+        delete payload.q16_type;
+
+
+        const { data, error } = await supabase.functions.invoke('submit-survey', {
+          body: { response_id: responseId, payload },
+        });
+
+        if (error) throw error;
+        if (data.error) throw new Error(data.error);
+
+        setTimeout(()=>{
+          if (overlay) {
+            overlay.style.display = 'none';
+          }
+          const params = new URLSearchParams();
+          if(receiptParam) params.set('receipt', receiptParam);
+          if(responseId) params.set('response_id', responseId);
+          if(data.reward_code) params.set('reward_code', data.reward_code);
+          const dest = params.toString() ? 'kzreward.html?'+params.toString() : 'kzreward.html';
+          window.location.href = dest;
+        }, 500);
+
+      } catch (error) {
+        console.error('Error submitting survey:', error);
+        state.textContent = 'An error occurred. Please try again.';
+        if (overlay) {
+          overlay.style.display = 'none';
+        }
+        submitBtn.disabled = false; nextBtn.disabled = false; backBtn.disabled = false;
+      }
     });
 
     window.addEventListener('load',()=>{

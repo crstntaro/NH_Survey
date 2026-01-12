@@ -157,117 +157,142 @@
 
   <!-- html2canvas for “save as image” -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script>
-    (function(){
-      const qs = new URLSearchParams(location.search);
+    (async function(){
+      const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Generate/pick code with KZ prefix
-      function makeCode(prefix="KZ"){
-        const chars="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        let c=""; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)];
-        return prefix + "-" + c.slice(0,4) + "-" + c.slice(4,8);
-      }
-      const reward = (qs.get('reward') || makeCode('KZ')).toUpperCase();
-      const receipt = qs.get('receipt') || '—';
+      const qs = new URLSearchParams(location.search);
+      const responseId = qs.get('response_id');
+      const rewardCodeFromUrl = qs.get('reward_code');
 
       const codeEl = document.getElementById('code');
+      const cardEl = document.querySelector('.card');
       const recCode = document.getElementById('recCode');
       const recNo   = document.getElementById('recNo');
       const recDate = document.getElementById('recDate');
 
-      codeEl.textContent = reward;
-      recCode.textContent = reward;
-      recNo.textContent = receipt;
-      recDate.textContent = new Date().toLocaleString();
+      if (!responseId || !rewardCodeFromUrl) {
+          cardEl.innerHTML = '<h1>Error</h1><p>Invalid reward link. Please complete a survey to get a reward.</p>';
+          return;
+      }
 
-      // Copy with tiny toast
-      document.getElementById('copyBtn').addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(reward);
-          const msg = document.createElement('div');
-          msg.textContent = 'Code copied';
-          Object.assign(msg.style,{
-            position:'fixed', left:'50%', bottom:'20px', transform:'translateX(-50%)',
-            background:'#101010', color:'#fff', padding:'8px 12px', borderRadius:'10px',
-            font:'700 12px/1 Montserrat, sans-serif', zIndex:9999, opacity:'0',
-            transition:'opacity .18s ease'
-          });
-          document.body.appendChild(msg);
-          requestAnimationFrame(()=>{ msg.style.opacity='1'; });
-          setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 1100);
-        }catch(e){
-          alert('Copy failed');
-        }
-      });
+      try {
+          const { data, error } = await supabase
+              .from('survey_responses')
+              .select('reward_code, receipt, completed_at')
+              .eq('id', responseId)
+              .single();
 
-      // Save-as-image (robust: fonts/images ready, CORS-safe, toBlob + fallbacks)
-      document.getElementById('saveBtn').addEventListener('click', async ()=>{
-        const node = document.getElementById('receiptCard');
-
-        // Ensure images inside receipt are CORS-friendly for html2canvas
-        node.querySelectorAll('img').forEach(img => img.setAttribute('crossorigin','anonymous'));
-
-        // Wait for webfonts
-        if (document.fonts && document.fonts.ready) {
-          try { await document.fonts.ready; } catch {}
-        }
-        // Wait for images inside the receipt to decode
-        const imgs = Array.from(node.querySelectorAll('img'));
-        await Promise.all(
-          imgs.map(img => (img.decode ? img.decode().catch(()=>{}) :
-                           new Promise(r => (img.complete ? r() : (img.onload = img.onerror = r)))))
-        );
-
-        try{
-          const canvas = await html2canvas(node, {
-            backgroundColor:'#ffffff',
-            scale: Math.min(2, (window.devicePixelRatio || 1)),
-            useCORS: true,
-            allowTaint: false,
-            logging: false
-          });
-
-          const downloadFile = (blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.download = `Kazu-Reward-${reward}.png`;
-            a.href = url;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(()=>URL.revokeObjectURL(url), 1000);
-          };
-
-          if (canvas.toBlob) {
-            canvas.toBlob((blob)=>{
-              if (blob) downloadFile(blob);
-              else throw new Error('toBlob produced null');
-            }, 'image/png');
-          } else {
-            // Fallback for very old browsers
-            const dataUrl = canvas.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.download = `Kazu-Reward-${reward}.png`;
-            a.href = dataUrl;
-            if (typeof a.download === 'string') a.click();
-            else window.open(dataUrl, '_blank');
+          if (error || !data) {
+              throw new Error('Survey response not found.');
           }
-        }catch(err){
-          // Final fallback if something blocks programmatic download
-          try{
-            const canvas = await html2canvas(node, { backgroundColor:'#ffffff', scale:1 });
-            const dataUrl = canvas.toDataURL('image/png');
-            const win = window.open();
-            if (win) {
-              win.document.write('<iframe src="'+dataUrl+'" frameborder="0" style="border:0;top:0;left:0;bottom:0;right:0;width:100%;height:100%;position:fixed;"></iframe>');
-            } else {
-              alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+
+          if (!data.completed_at) {
+              throw new Error('Survey not yet completed.');
+          }
+
+          if (data.reward_code !== rewardCodeFromUrl) {
+              throw new Error('Invalid reward code.');
+          }
+
+          const reward = data.reward_code;
+          const receipt = data.receipt;
+
+          codeEl.textContent = reward;
+          recCode.textContent = reward;
+          recNo.textContent = receipt;
+          recDate.textContent = new Date().toLocaleString();
+
+          // Copy toast
+          document.getElementById('copyBtn').addEventListener('click', async ()=>{
+            try{
+              await navigator.clipboard.writeText(reward);
+              const msg = document.createElement('div');
+              msg.textContent = 'Code copied';
+              Object.assign(msg.style,{
+                position:'fixed', left:'50%', bottom:'20px', transform:'translateX(-50%)',
+                background:'#101010', color:'#fff', padding:'8px 12px', borderRadius:'10px',
+                font:'700 12px/1 Montserrat, sans-serif', zIndex:9999, opacity:'0',
+                transition:'opacity .18s ease'
+              });
+              document.body.appendChild(msg);
+              requestAnimationFrame(()=>{ msg.style.opacity='1'; });
+              setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 1100);
+            }catch(e){
+              alert('Copy failed');
             }
-          }catch(e){
-            alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
-          }
-        }
-      });
+          });
+
+          // Save-as-image
+          document.getElementById('saveBtn').addEventListener('click', async ()=>{
+            const node = document.getElementById('receiptCard');
+            node.querySelectorAll('img').forEach(img => img.setAttribute('crossorigin','anonymous'));
+            if (document.fonts && document.fonts.ready) {
+              try { await document.fonts.ready; } catch {}
+            }
+            const imgs = Array.from(node.querySelectorAll('img'));
+            await Promise.all(
+              imgs.map(img => (img.decode ? img.decode().catch(()=>{}) :
+                               new Promise(r => (img.complete ? r() : (img.onload = img.onerror = r)))))
+            );
+
+            try{
+              const canvas = await html2canvas(node, {
+                backgroundColor:'#ffffff',
+                scale: Math.min(2, (window.devicePixelRatio || 1)),
+                useCORS: true,
+                allowTaint: false,
+                logging: false
+              });
+              const downloadFile = (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.download = `Kazu-Reward-${reward}.png`;
+                a.href = url;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(()=>URL.revokeObjectURL(url), 1000);
+              };
+              if (canvas.toBlob) {
+                canvas.toBlob((blob)=>{
+                  if (blob) downloadFile(blob);
+                  else throw new Error('toBlob produced null');
+                }, 'image/png');
+              } else {
+                const dataUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.download = `Kazu-Reward-${reward}.png`;
+                a.href = dataUrl;
+                if (typeof a.download === 'string') {
+                  a.click();
+                } else {
+                  window.open(dataUrl, '_blank');
+                }
+              }
+            }catch(err){
+              try{
+                const canvas = await html2canvas(node, { backgroundColor:'#ffffff', scale:1 });
+                const dataUrl = canvas.toDataURL('image/png');
+                const win = window.open();
+                if (win) {
+                  win.document.write('<iframe src="'+dataUrl+'" frameborder="0" style="border:0;top:0;left:0;bottom:0;right:0;width:100%;height:100%;position:fixed;"></iframe>');
+                } else {
+                  alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+                }
+              }catch(e){
+                alert('If the image cannot be saved automatically, please take a screenshot of the reward card.');
+              }
+            }
+          });
+
+      } catch (error) {
+          console.error('Error verifying reward:', error);
+          cardEl.innerHTML = `<h1>Error</h1><p>${error.message}</p><p>Could not verify your reward. Please try again or contact support.</p>`;
+      }
     })();
   </script>
 </body>
