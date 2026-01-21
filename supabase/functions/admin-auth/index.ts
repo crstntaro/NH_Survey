@@ -4,7 +4,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.0/mod.ts';
 
 // Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080').split(',');
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,https://tarotaro-nh.github.io').split(',');
 
 function getCorsHeaders(origin: string | null) {
   // Allow null origin for file:// protocol and localhost variations
