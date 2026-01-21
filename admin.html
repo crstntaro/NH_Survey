@@ -767,11 +767,27 @@
       <h2>Account Settings</h2>
       <p class="subtitle">Manage your admin account</p>
 
-      <div style="background:rgba(0,0,0,0.03); padding:16px; border-radius:10px; margin-bottom:20px">
-        <div style="font-size:13px; color:var(--muted); margin-bottom:4px">Logged in as</div>
-        <div style="font:700 14px var(--font)" id="profileEmail">-</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px" id="profileRole">-</div>
+      <div style="display:flex; gap:16px; align-items:center; background:rgba(0,0,0,0.03); padding:16px; border-radius:10px; margin-bottom:20px">
+        <div id="profilePicPreview" style="width:60px; height:60px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font:800 20px var(--font); color:#fff; overflow:hidden">
+          <span id="profileInitials">A</span>
+        </div>
+        <div style="flex:1">
+          <div style="font:700 14px var(--font)" id="profileDisplayName">-</div>
+          <div style="font-size:12px; color:var(--muted)" id="profileEmail">-</div>
+          <div style="font-size:11px; color:var(--muted)" id="profileRole">-</div>
+        </div>
       </div>
+
+      <h4 style="font:700 14px var(--font); margin-bottom:12px">Profile Info</h4>
+      <label for="displayNameInput">Display Name</label>
+      <input type="text" id="displayNameInput" placeholder="Your name">
+      <label for="profilePicFile">Profile Picture</label>
+      <input type="file" id="profilePicFile" accept="image/*" style="padding:8px">
+      <input type="hidden" id="profilePicInput">
+      <button class="btn primary" id="saveProfileBtn" style="margin-top:12px; width:100%">Save Profile</button>
+      <div id="profileSaveMsg" style="margin-top:8px"></div>
+
+      <hr style="border:none; border-top:1px solid var(--line); margin:20px 0">
 
       <h4 style="font:700 14px var(--font); margin-bottom:4px">Change Password</h4>
       <p style="font-size:12px; color:var(--muted); margin-bottom:12px">You'll need to sign in again after changing your password.</p>
@@ -880,7 +896,8 @@
             .update({
               reward_claimed: true,
               reward_claimed_at: new Date().toISOString(),
-              reward_claimed_by: currentUser?.email || 'admin'
+              reward_claimed_by: currentUser?.email || 'admin',
+              reward_claimed_branch: currentUser?.branch || 'Unknown'
             })
             .eq('id', id);
 
@@ -951,6 +968,14 @@
     };
 
     /* ---------- Utility Functions ---------- */
+    // Calculate average of all slider ratings (q5-q11, 1-5 scale) and convert to 0-10
+    function calculateAvgRating(r) {
+      const ratings = [r.q5, r.q6, r.q7, r.q8, r.q10, r.q11].filter(v => v !== null && v !== undefined);
+      if (ratings.length === 0) return null;
+      const avg = ratings.reduce((a, b) => a + Number(b), 0) / ratings.length;
+      return Math.round((avg - 1) * 2.5); // Convert 1-5 to 0-10 scale
+    }
+
     function getNPSCategory(score) {
       if (score === null || score === undefined) return 'unknown';
       if (score >= 9) return 'promoter';
@@ -1155,14 +1180,59 @@
     }
 
     /* ---------- Profile Modal ---------- */
+    function getInitials(name, email) {
+      if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+      if (email) return email[0].toUpperCase();
+      return 'A';
+    }
+
     userBadge.addEventListener('click', () => {
       document.getElementById('profileModal').classList.add('visible');
+      const name = currentUser?.display_name || '';
+      const pic = currentUser?.profile_pic || '';
+      document.getElementById('profileDisplayName').textContent = name || currentUser?.email || '-';
       document.getElementById('profileEmail').textContent = currentUser?.email || '-';
       document.getElementById('profileRole').textContent = `${currentUser?.brand || 'All Brands'} - ${currentUser?.role || 'Admin'}`;
+      document.getElementById('displayNameInput').value = name;
+      document.getElementById('profilePicInput').value = pic;
+      document.getElementById('profileInitials').textContent = getInitials(name, currentUser?.email);
+      if (pic) {
+        document.getElementById('profilePicPreview').innerHTML = `<img src="${pic}" style="width:100%;height:100%;object-fit:cover">`;
+      }
       document.getElementById('passwordMsg').innerHTML = '';
+      document.getElementById('profileSaveMsg').innerHTML = '';
       document.getElementById('currentPassword').value = '';
       document.getElementById('newPassword').value = '';
       document.getElementById('confirmPassword').value = '';
+    });
+
+    document.getElementById('profilePicFile')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 500000) { alert('Image must be under 500KB'); return; }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('profilePicInput').value = ev.target.result;
+        document.getElementById('profilePicPreview').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
+      const name = document.getElementById('displayNameInput').value.trim();
+      const pic = document.getElementById('profilePicInput').value;
+      const msgEl = document.getElementById('profileSaveMsg');
+      try {
+        const { error } = await sb.from('admin_users').update({ display_name: name, profile_pic: pic }).eq('email', currentUser?.email);
+        if (error) throw error;
+        currentUser.display_name = name;
+        currentUser.profile_pic = pic;
+        localStorage.setItem('admin_user', JSON.stringify(currentUser));
+        userBadge.textContent = name || currentUser.email;
+        msgEl.innerHTML = '<div class="success-msg">Profile saved!</div>';
+      } catch (err) {
+        msgEl.innerHTML = '<div class="error-msg">Failed to save</div>';
+      }
     });
 
     document.getElementById('closeProfileBtn').addEventListener('click', () => {
@@ -1226,11 +1296,24 @@
       }
     });
 
+    /* ---------- Access Control ---------- */
+    function isSuperAdmin() {
+      return currentUser?.role === 'super_admin' || currentUser?.brand === 'All';
+    }
+
+    function filterByUserAccess(responses) {
+      if (isSuperAdmin()) return responses;
+      return responses.filter(r =>
+        r.brand === currentUser?.brand && r.branch === currentUser?.branch
+      );
+    }
+
     /* ---------- App Initialization ---------- */
     async function initApp() {
       // Fetch real data from Supabase
       allResponses = await DataService.fetchResponses();
-      filteredResponses = [...allResponses];
+      // For Responses/Analytics/Export: filter by user access
+      filteredResponses = filterByUserAccess([...allResponses]);
 
       // Paint initial view
       setTab('overview');
@@ -1379,7 +1462,7 @@
       const from = document.getElementById('respFilterFrom').value;
       const to = document.getElementById('respFilterTo').value;
 
-      filteredResponses = allResponses.filter(r => {
+      filteredResponses = filterByUserAccess(allResponses).filter(r => {
         if (search) {
           const haystack = [r.name, r.email, r.receipt, r.branch].join(' ').toLowerCase();
           if (!haystack.includes(search)) return false;
@@ -1403,7 +1486,7 @@
       document.getElementById('respFilterNps').value = '';
       document.getElementById('respFilterFrom').value = '';
       document.getElementById('respFilterTo').value = '';
-      filteredResponses = [...allResponses];
+      filteredResponses = filterByUserAccess([...allResponses]);
       paintResponses();
     });
 
@@ -1441,8 +1524,9 @@
       currentValidationResponse = response;
 
       // Populate details
+      const avgNps = calculateAvgRating(response);
       document.getElementById('valCustomer').textContent = response.name || '-';
-      document.getElementById('valNps').innerHTML = npsBadge(response.q12);
+      document.getElementById('valNps').innerHTML = npsBadge(avgNps !== null ? avgNps : response.q12);
       document.getElementById('valReceipt').textContent = response.receipt || '-';
       document.getElementById('valCode').textContent = response.reward_code || '-';
       document.getElementById('valDate').textContent = formatDate(response.completed_at);
@@ -1450,7 +1534,8 @@
       if (response.reward_claimed) {
         statusEl.textContent = '⚠️ Reward Already Claimed';
         statusEl.className = 'status claimed';
-        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--warn)">Claimed on ${formatDate(response.reward_claimed_at)}</span>`;
+        const claimInfo = `Claimed on ${formatDate(response.reward_claimed_at)}${response.reward_claimed_branch ? ` at ${response.reward_claimed_branch}` : ''}`;
+        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--warn)">${claimInfo}</span>`;
         actionsEl.style.display = 'none';
       } else {
         statusEl.textContent = '✅ Valid - Reward Available';
@@ -1483,6 +1568,7 @@
           response.reward_claimed = true;
           response.reward_claimed_at = new Date().toISOString();
           response.reward_claimed_by = currentUser?.email;
+          response.reward_claimed_branch = currentUser?.branch;
         }
       } else {
         btn.disabled = false;
@@ -1498,11 +1584,12 @@
 
     /* ---------- Analytics Tab ---------- */
     function paintAnalytics() {
-      // Filter by period
-      let periodResponses = allResponses;
+      // Filter by user access then by period
+      const userResponses = filterByUserAccess(allResponses);
+      let periodResponses = userResponses;
       if (analyticsPeriod !== 'all') {
         const cutoff = new Date(Date.now() - analyticsPeriod * 86400000);
-        periodResponses = allResponses.filter(r => new Date(r.completed_at) >= cutoff);
+        periodResponses = userResponses.filter(r => new Date(r.completed_at) >= cutoff);
       }
 
       const npsData = DataService.calculateNPS(periodResponses);
@@ -1684,7 +1771,7 @@
       const from = document.getElementById('exportFrom').value;
       const to = document.getElementById('exportTo').value;
 
-      return allResponses.filter(r => {
+      return filterByUserAccess(allResponses).filter(r => {
         if (brand && r.brand !== brand) return false;
         if (npsFilter) {
           const cat = getNPSCategory(r.q12);

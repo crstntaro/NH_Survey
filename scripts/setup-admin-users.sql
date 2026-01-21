@@ -1,247 +1,98 @@
 -- ============================================
--- Script: Setup Admin Users
--- Run this in Supabase SQL Editor (Dashboard > SQL Editor)
--- This creates the admin_users records
--- IMPORTANT: After running this, you also need to create the users in Supabase Auth
+-- Admin Users Setup Script
+-- Format: storecode@nipponhasha.com / hasha+storecode
+-- Run in Supabase SQL Editor, then create matching Auth users
 -- ============================================
 
--- First, let's check if the admin_users table exists
--- If not, the migrations need to be run first
+-- Add profile columns if not exist
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS display_name TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS profile_pic TEXT;
 
--- Mendokoro Ramenba - Katipunan (test user)
+-- Add reward_claimed_branch to survey_responses if not exist
+ALTER TABLE survey_responses ADD COLUMN IF NOT EXISTS reward_claimed_branch TEXT;
+
+-- Mendokoro branches
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'mendokoro_ramenba_katipunan_admin',
-  'admin.katipunan@mendokoro.com',
-  -- This is a placeholder - the actual password is verified via Supabase Auth
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Mendokoro',
-  'Katipunan',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mdka_admin', 'mdka@nipponhasha.com', '$2a$10$placeholder', 'Mendokoro', 'Molito (Alabang)', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Mendokoro', branch='Molito (Alabang)', is_active=true;
 
--- Mendokoro Ramenba - Molito (Alabang)
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'mendokoro_ramenba_molito_alabang_admin',
-  'admin.alabang@mendokoro.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Mendokoro',
-  'Molito (Alabang)',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mdkb_admin', 'mdkb@nipponhasha.com', '$2a$10$placeholder', 'Mendokoro', 'Bonifacio Global City', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Mendokoro', branch='Bonifacio Global City', is_active=true;
 
--- Mendokoro Ramenba - Bonifacio Global City
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'mendokoro_ramenba_bonifacio_global_city_admin',
-  'admin.bgc@mendokoro.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Mendokoro',
-  'Bonifacio Global City',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mdkc_admin', 'mdkc@nipponhasha.com', '$2a$10$placeholder', 'Mendokoro', 'Cebu', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Mendokoro', branch='Cebu', is_active=true;
 
--- Mendokoro Ramenba - Cebu
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'mendokoro_ramenba_cebu_admin',
-  'admin.cebu@mendokoro.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Mendokoro',
-  'Cebu',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mdkk_admin', 'mdkk@nipponhasha.com', '$2a$10$placeholder', 'Mendokoro', 'Katipunan', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Mendokoro', branch='Katipunan', is_active=true;
 
--- Mendokoro Ramenba - Salcedo Village (Makati)
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'mendokoro_ramenba_salcedo_village_makati_admin',
-  'admin.makati@mendokoro.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Mendokoro',
-  'Salcedo Village (Makati)',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mdkm_admin', 'mdkm@nipponhasha.com', '$2a$10$placeholder', 'Mendokoro', 'Salcedo Village (Makati)', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Mendokoro', branch='Salcedo Village (Makati)', is_active=true;
 
--- Mendokoro Ramenba - Pasay
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'mendokoro_ramenba_pasay_admin',
-  'admin.pasay@mendokoro.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Mendokoro',
-  'Pasay',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mdkp_admin', 'mdkp@nipponhasha.com', '$2a$10$placeholder', 'Mendokoro', 'Pasay', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Mendokoro', branch='Pasay', is_active=true;
 
--- Ramen Yushoken - Molito (Alabang)
+-- Yushoken branches
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'ramen_yushoken_molito_alabang_admin',
-  'admin.alabang@yushoken.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Yushoken',
-  'Molito (Alabang)',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('yska_admin', 'yska@nipponhasha.com', '$2a$10$placeholder', 'Yushoken', 'Molito (Alabang)', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Yushoken', branch='Molito (Alabang)', is_active=true;
 
--- Ramen Yushoken - Cebu
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'ramen_yushoken_cebu_admin',
-  'admin.cebu@yushoken.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Yushoken',
-  'Cebu',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('yskc_admin', 'yskc@nipponhasha.com', '$2a$10$placeholder', 'Yushoken', 'Cebu', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Yushoken', branch='Cebu', is_active=true;
 
--- Ramen Yushoken - Ortigas
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'ramen_yushoken_ortigas_admin',
-  'admin.ortigas@yushoken.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Yushoken',
-  'Ortigas',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('ysko_admin', 'ysko@nipponhasha.com', '$2a$10$placeholder', 'Yushoken', 'Ortigas', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Yushoken', branch='Ortigas', is_active=true;
 
--- Ramen Yushoken - Pasay
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'ramen_yushoken_pasay_admin',
-  'admin.pasay@yushoken.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Yushoken',
-  'Pasay',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('yskp_admin', 'yskp@nipponhasha.com', '$2a$10$placeholder', 'Yushoken', 'Pasay', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Yushoken', branch='Pasay', is_active=true;
 
--- Kazunori - Makati
+-- Marudori branches
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'kazunori_makati_admin',
-  'admin@kazunori.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Kazunori',
-  'Makati',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mrdr_admin', 'mrdr@nipponhasha.com', '$2a$10$placeholder', 'Marudori', 'Rockwell', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Marudori', branch='Rockwell', is_active=true;
 
--- Kazu Cafe - Makati
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'kazu_caf_makati_admin',
-  'admin@kazucafe.com',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'Kazu Cafe',
-  'Makati',
-  'branch_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('mrdv_admin', 'mrdv@nipponhasha.com', '$2a$10$placeholder', 'Marudori', 'Vertis North', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Marudori', branch='Vertis North', is_active=true;
 
--- Super Admin (for testing - all brands access)
+-- Kazunori & Kazu Cafe
 INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
-VALUES (
-  'super_admin',
-  'admin@nipponhasha.ph',
-  '$2a$10$placeholder_hash_for_supabase_auth',
-  'All',
-  'All',
-  'super_admin',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET
-  username = EXCLUDED.username,
-  brand = EXCLUDED.brand,
-  branch = EXCLUDED.branch,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active;
+VALUES ('kznm_admin', 'kznm@nipponhasha.com', '$2a$10$placeholder', 'Kazunori', 'Makati', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Kazunori', branch='Makati', is_active=true;
 
--- Verify the inserts
-SELECT id, username, email, brand, branch, role, is_active FROM admin_users ORDER BY brand, branch;
+INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
+VALUES ('kzcf_admin', 'kzcf@nipponhasha.com', '$2a$10$placeholder', 'Kazu Cafe', 'Makati', 'branch_admin', true)
+ON CONFLICT (email) DO UPDATE SET brand='Kazu Cafe', branch='Makati', is_active=true;
+
+-- Super Admin
+UPDATE admin_users SET email='admin@nipponhasha.com', brand='All', branch='All', role='super_admin', is_active=true WHERE username='super_admin';
+INSERT INTO admin_users (username, email, password_hash, brand, branch, role, is_active)
+SELECT 'nh_super_admin', 'admin@nipponhasha.com', '$2a$10$placeholder', 'All', 'All', 'super_admin', true
+WHERE NOT EXISTS (SELECT 1 FROM admin_users WHERE email='admin@nipponhasha.com');
+
+-- Verify
+SELECT email, brand, branch, role FROM admin_users ORDER BY brand, branch;
+
+-- CREDENTIALS REFERENCE:
+-- mdka@nipponhasha.com / hashamdka
+-- mdkb@nipponhasha.com / hashamdkb
+-- mdkc@nipponhasha.com / hashamdkc
+-- mdkk@nipponhasha.com / hashamdkk
+-- mdkm@nipponhasha.com / hashamdkm
+-- mdkp@nipponhasha.com / hashamdkp
+-- yska@nipponhasha.com / hashayska
+-- yskc@nipponhasha.com / hashayskc
+-- ysko@nipponhasha.com / hashaysko
+-- yskp@nipponhasha.com / hashayskp
+-- mrdr@nipponhasha.com / hashamrdr
+-- mrdv@nipponhasha.com / hashamrdv
+-- kznm@nipponhasha.com / hashakznm
+-- kzcf@nipponhasha.com / hashakzcf
+-- admin@nipponhasha.com / hashaadmin
