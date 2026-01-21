@@ -477,7 +477,7 @@
               <div class="slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
             </div>
             <div class="slider-followup" id="q11Follow" data-low-max="6" data-high-min="9" data-low-label="What specific area did you find unclean or poorly maintained?" data-low-placeholder="Let us know what needs more attention…" data-high-label="What stood out to you about the orderliness today?" data-high-placeholder="Share what impressed you…" data-neutral-display="show" data-neutral-label="What improvement could have made the space feel more tidy?" data-neutral-placeholder="Share any suggestions for tidier spaces…">
-              <label for="q11FollowText" id="q11FollowLabel">Tell us more about your rating</label>
+            <label for="q11FollowText" id="q11FollowLabel">Tell us more about your rating</label>
               <textarea id="q11FollowText" name="q11_follow" placeholder=""></textarea>
             </div>
             <input type="hidden" name="q11" required>
@@ -921,7 +921,8 @@
       });
     }
     function setupPills(){
-      $$('.row .pill').forEach(btn=>{
+      // Exclude q16_type which is handled by setupLocationQuestion
+      $$('.row .pill:not([data-name="q16_type"])').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           const name = btn.dataset.name;
           const value = btn.dataset.value;
@@ -944,7 +945,7 @@
           if(!handledBySync){ updateUI(); }
         });
       });
-      $$('.row .pill').forEach(b=>b.setAttribute('aria-pressed','false'));
+      $$('.row .pill:not([data-name="q16_type"])').forEach(b=>b.setAttribute('aria-pressed','false'));
     }
     setupPills();
     function createSliderInstance(shell){

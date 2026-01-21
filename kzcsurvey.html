@@ -1033,7 +1033,8 @@
       });
     }
     function setupPills(){
-      $$('.row .pill').forEach(btn=>{
+      // Exclude q16_type which is handled by setupLocationQuestion
+      $$('.row .pill:not([data-name="q16_type"])').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           const name = btn.dataset.name;
           const value = btn.dataset.value;
@@ -1059,7 +1060,7 @@
           if(!handledBySync){ updateUI(); }
         });
       });
-      $$('.row .pill').forEach(b=>b.setAttribute('aria-pressed','false'));
+      $$('.row .pill:not([data-name="q16_type"])').forEach(b=>b.setAttribute('aria-pressed','false'));
     }
     setupPills();
     function createSliderInstance(shell){

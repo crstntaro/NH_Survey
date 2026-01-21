@@ -13,15 +13,16 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
-  <!-- Supabase (placeholder for prod wiring) -->
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
   <style>
     :root{
-      /* Brand palette (from guide) */
       --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 
-      /* Light default */
       --ink:#101010; --muted:#6b7280;
       --gold:#85754E; --gold-dk:#6f6242;
       --navy:#002A3A; --black:#231f20;
@@ -29,1290 +30,1953 @@
       --line:#e7e6e2; --bg:#faf6ef; --surface:#ffffff;
       --bad:#c41e3a; --warn:#ff9d00; --ok:#0e9a5a; --info:#1f6feb;
 
-      --header-h:60px;
-      --sea1:.12; --sea2:.05;
+      --header-h:64px;
       --radius:16px;
+      --sea1:.12; --sea2:.05;
 
-      /* Motion & layering */
       --elev-1: 0 2px 10px rgba(0,0,0,.06);
       --elev-2: 0 12px 26px rgba(0,0,0,.12);
       --dur-fast: .20s;
       --dur-med: .28s;
       --ease: cubic-bezier(.22,.61,.36,1);
+
+      /* Brand colors */
+      --brand-yushoken: #f4b400;
+      --brand-mendokoro: #c41e3a;
+      --brand-kazunori: #2f9e6e;
+      --brand-kazucafe: #2f9e6e;
+      --brand-marudori: #0e9a5a;
     }
 
-    /* -------- Base / layout -------- */
-    *{ box-sizing:border-box; margin:0; padding:0 }
-    html,body{ min-height:100% }
-    body{
-      font-family:var(--font); color:var(--ink); background:var(--bg);
-      line-height:1.55; overflow-x:hidden;
-      opacity:0; transform:translateY(6px); animation:fadeIn .35s var(--ease) forwards;
-    }
-    @keyframes fadeIn{ to{ opacity:1; transform:none } }
-
-    /* Brand background */
+    /* Animated seigaiha background */
     .bg{ position:fixed; inset:0; z-index:-2;
-      background: radial-gradient(1200px 360px at 50% -120px, rgba(196,30,58,.08), transparent 65%), var(--bg);
+      background: radial-gradient(1200px 360px at 50% -120px, rgba(196,30,58,.09), transparent 65%), var(--bg);
     }
     .bg::before, .bg::after{
       content:""; position:absolute; inset:0; pointer-events:none;
       background-repeat:repeat; background-size:400px 200px; animation: float 34s linear infinite;
-      will-change: background-position;
     }
     .bg::before{
       opacity:var(--sea1);
       background-image:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMzAwIDE1MCI+PGRlZnM+PHBhdHRlcm4gaWQ9InMiIHdpZHRoPSI1MCIgaGVpZ2h0PSIyNSIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMjVhMjUgMjUgMCAwMSA1MCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNDNDFFM0EiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNzKSIvPjwvc3ZnPg==');
     }
     .bg::after{
-      opacity:var(--sea2); animation-duration:48s; animation-direction:reverse; transform:translateY(8px);
+      opacity:var(--sea2); animation-duration:48s; animation-direction:reverse; transform:translateY(10px);
       background-image:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMzAwIDE1MCI+PGRlZnM+PHBhdHRlcm4gaWQ9InMiIHdpZHRoPSI1MCIgaGVpZ2h0PSIyNSIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMjVhMjUgMjUgMCAwMSA1MCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDEwMTAiIHN0cm9rZS13aWR0aD0iLjkiIG9wYWNpdHk9Ii4yNSIvPjxwYXRoIGQ9Ik0xMi41IDI1QTEyLjUgMTIuNSAwIDAxMzcgMjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzEwMTAxMCIgc3Ryb2tlLXdpZHRoPSIuNiIgb3BhY2l0eT0iLjE4Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3MpIi8+PC9zdmc+');
     }
     @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
 
-    /* Freeze animation + swap scheme in validator */
-    body.validator-mode .bg::before, body.validator-mode .bg::after{ animation:none; opacity:0 }
-    body.validator-mode{
-      --bg:#f4f8fa; --surface:#ffffff; --line:#dbe6ea;
-      --ink:#0b1f27; --muted:#5a7480;
+    *{ box-sizing:border-box; margin:0; padding:0 }
+    html,body{ min-height:100vh }
+    body{
+      font-family:var(--font); color:var(--ink); background:transparent;
+      line-height:1.55; overflow-x:hidden;
+      opacity:0; transform:translateY(6px); animation:fadeIn .35s var(--ease) forwards;
     }
-    body.validator-mode .site-header{ border-bottom-color:#d0e0e6 }
-    body.validator-mode .tab[aria-selected="true"]{ background:var(--navy) }
-    body.validator-mode h3, body.validator-mode .kpi .v{ color:var(--navy) }
+    @keyframes fadeIn{ to{ opacity:1; transform:none } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-    /* Header (appears AFTER login) */
+    /* Admin-specific header - Dark theme */
     .site-header{
       position:sticky; top:0; z-index:30;
-      display:none; flex-direction:column; align-items:stretch; gap:6px;
-      background:color-mix(in oklab, var(--surface) 88%, transparent);
-      border-bottom:1px solid var(--line);
-      backdrop-filter:saturate(180%) blur(6px);
-      padding:6px 0 10px;
+      display:none; flex-direction:column; align-items:stretch;
+      background: linear-gradient(135deg, #2d2a24 0%, #1a1815 100%);
+      border-bottom: 2px solid var(--gold);
+      padding:0;
       min-height:var(--header-h);
     }
-    .nav{ max-width:1100px; margin:0 auto; padding:0 12px; width:100%;
-      display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:14px;
+    .site-header.visible { display:flex; }
+    .nav{
+      max-width:1200px; margin:0 auto; padding:12px 16px; width:100%;
+      display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px;
     }
-    .tab-bar{ display:flex; align-items:center; justify-content:center; gap:10px; position:relative; }
-    .tab-select-wrap{ display:none; position:relative; }
-    .tab-select{ appearance:none; padding:8px 38px 8px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font:700 13px var(--font); box-shadow:var(--elev-1); background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22%3E%3Cpath fill=%22%23101010%22 d=%22M6 8a1 1 0 0 1-.7-.29l-5-5A1 1 0 1 1 1.7 1.3L6 5.59 10.3 1.3a1 1 0 0 1 1.41 1.41l-5 5A1 1 0 0 1 6 8z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:calc(100% - 14px) center; background-size:12px; cursor:pointer; transition:box-shadow var(--dur-fast) var(--ease) }
-    .tab-select:focus-visible{ box-shadow:0 0 0 3px color-mix(in oklab, var(--gold) 25%, transparent); outline:none }
-    .tab-action{ border-style:dashed }
-    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0 }
-    .brand{ display:flex; align-items:center; gap:10px; min-width:0; flex:0 0 auto }
-    .brand img{ height:30px; width:auto }
-    .brand .title{ font:800 clamp(13px,2vw,16px)/1 var(--font); letter-spacing:.02em; color:var(--black); white-space:nowrap }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:36px; width:auto; }
+    .brand .title{
+      font:800 14px/1 var(--font); letter-spacing:.02em; color:#fff;
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .brand .title small { font-size:10px; color:var(--gold); font-weight:600; letter-spacing:.1em; }
 
-    .tabs{ display:flex; gap:6px; align-items:center; overflow:auto; padding:6px 0; flex:1 1 200px; scrollbar-width:thin; justify-content:center }
+    .tabs{ display:flex; gap:6px; align-items:center; justify-content:center; flex-wrap:wrap; }
     .tab{
       display:inline-flex; align-items:center; justify-content:center; gap:6px;
-      padding:7px 12px; border:1px solid var(--line); border-radius:999px; background:var(--surface); font:700 13px/1 var(--font); cursor:pointer; white-space:nowrap; transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); text-decoration:none; color:inherit;
-      will-change: transform;
+      padding:8px 16px; border:1px solid rgba(255,255,255,0.2); border-radius:999px;
+      background:transparent; font:700 13px/1 var(--font); cursor:pointer;
+      white-space:nowrap; transition:all var(--dur-fast) var(--ease);
+      color:rgba(255,255,255,0.8); text-decoration:none;
     }
-    .tab:hover{ transform:translateY(-1px); }
-    .tab[aria-selected="true"]{ background:var(--gold); color:#fff; border-color:transparent }
-    .header-actions{ display:flex; gap:8px; align-items:center; margin-left:auto; flex:0 0 auto }
-    .icon-btn{ height:36px; width:36px; display:grid; place-items:center; border-radius:10px; border:1px solid var(--line); background:var(--surface); cursor:pointer; position:relative; transition:transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); box-shadow:var(--elev-1) }
-    .icon-btn:hover{ background:rgba(0,0,0,.04); transform:translateY(-1px) }
-    .icon-btn[data-badge]:after{ content:attr(data-badge); position:absolute; top:-4px; right:-4px; min-height:16px; min-width:16px; padding:0 5px; border-radius:999px; background:var(--bad); color:#fff; font:700 10px/16px var(--font); display:inline-flex; justify-content:center; align-items:center; }
-    .btn{ height:36px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); cursor:pointer; font-weight:700; transition:transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease) }
-    .btn:hover{ background:color-mix(in oklab, var(--surface) 90%, var(--gold) 10%); transform:translateY(-1px); box-shadow:var(--elev-1) }
-    .tab, .btn, .icon-btn{ outline:none }
-    .tab:focus-visible, .btn:focus-visible, .icon-btn:focus-visible, .filter-inner input:focus-visible, .filter-inner select:focus-visible{ box-shadow:0 0 0 3px color-mix(in oklab, var(--gold) 25%, transparent); outline:none }
+    .tab:hover{ background:rgba(255,255,255,0.1); color:#fff; transform:translateY(-1px); }
+    .tab[aria-selected="true"]{ background:var(--gold); color:#fff; border-color:var(--gold); }
 
-    /* Slide-down search/filters — SMOOTHER */
-    .filter-bar{
-      position:fixed; left:0; right:0;
-      top:calc(var(--header-offset, 0px));
-      z-index:40;
-      border-bottom:1px solid var(--line); background:var(--surface);
-      transform:translateY(-10px); opacity:0; pointer-events:none;
-      transition:transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease);
-      will-change: transform, opacity;
-      content-visibility:auto; contain-intrinsic-size: 1px 200px;
-      box-shadow:0 6px 20px rgba(0,0,0,.06);
+    .header-actions{ display:flex; gap:10px; align-items:center; }
+    .user-badge {
+      font-size:12px; color:rgba(255,255,255,0.7); max-width:160px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;
+      padding:6px 12px; border-radius:8px; background:rgba(255,255,255,0.1);
+      transition:background var(--dur-fast) var(--ease);
     }
-    .filter-bar[data-open="true"]{ transform:translateY(0); opacity:1; pointer-events:auto }
-    .filter-inner{ max-width:1100px; margin:0 auto; padding:12px 12px 16px; display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); align-items:end }
+    .user-badge:hover { background:rgba(255,255,255,0.2); }
 
-    .filter-inner .field{ display:grid; gap:6px }
-    .filter-inner input, .filter-inner select{ padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font:600 13px var(--font); box-shadow:0 1px 2px rgba(0,0,0,.05); transition:border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease) }
-    .filter-inner select{ appearance:none; padding-right:34px; background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3E%3Cpath fill=%27%23101010%27 d=%27M6 8a1 1 0 0 1-.7-.29l-5-5A1 1 0 1 1 1.7 1.3L6 5.59 10.3 1.3a1 1 0 0 1 1.41 1.41l-5 5A1 1 0 0 1 6 8z%27/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:calc(100% - 12px) center; background-size:12px }
-    .filter-inner input:focus, .filter-inner select:focus{ border-color:color-mix(in oklab, var(--gold) 35%, transparent); box-shadow:0 0 0 3px color-mix(in oklab, var(--gold) 20%, transparent) }
-    .pill{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface); cursor:pointer; font-weight:700; font-size:12px; transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease) }
-    .styled-select{ appearance:none; padding:8px 36px 8px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font:700 13px var(--font); box-shadow:0 1px 2px rgba(0,0,0,.05); background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22%3E%3Cpath fill=%22%23101010%22 d=%22M6 8a1 1 0 0 1-.7-.29l-5-5A1 1 0 1 1 1.7 1.3L6 5.59 10.3 1.3a1 1 0 0 1 1.41 1.41l-5 5A1 1 0 0 1 6 8z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:calc(100% - 14px) center; background-size:12px; cursor:pointer; }
-    .select-shell{ display:flex }
-    .styled-select:focus-visible{ box-shadow:0 0 0 3px color-mix(in oklab, var(--gold) 25%, transparent); outline:none }
-    .analytics-controls{ display:grid; gap:6px; min-width:200px }
-    .analytics-summary{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:16px 0 10px }
-    .analytic-card{ padding:16px; margin-top:12px }
-    .analytic-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px }
-    .legend{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--muted) }
-    .legend span{ display:inline-flex; align-items:center; gap:6px }
-    .legend span::before{ content:''; width:10px; height:10px; border-radius:50%; background:var(--brand-color,var(--gold)); display:inline-block }
-    .comments-list{ display:grid; gap:10px }
-    .comments-list .card{ padding:14px }
-    .export-grid{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin:16px 0 }
-    .export-grid input, .export-grid select{ padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font:600 13px var(--font); box-shadow:0 1px 2px rgba(0,0,0,.05) }
-    .export-grid input:focus, .export-grid select:focus{ border-color:color-mix(in oklab, var(--gold) 35%, transparent); box-shadow:0 0 0 3px color-mix(in oklab, var(--gold) 20%, transparent) }
-    .chip-grid{ display:flex; flex-wrap:wrap; gap:8px }
-    .chip-option{ position:relative; display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font-weight:600; font-size:12px; cursor:pointer; transition:background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease) }
-    .chip-option::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--brand-color,var(--gold)); }
-    .chip-option input{ position:absolute; inset:0; opacity:0; pointer-events:none }
-    .chip-option span{ pointer-events:none }
-    .chip-option[data-active="true"]{ background:color-mix(in oklab, var(--gold) 18%, transparent); border-color:color-mix(in oklab, var(--gold) 45%, transparent); color:var(--ink); transform:translateY(-1px) }
-    .export-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
-    .pill[aria-pressed="true"]{ background:var(--ink); color:var(--bg) }
-
-    /* Content */
-    .wrap{ max-width:1100px; margin:0 auto; padding:calc(var(--header-offset, 0px) + 12px) 12px 12px; display:grid; gap:12px }
-    .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px }
-    .card h3{ font:800 16px/1 var(--font); margin-bottom:8px }
-    .kpis{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px }
-    .kpi{ border:1px solid var(--line); border-radius:14px; padding:12px }
-    .kpi .v{ font:800 clamp(18px,3.5vw,22px)/1 var(--font) }
-    .kpi .l{ color:var(--muted); font-size:12px; margin-top:2px }
-    .kpi.bad{ outline:2px solid color-mix(in oklab, var(--bad) 25%, transparent) }
-    .empty{ padding:22px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:12px; font-size:13px }
-
-    .table{ width:100%; border-collapse:collapse }
-    .table th,.table td{ border-bottom:1px solid var(--line); text-align:left; padding:10px 8px; font-size:13px; vertical-align:top }
-    .table tr:hover{ background:color-mix(in oklab, var(--surface) 94%, transparent) }
-    .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace }
-    .statusSel{ appearance:none; padding:8px 34px 8px 12px; border-radius:999px; border:1px solid color-mix(in oklab, var(--line) 85%, var(--ink) 5%); font-weight:700; font-size:12px; cursor:pointer; background:color-mix(in oklab, var(--warn) 14%, transparent); color:var(--warn); box-shadow:0 1px 2px rgba(0,0,0,.08); transition:box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease) }
-    .statusSel:hover{ transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,.12) }
-    .statusSel:focus-visible{ box-shadow:0 0 0 3px color-mix(in oklab, var(--gold) 25%, transparent) }
-    .statusSel.ongoing { background:color-mix(in oklab, var(--info) 18%, transparent); color:var(--info) }
-    .statusSel.resolved{ background:color-mix(in oklab, var(--ok) 18%, transparent); color:var(--ok) }
-    .statusSel.pending{ background:color-mix(in oklab, var(--warn) 18%, transparent); color:var(--warn) }
-    .status{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-weight:800; font-size:12px }
-    .brandTag{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px; background:color-mix(in oklab, var(--surface) 80%, transparent); color:var(--ink); border:1px solid color-mix(in oklab, var(--line) 85%, var(--ink) 5%); }
-    .brandTag::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--brand-color,var(--gold)); display:inline-block }
-
-    /* Validator panel — FIXED under header with smooth slide */
-    .validator-bar{
-      position:fixed; left:0; right:0;
-      top:calc(var(--header-offset, 0px));
-      z-index:50;
-      border-bottom:1px solid var(--line); background:var(--surface);
-      transform:translateY(-12px); opacity:0; pointer-events:none;
-      transition:transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease);
-      will-change: transform, opacity;
-      box-shadow:0 8px 24px rgba(0,0,0,.08);
+    .icon-btn{
+      height:36px; width:36px; display:grid; place-items:center; border-radius:10px;
+      border:1px solid rgba(255,255,255,0.2); background:transparent; cursor:pointer;
+      color:#fff; transition:all var(--dur-fast) var(--ease);
     }
-    .validator-bar.is-open{ transform:translateY(0); opacity:1; pointer-events:auto }
-    .validator-inner{ max-width:1100px; margin:0 auto; padding:16px 12px 18px; display:grid; gap:16px }
-    .validator-grid{ display:flex; flex-wrap:wrap; gap:12px }
-    .validator-grid input{ flex:1; min-width:220px; padding:12px; border:1px solid var(--line); border-radius:12px; font:600 14px var(--font); box-shadow:0 1px 2px rgba(0,0,0,.04) }
-    .validator-actions{ display:flex; gap:10px; flex-wrap:wrap }
-    .validator-results{ border:1px solid var(--line); border-radius:12px; padding:12px; display:grid; gap:10px; background:color-mix(in oklab, var(--surface) 96%, transparent) }
-    .validator-legend{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px }
-    .status.pending{ background:color-mix(in oklab, var(--warn) 18%, transparent); color:var(--warn) }
-    .status.ongoing{ background:color-mix(in oklab, var(--info) 18%, transparent); color:var(--info) }
-    .status.resolved{ background:color-mix(in oklab, var(--ok) 18%, transparent); color:var(--ok) }
-    .hint{ color:var(--muted); font-size:12px }
-    .flex{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-    .right{ margin-left:auto }
+    .icon-btn:hover{ background:rgba(255,255,255,0.1); transform:translateY(-1px); }
+
+    /* Header buttons (white text) */
+    .site-header .btn{
+      height:36px; padding:0 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.3);
+      background:transparent; color:#fff; cursor:pointer; font:700 13px var(--font);
+      transition:all var(--dur-fast) var(--ease);
+    }
+    .site-header .btn:hover{ background:rgba(255,255,255,0.1); transform:translateY(-1px); }
+
+    /* Content area buttons (dark text) */
+    .btn{
+      height:36px; padding:0 14px; border-radius:10px; border:1px solid var(--line);
+      background:var(--surface); color:var(--ink); cursor:pointer; font:700 13px var(--font);
+      transition:all var(--dur-fast) var(--ease); box-shadow:var(--elev-1);
+    }
+    .btn:hover{ background:color-mix(in oklab, var(--surface) 95%, var(--gold)); transform:translateY(-1px); }
+    .btn.primary { background:var(--gold); border-color:var(--gold); color:#fff; }
+    .btn.primary:hover { background:var(--gold-dk); }
+    .btn.danger { background:var(--bad); border-color:var(--bad); color:#fff; }
+    .btn.danger:hover { background:#a01830; }
+    .btn.success { background:var(--ok); border-color:var(--ok); color:#fff; }
+    .btn.success:hover { background:#0b7a48; }
+
+    /* Content area */
+    .wrap{ max-width:1200px; margin:0 auto; padding:20px 16px; display:grid; gap:16px; min-height:calc(100vh - var(--header-h)); }
+    .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--elev-1); }
+    .card h3{ font:800 18px/1.2 var(--font); margin-bottom:12px; color:var(--black); }
+    .card .subtitle { color:var(--muted); font-size:13px; margin-top:-8px; margin-bottom:16px; }
+
+    /* KPI Cards */
+    .kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px; }
+    .kpi{
+      border:1px solid var(--line); border-radius:14px; padding:16px;
+      background:var(--surface); position:relative; overflow:hidden;
+    }
+    .kpi .v{ font:800 28px/1 var(--font); color:var(--black); }
+    .kpi .l{ color:var(--muted); font-size:12px; margin-top:4px; font-weight:600; }
+    .kpi.critical {
+      border-left:4px solid var(--bad); background:rgba(196,30,58,0.05);
+    }
+    .kpi.critical .v { color:var(--bad); }
+    .kpi.warning { border-left:4px solid var(--warn); background:rgba(255,157,0,0.05); }
+    .kpi.warning .v { color:var(--warn); }
+    .kpi.success { border-left:4px solid var(--ok); background:rgba(14,154,90,0.05); }
+    .kpi.success .v { color:var(--ok); }
+    .kpi.info { border-left:4px solid var(--info); background:rgba(31,111,235,0.05); }
+    .kpi.info .v { color:var(--info); }
+    .kpi .trend { font-size:11px; color:var(--muted); margin-top:6px; }
+    .kpi .trend.up { color:var(--ok); }
+    .kpi .trend.down { color:var(--bad); }
+
+    /* NPS Badges */
+    .nps-badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border-radius:50%; font:800 14px var(--font);
+    }
+    .nps-badge.promoter { background:rgba(14,154,90,0.15); color:var(--ok); }
+    .nps-badge.passive { background:rgba(255,157,0,0.15); color:var(--warn); }
+    .nps-badge.detractor { background:rgba(196,30,58,0.15); color:var(--bad); }
+
+    /* Priority rows */
+    .priority-critical { border-left:4px solid var(--bad); background:rgba(196,30,58,0.04); }
+    .priority-high { border-left:4px solid var(--warn); background:rgba(255,157,0,0.04); }
+    .priority-normal { border-left:4px solid var(--info); }
+
+    /* Aging badges */
+    .aging-badge {
+      display:inline-flex; padding:4px 10px; border-radius:999px;
+      font:700 11px var(--font);
+    }
+    .aging-badge.urgent { background:var(--bad); color:#fff; animation:pulse 2s infinite; }
+    .aging-badge.old { background:var(--warn); color:#fff; }
+    .aging-badge.recent { background:var(--muted); color:#fff; }
+
+    /* Tables */
+    .table{ width:100%; border-collapse:collapse; }
+    .table th{
+      text-align:left; padding:12px 10px; font-size:11px; font-weight:800;
+      color:var(--muted); text-transform:uppercase; letter-spacing:.05em;
+      border-bottom:2px solid var(--line); background:rgba(0,0,0,0.02);
+    }
+    .table td{ border-bottom:1px solid var(--line); padding:12px 10px; font-size:13px; vertical-align:middle; }
+    .table tbody tr:hover{ background:rgba(133,117,78,0.04); }
+    .table .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; }
+
+    /* Status select */
+    .statusSel{
+      appearance:none; padding:6px 28px 6px 10px; border-radius:999px;
+      border:1px solid var(--line); font:700 11px var(--font); cursor:pointer;
+      background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"%3E%3Cpath fill="%236b7280" d="M5 6L0 0h10z"/%3E%3C/svg%3E');
+      background-repeat:no-repeat; background-position:calc(100% - 8px) center;
+      transition:all var(--dur-fast) var(--ease);
+    }
+    .statusSel.open { background-color:rgba(255,157,0,0.15); color:var(--warn); border-color:var(--warn); }
+    .statusSel.in_progress { background-color:rgba(31,111,235,0.15); color:var(--info); border-color:var(--info); }
+    .statusSel.resolved { background-color:rgba(14,154,90,0.15); color:var(--ok); border-color:var(--ok); }
+
+    /* Brand tags */
+    .brandTag{
+      display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border-radius:999px; font:700 11px var(--font); background:var(--surface);
+      border:1px solid var(--line);
+    }
+    .brandTag::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--brand-color); }
+
+    /* Status badges */
+    .status-badge {
+      display:inline-flex; padding:4px 10px; border-radius:999px;
+      font:700 11px var(--font);
+    }
+    .status-badge.claimed { background:rgba(14,154,90,0.15); color:var(--ok); }
+    .status-badge.unclaimed { background:rgba(255,157,0,0.15); color:var(--warn); }
 
     /* Login screen */
-    .login-wrap{ min-height:100dvh; display:grid; place-items:center; padding:22px 12px }
-    .login-card{ width:min(440px,100%); background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--elev-2) }
-    .login-card h1{ font:800 20px/1.2 var(--font); margin-bottom:4px; color:var(--gold) }
-    .login-card p{ color:var(--muted); font-size:13px; margin-bottom:8px }
-    .login-card label{ font:800 12px/1 var(--font); margin-top:10px; display:block }
-    .login-card input{ width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:10px; margin-top:6px }
+    .login-wrap{ min-height:100dvh; display:grid; place-items:center; padding:24px 16px; background:linear-gradient(135deg, #2d2a24 0%, #1a1815 100%); }
+    .login-card{
+      width:min(420px,100%); background:var(--surface); border-radius:var(--radius);
+      padding:32px; box-shadow:var(--elev-2);
+    }
+    .login-card .logo-wrap { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+    .login-card .logo-wrap img { height:40px; }
+    .login-card .logo-wrap .title { font:800 16px var(--font); color:var(--black); }
+    .login-card .logo-wrap .title small { display:block; font-size:11px; color:var(--gold); font-weight:600; letter-spacing:.1em; margin-top:2px; }
+    .login-card h1{ font:800 24px/1.2 var(--font); margin-bottom:8px; color:var(--black); }
+    .login-card p{ color:var(--muted); font-size:14px; margin-bottom:20px; }
+    .login-card label{ font:700 12px/1 var(--font); color:var(--muted); margin-top:16px; display:block; }
+    .login-card input{
+      width:100%; padding:14px 16px; border:1px solid var(--line); border-radius:10px;
+      margin-top:8px; font:600 14px var(--font); transition:border-color var(--dur-fast) var(--ease);
+    }
+    .login-card input:focus { outline:none; border-color:var(--gold); }
+    .login-error { background:rgba(196,30,58,0.1); border:1px solid var(--bad); color:var(--bad); padding:12px 14px; border-radius:10px; font-size:13px; margin-bottom:16px; }
+    .password-wrap { position:relative; }
+    .toggle-pw { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; opacity:0.5; }
+    .toggle-pw:hover { opacity:1; }
+    .login-btn {
+      width:100%; height:48px; margin-top:20px; background:var(--gold); color:#fff;
+      border:none; border-radius:10px; font:700 14px var(--font); cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      transition:background var(--dur-fast) var(--ease);
+    }
+    .login-btn:hover { background:var(--gold-dk); }
+    .login-btn:disabled { opacity:0.6; cursor:not-allowed; }
+    .spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Modal */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100;
+      display:none; place-items:center; backdrop-filter:blur(4px);
+    }
+    .modal-overlay.visible { display:grid; }
+    .modal {
+      background:var(--surface); border-radius:var(--radius); padding:24px;
+      width:min(480px, 90vw); max-height:90vh; overflow-y:auto;
+      box-shadow:var(--elev-2); animation:modalIn .25s var(--ease);
+    }
+    @keyframes modalIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
+    .modal h2 { font:800 20px var(--font); margin-bottom:8px; }
+    .modal .subtitle { color:var(--muted); font-size:13px; margin-bottom:20px; }
+    .modal label { font:700 12px var(--font); color:var(--muted); display:block; margin-top:16px; }
+    .modal input {
+      width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px;
+      margin-top:8px; font:600 14px var(--font);
+    }
+    .modal input:focus { outline:none; border-color:var(--gold); }
+    .modal-actions { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
+    .modal .btn { height:40px; color:var(--ink); background:var(--surface); border:1px solid var(--line); }
+    .modal .btn:hover { background:color-mix(in oklab, var(--surface) 95%, var(--gold)); }
+    .modal .btn.primary { background:var(--gold); color:#fff; border-color:var(--gold); }
+    .modal .btn.primary:hover { background:var(--gold-dk); }
+    .modal .success-msg { background:rgba(14,154,90,0.1); color:var(--ok); padding:12px; border-radius:8px; font-size:13px; margin-top:16px; }
+    .modal .error-msg { background:rgba(196,30,58,0.1); color:var(--bad); padding:12px; border-radius:8px; font-size:13px; margin-top:16px; }
+
+    /* Validator panel */
+    .validator-bar {
+      position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:90;
+      display:none; place-items:start center; padding-top:100px;
+      backdrop-filter:blur(4px);
+    }
+    .validator-bar.visible { display:grid; }
+    .validator-content {
+      background:var(--surface); border-radius:var(--radius); padding:24px;
+      width:min(600px, 90vw); box-shadow:var(--elev-2);
+      animation:modalIn .25s var(--ease);
+    }
+    .validator-content h3 { font:800 18px var(--font); margin-bottom:4px; }
+    .validator-content .subtitle { color:var(--muted); font-size:13px; margin-bottom:20px; }
+    .validator-input-wrap { display:flex; gap:10px; margin-bottom:16px; }
+    .validator-input-wrap input {
+      flex:1; padding:14px 16px; border:1px solid var(--line); border-radius:10px;
+      font:600 14px var(--font); font-family:monospace;
+    }
+    .validator-input-wrap input:focus { outline:none; border-color:var(--gold); }
+    .validator-result {
+      border:1px solid var(--line); border-radius:12px; padding:16px;
+      background:rgba(0,0,0,0.02); min-height:120px;
+    }
+    .validator-result .status { font:800 16px var(--font); margin-bottom:12px; }
+    .validator-result .status.valid { color:var(--ok); }
+    .validator-result .status.claimed { color:var(--warn); }
+    .validator-result .status.invalid { color:var(--bad); }
+    .validator-result .details { display:grid; gap:8px; font-size:13px; }
+    .validator-result .details dt { color:var(--muted); font-weight:600; }
+    .validator-result .details dd { margin:0; font-weight:700; }
+    .validator-actions { display:flex; gap:10px; margin-top:16px; }
+
+    /* Charts container */
+    .chart-container { position:relative; height:300px; margin:16px 0; }
+    .chart-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; }
+    .chart-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; }
+    .chart-card h4 { font:800 14px var(--font); margin-bottom:16px; color:var(--black); }
+
+    /* NPS Gauge */
+    .nps-gauge-wrap { display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px; }
+    .nps-gauge-value { font:800 48px var(--font); }
+    .nps-gauge-value.positive { color:var(--ok); }
+    .nps-gauge-value.neutral { color:var(--warn); }
+    .nps-gauge-value.negative { color:var(--bad); }
+    .nps-gauge-label { color:var(--muted); font-size:12px; margin-top:8px; }
+
+    /* Period selector */
+    .period-selector { display:flex; gap:6px; margin-bottom:16px; }
+    .period-btn {
+      padding:8px 16px; border:1px solid var(--line); border-radius:999px;
+      background:var(--surface); font:700 12px var(--font); cursor:pointer;
+      transition:all var(--dur-fast) var(--ease);
+    }
+    .period-btn:hover { background:rgba(0,0,0,0.04); }
+    .period-btn.active { background:var(--gold); color:#fff; border-color:var(--gold); }
+
+    /* Export section */
+    .export-filters { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px; }
+    .export-filters .field label { font:700 12px var(--font); color:var(--muted); display:block; margin-bottom:8px; }
+    .export-filters .field select,
+    .export-filters .field input {
+      width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px;
+      font:600 13px var(--font);
+    }
+    .export-actions { display:flex; gap:12px; flex-wrap:wrap; }
+
+    /* Empty state */
+    .empty{ padding:40px 20px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:12px; font-size:14px; }
+    .empty-icon { font-size:32px; margin-bottom:12px; }
+
+    /* Mobile select for tabs */
+    .tab-select-wrap { display:none; }
+    .tab-select {
+      padding:10px 40px 10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.3);
+      background:transparent; color:#fff; font:700 13px var(--font);
+      appearance:none; cursor:pointer;
+      background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"%3E%3Cpath fill="%23fff" d="M5 6L0 0h10z"/%3E%3C/svg%3E');
+      background-repeat:no-repeat; background-position:calc(100% - 14px) center;
+    }
+
+    /* Filters panel */
+    .filters-panel {
+      background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+      padding:20px; margin-bottom:16px;
+    }
+    .filters-panel h4 { font:800 14px var(--font); margin-bottom:16px; }
+    .filters-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
+    .filters-grid .field label { font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px; }
+    .filters-grid .field input,
+    .filters-grid .field select {
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+      font:600 13px var(--font);
+    }
+    .filter-actions { display:flex; gap:10px; margin-top:16px; justify-content:flex-end; }
+
+    /* Scrollable table wrapper */
+    .table-wrap { overflow-x:auto; }
 
     /* Mobile responsiveness */
-    @media (max-width:980px){
-      .filter-inner{ grid-template-columns:1fr 1fr 1fr; }
-      .kpis{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+    @media (max-width:900px){
+      .kpis { grid-template-columns:repeat(2, 1fr); }
     }
     @media (max-width:720px){
-      .tabs{ display:none }
-      .tab-select-wrap{ display:block }
-      .tab-bar{ justify-content:flex-start }
-      .brand .title{ display:none }
+      .tabs { display:none; }
+      .tab-select-wrap { display:block; }
+      .nav { grid-template-columns:auto 1fr; }
+      .header-actions { justify-content:flex-end; }
+      .brand .title { display:none; }
     }
     @media (max-width:640px){
-      .filter-inner{ grid-template-columns:1fr; }
-      .kpis{ grid-template-columns:1fr }
-
-      /* stack table rows for mobile */
-      .table thead{ display:none }
-      .table tr{ display:block; border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:10px }
-      .table td{ display:flex; justify-content:space-between; border:none; padding:6px 4px }
-      .table td::before{ content:attr(data-label); font-weight:800; margin-right:10px; color:var(--muted) }
-    }
-    @media (prefers-reduced-motion: reduce){
-      *, *::before, *::after{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important }
+      .kpis { grid-template-columns:1fr; }
+      .chart-row { grid-template-columns:1fr; }
+      .table thead { display:none; }
+      .table tr { display:block; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; }
+      .table td { display:flex; justify-content:space-between; border:none; padding:8px 4px; }
+      .table td::before { content:attr(data-label); font-weight:700; color:var(--muted); }
     }
   </style>
 </head>
 <body>
+  <!-- Animated background -->
   <div class="bg" aria-hidden="true"></div>
 
-  <!-- LOGIN (header hidden here) -->
-  <main id="loginView" class="login-wrap" aria-hidden="false">
-    <section class="login-card" role="dialog" aria-label="Admin sign in">
-      <div class="flex" style="gap:10px; align-items:center; margin-bottom:8px">
-        <img src="nhlogo.png" alt="Nippon Hasha" style="height:34px">
-        <div style="font:800 16px var(--font); letter-spacing:.02em">Customer Survey Dashboard</div>
+  <!-- LOGIN -->
+  <main id="loginView" class="login-wrap">
+    <section class="login-card">
+      <div class="logo-wrap">
+        <img src="nhlogo.png" alt="Nippon Hasha">
+        <div class="title">Nippon Hasha<small>ADMIN DASHBOARD</small></div>
       </div>
-      <h1>Sign in</h1>
-      <p>Demo mode: any email & password will continue.</p>
+      <h1>Welcome back</h1>
+      <p>Sign in to access the admin dashboard.</p>
+
+      <div id="loginError" class="login-error" style="display:none"></div>
+
       <label for="email">Email</label>
-      <input id="email" type="email" placeholder="you@nipponhasha.ph" autocomplete="username" required />
+      <input id="email" type="email" placeholder="admin@nipponhasha.ph" autocomplete="username" required />
+
       <label for="password">Password</label>
-      <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
-      <div class="flex" style="justify-content:space-between">
-        <button id="loginBtn" class="btn">Sign in</button>
-        <span id="loginState" class="hint" aria-live="polite"></span>
+      <div class="password-wrap">
+        <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+        <button type="button" id="togglePassword" class="toggle-pw">👁</button>
       </div>
+
+      <button id="loginBtn" class="login-btn">
+        <span id="loginBtnText">Sign in</span>
+        <span id="loginSpinner" class="spinner" style="display:none"></span>
+      </button>
     </section>
   </main>
-  <!-- HEADER (tabs + search) -->
-  <header class="site-header" id="appHeader" aria-hidden="true">
+
+  <!-- HEADER -->
+  <header class="site-header" id="appHeader">
     <nav class="nav">
       <div class="brand">
         <img src="nhlogo.png" alt="Nippon Hasha Inc.">
+        <div class="title">Nippon Hasha<small>ADMIN DASHBOARD</small></div>
       </div>
 
-      <div class="tab-bar" role="presentation">
-        <div class="tabs" role="tablist">
-          <button class="tab" data-tab="overview" aria-selected="true">Overview</button>
-          <button class="tab" data-tab="responses">Responses</button>
-          <button class="tab" type="button" data-modal="validator" aria-expanded="false">Validator</button>
-          <button class="tab" data-tab="analytics">Analytics</button>
-          <button class="tab" data-tab="export">Export</button>
-        </div>
-        <label class="tab-select-wrap">
-          <span class="sr-only">Navigate sections</span>
-          <select id="tabSelect" class="tab-select" aria-label="Navigate sections">
-            <option value="overview" selected>Overview</option>
-            <option value="responses">Responses</option>
-            <option value="validator">Validator</option>
-            <option value="analytics">Analytics</option>
-            <option value="export">Export</option>
-          </select>
-        </label>
+      <div class="tabs" role="tablist">
+        <button class="tab" data-tab="overview" aria-selected="true">Overview</button>
+        <button class="tab" data-tab="responses">Responses</button>
+        <button class="tab" data-tab="validator">Validator</button>
+        <button class="tab" data-tab="analytics">Analytics</button>
+        <button class="tab" data-tab="export">Export</button>
+      </div>
+
+      <div class="tab-select-wrap">
+        <select id="tabSelect" class="tab-select">
+          <option value="overview">Overview</option>
+          <option value="responses">Responses</option>
+          <option value="validator">Validator</option>
+          <option value="analytics">Analytics</option>
+          <option value="export">Export</option>
+        </select>
       </div>
 
       <div class="header-actions">
-        <button id="searchToggle" class="icon-btn" title="Search & Filters" aria-expanded="false" aria-controls="filterBar" aria-label="Search & Filters">🔍</button>
+        <span class="user-badge" id="userBadge" title="Click to manage profile"></span>
         <button id="signOutBtn" class="btn">Sign out</button>
       </div>
     </nav>
-
-    <!-- Slide-down Search & Filters -->
-    <div class="filter-bar" id="filterBar" role="region" aria-label="Search & Filters" aria-hidden="true" data-open="false">
-      <div class="filter-inner">
-        <div class="field">
-          <label class="hint">Search (name / email / receipt / branch)</label>
-          <input id="fQuery" type="search" placeholder="e.g., MDNK-123456-789012, Mika, BGC">
-        </div>
-        <div class="field">
-          <label class="hint">Brand</label>
-          <select id="fBrand">
-            <option value="">All</option>
-            <option>Yushoken</option><option>Mendokoro</option><option>Marudori</option><option>Kazu Cafe</option><option>Kazunori</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="hint">Branch</label>
-          <input id="fBranch" type="text" placeholder="e.g., BGC, Alabang" list="branchesList" />
-          <datalist id="branchesList"></datalist>
-        </div>
-        <div class="field"><label class="hint">From</label><input id="fFrom" type="date"></div>
-        <div class="field"><label class="hint">To</label><input id="fTo" type="date"></div>
-
-        <div class="field" style="grid-column:1/-1">
-          <label class="hint">Focus</label>
-          <div class="flex">
-            <button class="pill" data-focus="all" aria-pressed="true">All</button>
-            <button class="pill" data-focus="negative">Poor / Very Poor</button>
-            <button class="pill" data-focus="unresolved">Unresolved</button>
-            <button class="pill" data-focus="comments">With Comments</button>
-          </div>
-        </div>
-
-        <div class="flex" style="grid-column:1/-1; justify-content:flex-end">
-          <button id="clearFilters" class="btn">Clear</button>
-          <button id="applyFilters" class="btn">Apply</button>
-        </div>
-      </div>
-    </div>
   </header>
 
-  <!-- CONTENT -->
-  <main id="appView" class="wrap" aria-hidden="true" style="display:none">
-    <!-- OVERVIEW -->
-    <section class="card tabpanel" id="tab-overview" role="tabpanel">
-      <h3>Negative Alerts & Aging</h3>
-      <div class="kpis" style="margin-bottom:6px">
-        <div class="kpi"><div class="v" id="kpiResponses">—</div><div class="l">Total Responses</div></div>
-        <div class="kpi"><div class="v" id="kpiNeg">—</div><div class="l">Negative Flags</div></div>
-        <div class="kpi"><div class="v" id="kpiOpen">—</div><div class="l">Open Issues</div></div>
-        <div class="kpi bad"><div class="v" id="kpiAging">—</div><div class="l">Oldest Aging Issue</div></div>
-      </div>
+  <!-- MAIN CONTENT -->
+  <main id="appView" class="wrap" style="display:none">
 
-      <table class="table" id="negTable" aria-label="Negative items">
-        <thead>
-          <tr>
-            <th>When</th><th>Brand / Branch</th><th>Customer</th><th class="mono">Receipt</th>
-            <th>Question</th><th>Rating</th><th>Comment</th><th>Status</th><th>Aging</th><th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+    <!-- OVERVIEW TAB - Win-Back Dashboard -->
+    <section class="tabpanel" id="tab-overview">
+      <div class="card">
+        <h3>Win-Back Dashboard</h3>
+        <p class="subtitle">Prioritize detractors and turn unhappy customers into advocates. Sorted oldest to newest.</p>
 
-    <!-- RESPONSES -->
-    <section class="card tabpanel" id="tab-responses" role="tabpanel" hidden>
-      <h3>All Responses</h3>
-      <table class="table" id="respTable" aria-label="All responses">
-        <thead>
-          <tr>
-            <th>When</th><th>Brand / Branch</th><th>Guest</th><th>Contact</th><th class="mono">Receipt</th><th>Dietary</th><th class="mono">Code</th><th>Status</th><th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-
-    <!-- ANALYTICS -->
-    <section class="card tabpanel" id="tab-analytics" role="tabpanel" hidden>
-      <div class="flex between" style="align-items:flex-start">
-        <div>
-          <h3>Analytics</h3>
-          <p class="meta">Switch questions to compare satisfaction trends.</p>
-        </div>
-        <div class="analytics-controls">
-          <label class="hint" for="qSelect">Question</label>
-          <div class="select-shell">
-            <select id="qSelect" class="styled-select" aria-label="Select question"></select>
+        <div class="kpis" id="overviewKpis">
+          <div class="kpi critical">
+            <div class="v" id="kpiCritical">-</div>
+            <div class="l">Critical (NPS 0-3)</div>
+          </div>
+          <div class="kpi warning">
+            <div class="v" id="kpiDetractors">-</div>
+            <div class="l">Detractors (NPS 4-6)</div>
+          </div>
+          <div class="kpi info">
+            <div class="v" id="kpiOpenTickets">-</div>
+            <div class="l">Open Tickets</div>
+          </div>
+          <div class="kpi">
+            <div class="v" id="kpiOldestUnresolved">-</div>
+            <div class="l">Oldest Unresolved</div>
           </div>
         </div>
-      </div>
 
-      <div class="analytics-summary">
-        <div class="kpi"><div class="v" id="kpiPositive">—</div><div class="l">Positive (4–5)</div></div>
-        <div class="kpi"><div class="v" id="kpiNeutral">—</div><div class="l">Neutral (3)</div></div>
-        <div class="kpi"><div class="v" id="kpiNegative">—</div><div class="l">Negative (1–2)</div></div>
-        <div class="kpi"><div class="v" id="kpiN">—</div><div class="l">n</div></div>
-      </div>
-
-      <div class="card analytic-card">
-        <header class="analytic-header">
-          <h4>Rating distribution</h4>
-          <div class="legend" id="brandLegend"></div>
-        </header>
-        <canvas id="barTop" height="320" aria-label="Ratings distribution"></canvas>
-      </div>
-
-      <div class="card" style="padding:12px; margin-top:12px">
-        <h4 style="font:800 14px var(--font); margin:4px 0 12px">Comments — drill down</h4>
-        <div id="commentsList" class="comments-list"></div>
+        <div class="table-wrap">
+          <table class="table" id="detractorsTable">
+            <thead>
+              <tr>
+                <th>Age</th>
+                <th>NPS</th>
+                <th>Brand / Branch</th>
+                <th>Customer</th>
+                <th>Concern</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="detractorsBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <!-- EXPORT -->
-    <section class="card tabpanel" id="tab-export" role="tabpanel" hidden>
-      <h3>Export workspace</h3>
-      <p class="meta">Choose filters to prepare an Excel export (coming soon).</p>
-      <div class="export-grid">
-        <div class="field">
-          <label class="hint">Brand</label>
-          <div class="chip-grid" id="exportBrandChips"></div>
+    <!-- RESPONSES TAB -->
+    <section class="tabpanel" id="tab-responses" hidden>
+      <div class="card">
+        <h3>All Responses</h3>
+        <p class="subtitle">View all completed survey responses from Supabase.</p>
+
+        <div class="filters-panel">
+          <h4>Filters</h4>
+          <div class="filters-grid">
+            <div class="field">
+              <label>Search</label>
+              <input type="text" id="respFilterSearch" placeholder="Name, receipt, email...">
+            </div>
+            <div class="field">
+              <label>Brand</label>
+              <select id="respFilterBrand">
+                <option value="">All Brands</option>
+                <option value="Yushoken">Yushoken</option>
+                <option value="Mendokoro">Mendokoro</option>
+                <option value="Marudori">Marudori</option>
+                <option value="Kazu Cafe">Kazu Cafe</option>
+                <option value="Kazunori">Kazunori</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>NPS Category</label>
+              <select id="respFilterNps">
+                <option value="">All</option>
+                <option value="detractor">Detractors (0-6)</option>
+                <option value="passive">Passives (7-8)</option>
+                <option value="promoter">Promoters (9-10)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Date From</label>
+              <input type="date" id="respFilterFrom">
+            </div>
+            <div class="field">
+              <label>Date To</label>
+              <input type="date" id="respFilterTo">
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn" id="respClearFilters">Clear</button>
+            <button class="btn primary" id="respApplyFilters">Apply Filters</button>
+          </div>
         </div>
-        <div class="field">
-          <label class="hint" for="exportStatus">Status</label>
-          <select id="exportStatus" class="styled-select">
-            <option value="">Any</option>
-            <option>Pending</option>
-            <option>On-going</option>
-            <option>Resolved</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="hint" for="exportRating">Min rating</label>
-          <input id="exportRating" type="number" min="1" max="5" step="1" value="1">
-        </div>
-        <div class="field">
-          <label class="hint" for="exportFrom">From</label>
-          <input id="exportFrom" type="date">
-        </div>
-        <div class="field">
-          <label class="hint" for="exportTo">To</label>
-          <input id="exportTo" type="date">
+
+        <div class="table-wrap">
+          <table class="table" id="responsesTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Brand / Branch</th>
+                <th>Receipt</th>
+                <th>NPS</th>
+                <th>Ticket</th>
+                <th>Reward</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="responsesBody"></tbody>
+          </table>
         </div>
       </div>
-      <div class="export-actions">
-        <button class="btn" id="exportPlanBtn">Download .xlsx</button>
-        <div class="hint">Download is disabled in demo builds.</div>
+    </section>
+
+    <!-- VALIDATOR TAB -->
+    <section class="tabpanel" id="tab-validator" hidden>
+      <div class="card">
+        <h3>Receipt & Code Validator</h3>
+        <p class="subtitle">Validate reward codes and mark them as redeemed when customers claim their rewards.</p>
+
+        <div class="validator-input-wrap">
+          <input type="text" id="validatorInput" placeholder="Enter reward code or receipt number..." class="mono">
+          <button class="btn primary" id="validateBtn">Validate</button>
+        </div>
+
+        <div class="validator-result" id="validatorResult">
+          <div class="status" id="validatorStatus">Enter a code or receipt to validate</div>
+          <div class="details" id="validatorDetails" style="display:none">
+            <dl>
+              <dt>Customer</dt>
+              <dd id="valCustomer">-</dd>
+              <dt>NPS Score</dt>
+              <dd id="valNps">-</dd>
+              <dt>Receipt</dt>
+              <dd id="valReceipt">-</dd>
+              <dt>Reward Code</dt>
+              <dd id="valCode">-</dd>
+              <dt>Status</dt>
+              <dd id="valRewardStatus">-</dd>
+              <dt>Survey Date</dt>
+              <dd id="valDate">-</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="validator-actions" id="validatorActions" style="display:none">
+          <button class="btn success" id="markRedeemedBtn">Mark as Redeemed</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS TAB -->
+    <section class="tabpanel" id="tab-analytics" hidden>
+      <div class="card">
+        <h3>Analytics Dashboard</h3>
+        <p class="subtitle">Multi-brand NPS analysis and trends for executive review.</p>
+
+        <div class="period-selector">
+          <button class="period-btn active" data-period="7">Last 7 Days</button>
+          <button class="period-btn" data-period="30">Last 30 Days</button>
+          <button class="period-btn" data-period="90">Last 90 Days</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
+
+        <div class="kpis" id="analyticsKpis">
+          <div class="kpi">
+            <div class="v" id="kpiNpsScore">-</div>
+            <div class="l">Overall NPS Score</div>
+          </div>
+          <div class="kpi success">
+            <div class="v" id="kpiPromoters">-</div>
+            <div class="l">Promoters (9-10)</div>
+          </div>
+          <div class="kpi warning">
+            <div class="v" id="kpiPassives">-</div>
+            <div class="l">Passives (7-8)</div>
+          </div>
+          <div class="kpi critical">
+            <div class="v" id="kpiDetractorsPct">-</div>
+            <div class="l">Detractors (0-6)</div>
+          </div>
+          <div class="kpi info">
+            <div class="v" id="kpiTotalResponses">-</div>
+            <div class="l">Total Responses</div>
+          </div>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <h4>NPS Category Distribution</h4>
+            <div class="chart-container">
+              <canvas id="npsCategoryChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h4>Brand NPS Comparison</h4>
+            <div class="chart-container">
+              <canvas id="brandNpsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-row" style="margin-top:16px">
+          <div class="chart-card">
+            <h4>NPS Trend Over Time</h4>
+            <div class="chart-container">
+              <canvas id="npsTrendChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h4>Responses by Brand</h4>
+            <div class="chart-container">
+              <canvas id="brandResponsesChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h4 style="font:800 14px var(--font); margin-bottom:12px">Recent Detractor Comments</h4>
+          <div id="detractorComments"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPORT TAB -->
+    <section class="tabpanel" id="tab-export" hidden>
+      <div class="card">
+        <h3>Export Data</h3>
+        <p class="subtitle">Download survey responses in Excel or CSV format.</p>
+
+        <div class="export-filters">
+          <div class="field">
+            <label>Brand</label>
+            <select id="exportBrand">
+              <option value="">All Brands</option>
+              <option value="Yushoken">Yushoken</option>
+              <option value="Mendokoro">Mendokoro</option>
+              <option value="Marudori">Marudori</option>
+              <option value="Kazu Cafe">Kazu Cafe</option>
+              <option value="Kazunori">Kazunori</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>NPS Category</label>
+            <select id="exportNps">
+              <option value="">All</option>
+              <option value="detractor">Detractors Only</option>
+              <option value="passive">Passives Only</option>
+              <option value="promoter">Promoters Only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Date From</label>
+            <input type="date" id="exportFrom">
+          </div>
+          <div class="field">
+            <label>Date To</label>
+            <input type="date" id="exportTo">
+          </div>
+        </div>
+
+        <div class="kpis" style="margin-bottom:20px">
+          <div class="kpi info">
+            <div class="v" id="exportPreviewCount">-</div>
+            <div class="l">Records to Export</div>
+          </div>
+        </div>
+
+        <div class="export-actions">
+          <button class="btn primary" id="exportExcelBtn">Download Excel (.xlsx)</button>
+          <button class="btn" id="exportCsvBtn">Download CSV</button>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Fixed validator (slides under header) -->
-  <div class="validator-bar" id="validatorBar" role="region" aria-label="Receipt / Code Validator" aria-hidden="true">
-    <div class="validator-inner">
-      <div class="validator-legend">
-        <div>
-          <strong>Receipt / Code Validator</strong>
-          <span class="hint" style="display:block">Validate receipts or rewards codes captured in this session.</span>
-        </div>
-        <button class="btn ghost" type="button" id="validatorCloseBtn">Collapse</button>
+  <!-- PROFILE MODAL -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal">
+      <h2>Account Settings</h2>
+      <p class="subtitle">Manage your admin account</p>
+
+      <div style="background:rgba(0,0,0,0.03); padding:16px; border-radius:10px; margin-bottom:20px">
+        <div style="font-size:13px; color:var(--muted); margin-bottom:4px">Logged in as</div>
+        <div style="font:700 14px var(--font)" id="profileEmail">-</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px" id="profileRole">-</div>
       </div>
-      <div class="validator-grid">
-        <input id="codeInput" type="text" placeholder="AAAA-000000-000000" class="mono" autocomplete="off">
-        <div class="validator-actions">
-          <button id="codeCheckBtn" class="btn" type="button">Validate</button>
-          <button id="codeGenBtn" class="btn ghost" type="button" disabled>Generate replacement</button>
-        </div>
+
+      <h4 style="font:700 14px var(--font); margin-bottom:4px">Change Password</h4>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:12px">You'll need to sign in again after changing your password.</p>
+
+      <div id="passwordMsg"></div>
+
+      <label for="currentPassword">Current Password</label>
+      <input type="password" id="currentPassword" placeholder="Enter current password">
+
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" placeholder="Enter new password">
+
+      <label for="confirmPassword">Confirm New Password</label>
+      <input type="password" id="confirmPassword" placeholder="Confirm new password">
+
+      <div class="modal-actions">
+        <button class="btn" id="closeProfileBtn">Cancel</button>
+        <button class="btn primary" id="changePasswordBtn">Change Password</button>
       </div>
-      <div class="validator-results">
-        <div id="codeMsg" class="hint">Enter a receipt ID or rewards code to begin.</div>
-        <div id="codeDetails" style="font-size:13px"></div>
-        <ul id="codePrompts" style="margin:0; padding-left:20px; display:grid; gap:6px; font-size:13px; color:var(--muted)"></ul>
+    </div>
+  </div>
+
+  <!-- RESPONSE DETAIL MODAL -->
+  <div class="modal-overlay" id="responseDetailModal">
+    <div class="modal" style="max-width:600px">
+      <h2>Response Details</h2>
+      <p class="subtitle" id="detailSubtitle">-</p>
+      <div id="responseDetailContent"></div>
+      <div class="modal-actions">
+        <button class="btn" id="closeDetailBtn">Close</button>
       </div>
     </div>
   </div>
 
   <script>
     /* ---------- CONFIG ---------- */
-    const BYPASS_AUTH = true;  // demo: bypass login
-    const DEMO_MODE   = true;  // demo: seed data (one week, trimmed)
-
-    const SUPABASE_URL = 'https://example.supabase.co';     // placeholder
-    const SUPABASE_ANON_KEY = 'public-anon-placeholder';    // placeholder
+    const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* ---------- DOM refs ---------- */
-    const loginView  = document.getElementById('loginView');
-    const appView    = document.getElementById('appView');
-    const appHeader  = document.getElementById('appHeader');
-    const loginBtn   = document.getElementById('loginBtn');
-    const loginState = document.getElementById('loginState');
+    /* ---------- Brand Config ---------- */
+    const brandMeta = {
+      'Yushoken': { color: '#f4b400', route: 'YSHK' },
+      'Mendokoro': { color: '#c41e3a', route: 'MDNK' },
+      'Marudori': { color: '#0e9a5a', route: 'MRDR' },
+      'Kazu Cafe': { color: '#2f9e6e', route: 'KZCF' },
+      'Kazunori': { color: '#2f9e6e', route: 'KZNR' }
+    };
+
+    /* ---------- State ---------- */
+    let currentUser = null;
+    let allResponses = [];
+    let filteredResponses = [];
+    let activeTab = 'overview';
+    let analyticsPeriod = 7;
+    let charts = {};
+
+    /* ---------- DOM Elements ---------- */
+    const loginView = document.getElementById('loginView');
+    const appView = document.getElementById('appView');
+    const appHeader = document.getElementById('appHeader');
+    const loginBtn = document.getElementById('loginBtn');
     const signOutBtn = document.getElementById('signOutBtn');
-
+    const userBadge = document.getElementById('userBadge');
     const tabBtns = Array.from(document.querySelectorAll('.tab[data-tab]'));
     const tabPanels = Array.from(document.querySelectorAll('.tabpanel'));
     const tabSelect = document.getElementById('tabSelect');
-    const validatorTrigger = document.querySelector('.tab[data-modal="validator"]');
-    const validatorBar = document.getElementById('validatorBar');
-    const validatorCloseBtn = document.getElementById('validatorCloseBtn');
-    const codeInput = document.getElementById('codeInput');
-    const codeCheckBtn = document.getElementById('codeCheckBtn');
-    const codeGenBtn = document.getElementById('codeGenBtn');
-    const codeMsg = document.getElementById('codeMsg');
-    const codeDetails = document.getElementById('codeDetails');
-    const codePrompts = document.getElementById('codePrompts');
-    const brandLegend = document.getElementById('brandLegend');
-    const exportBrandChips = document.getElementById('exportBrandChips');
-    const exportStatusSel = document.getElementById('exportStatus');
-    const exportRatingInput = document.getElementById('exportRating');
-    const exportFromInput = document.getElementById('exportFrom');
-    const exportToInput = document.getElementById('exportTo');
-    const exportPlanBtn = document.getElementById('exportPlanBtn');
-    const filterBar = document.getElementById('filterBar');
-    const searchToggle = document.getElementById('searchToggle');
 
-    let activeTab = 'overview';
-    if(validatorTrigger){ validatorTrigger.setAttribute('aria-expanded', 'false'); validatorTrigger.setAttribute('aria-selected', 'false'); }
+    /* ---------- DataService ---------- */
+    const DataService = {
+      async fetchResponses() {
+        try {
+          const { data, error } = await sb
+            .from('survey_responses')
+            .select('*')
+            .not('completed_at', 'is', null)
+            .order('completed_at', { ascending: false });
 
-    tabBtns.forEach((btn, index)=>{
-      btn.dataset.index = String(index);
-      btn.addEventListener('click', ()=>setTab(btn.dataset.tab));
-      btn.addEventListener('keydown', handleTabKeyNav);
-    });
-    if(tabSelect){
-      tabSelect.addEventListener('change', event => {
-        const next = event.target.value;
-        if(next === 'validator'){
-          openValidatorPanel();
-          event.target.value = activeTab;
-        } else {
-          setTab(next);
+          if (error) throw error;
+          return data || [];
+        } catch (err) {
+          console.error('Error fetching responses:', err);
+          return [];
         }
-      });
-    }
-    if(validatorTrigger){
-      validatorTrigger.addEventListener('click', event => {
-        event.preventDefault();
-        openValidatorPanel();
-      });
-    }
-    if(validatorCloseBtn){
-      validatorCloseBtn.addEventListener('click', () => closeValidatorPanel());
-    }
+      },
 
-    const root = document.documentElement;
-    let resizeSyncTimer;
+      async updateTicketStatus(id, status) {
+        try {
+          const { error } = await sb
+            .from('survey_responses')
+            .update({ ticket_status: status })
+            .eq('id', id);
 
-    function syncAppOffset(){
-      // header + (validator/filter if open are fixed, so no extra offset)
-      if(!appHeader || appHeader.getAttribute('aria-hidden') === 'true'){
-        root.style.removeProperty('--header-offset');
-        return;
-      }
-      const height = Math.ceil(appHeader.getBoundingClientRect().height);
-      root.style.setProperty('--header-offset', `${height}px`);
-    }
-
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeSyncTimer);
-      resizeSyncTimer = setTimeout(syncAppOffset, 140); // slight debounce for smoother feel
-    });
-
-    /* ---------- Login flow ---------- */
-    function showApp(){
-      loginView.style.display='none'; loginView.setAttribute('aria-hidden','true');
-      appHeader.style.display='flex'; appHeader.setAttribute('aria-hidden','false');
-      appView.style.display='grid'; appView.setAttribute('aria-hidden','false');
-      initApp();
-      requestAnimationFrame(syncAppOffset);
-    }
-    function showLogin(){
-      document.body.classList.remove('validator-mode');
-      toggleFilters(false);
-      loginView.style.display='grid'; appHeader.style.display='none'; appView.style.display='none';
-      root.style.removeProperty('--header-offset');
-    }
-    loginBtn.addEventListener('click', ()=>{
-      if(BYPASS_AUTH){ loginState.textContent='Bypassing…'; setTimeout(showApp, 220); }
-      else { showApp(); }
-    });
-    signOutBtn.addEventListener('click', showLogin);
-
-    /* ---------- Tabs + validator color mode ---------- */
-    function setTab(id, options = {}){
-      if(!id) return;
-      closeValidatorPanel({ silent:true });
-      const skipScroll = options.skipScroll === true;
-      const previous = activeTab;
-      activeTab = id;
-      tabBtns.forEach(btn => {
-        const isActive = btn.dataset.tab === id;
-        btn.setAttribute('aria-selected', String(isActive));
-        btn.setAttribute('tabindex', isActive ? '0' : '-1');
-      });
-      tabPanels.forEach(panel => {
-        const isActive = panel.id === 'tab-'+id;
-        panel.hidden = !isActive;
-        panel.setAttribute('aria-hidden', String(!isActive));
-      });
-      if(tabSelect && tabSelect.value !== id){
-        tabSelect.value = id;
-      }
-      if(id === 'analytics'){
-        paintAnalytics({ animate: !prefersReducedMotion });
-      }
-      if(!skipScroll && window.innerWidth < 720 && previous !== id){
-        document.getElementById('appView').scrollIntoView({ behavior:'smooth', block:'start' });
-      }
-      requestAnimationFrame(syncAppOffset);
-    }
-    function handleTabKeyNav(event){
-      const keys = ['ArrowRight','ArrowLeft','Home','End'];
-      if(!keys.includes(event.key)) return;
-      event.preventDefault();
-      const currentIndex = tabBtns.indexOf(event.currentTarget);
-      let targetIndex = currentIndex;
-      if(event.key==='Home'){ targetIndex = 0; }
-      else if(event.key==='End'){ targetIndex = tabBtns.length - 1; }
-      else if(event.key==='ArrowRight'){ targetIndex = (currentIndex + 1) % tabBtns.length; }
-      else if(event.key==='ArrowLeft'){ targetIndex = (currentIndex - 1 + tabBtns.length) % tabBtns.length; }
-      const nextBtn = tabBtns[targetIndex];
-      if(nextBtn){
-        nextBtn.focus();
-        setTab(nextBtn.dataset.tab, { skipScroll:true });
-      }
-    }
-    setTab('overview');
-
-    let validatorPrevTab = 'overview';
-
-    function openValidatorPanel(){
-      validatorPrevTab = activeTab;
-      if(!validatorBar) return;
-      validatorBar.classList.add('is-open');
-      validatorBar.setAttribute('aria-hidden', 'false');
-      validatorTrigger?.setAttribute('aria-selected', 'true');
-      validatorTrigger?.setAttribute('aria-expanded', 'true');
-      if(tabSelect) tabSelect.value = 'validator';
-      if(codeInput){ codeInput.value = ''; }
-      setCodeUI('Enter a receipt ID or rewards code to begin.', '', []);
-      if(codeGenBtn){ codeGenBtn.disabled = true; codeGenBtn.onclick = null; }
-      requestAnimationFrame(() => {
-        syncAppOffset();
-        // No scroll jump; fixed panel slides under header
-      });
-      setTimeout(() => {
-        try{ codeInput?.focus({ preventScroll:true }); } catch(_err){ codeInput?.focus(); }
-      }, 40);
-    }
-
-    function closeValidatorPanel(opts={}){
-      if(!validatorBar) return;
-      validatorBar.classList.remove('is-open');
-      validatorBar.setAttribute('aria-hidden', 'true');
-      validatorTrigger?.setAttribute('aria-selected', 'false');
-      validatorTrigger?.setAttribute('aria-expanded', 'false');
-      if(!opts.silent && tabSelect && tabSelect.value !== validatorPrevTab){
-        tabSelect.value = validatorPrevTab;
-      }
-      requestAnimationFrame(syncAppOffset);
-    }
-
-    document.addEventListener('keydown', event => {
-      if(event.key === 'Escape' && validatorBar && validatorBar.classList.contains('is-open')){
-        closeValidatorPanel();
-      }
-    });
-
-    function setCodeUI(message, detailsHtml = '', prompts = []){
-      codeMsg.textContent = message;
-      codeDetails.innerHTML = detailsHtml || '';
-      codePrompts.innerHTML = '';
-      prompts.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        codePrompts.appendChild(li);
-      });
-    }
-
-    function persistDemoDataset(){
-      try{
-        sessionStorage.setItem('nh-admin-dataset', JSON.stringify({
-          responses: cache.responses,
-          codes: cache.codes
-        }));
-      }catch(err){
-        console.warn('Unable to persist dataset', err);
-      }
-    }
-
-    function checkCode(){
-      const raw = codeInput.value.trim();
-      if(!raw){
-        setCodeUI('Please enter a code or receipt.');
-        if(codeGenBtn) codeGenBtn.disabled = true;
-        return;
-      }
-      const query = raw.toUpperCase();
-      const codeRecord = cache.codes.find(item => (item.code || '').toUpperCase() === query);
-      if(codeRecord){
-        const status = (codeRecord.status || 'valid').toUpperCase();
-        const response = cache.responses.find(item => item.id === codeRecord.response_id);
-        const detailHtml = `<div><b>Code:</b> <span class="mono">${codeRecord.code}</span><br>` +
-          `<b>Status:</b> ${status}<br>` +
-          `<b>Linked response:</b> ${codeRecord.response_id || '—'}<br>` +
-          `<b>Created:</b> ${new Date(codeRecord.created_at).toLocaleString()}</div>`;
-        let prompts = [];
-        if(status === 'VALID') prompts = ['Proceed to redeem.', 'Remind guest to keep the code confidential.'];
-        else if(status === 'REDEEMED') prompts = ['Do not issue a replacement unless failure is verified.', 'Match the receipt against POS records.'];
-        else if(status === 'EXPIRED') prompts = ['Inform the guest of expiry policy.', 'Escalate if an exception is approved.'];
-        setCodeUI(status === 'VALID' ? '✅ Code is valid and unclaimed.' : status === 'REDEEMED' ? '⚠️ Code already redeemed.' : status === 'EXPIRED' ? '⛔ Code expired.' : 'ℹ️ Code found.', detailHtml, prompts);
-        if(codeGenBtn){
-          codeGenBtn.disabled = status === 'VALID';
-          codeGenBtn.onclick = () => generateReplacementFor(response, codeRecord.code);
+          if (error) throw error;
+          return true;
+        } catch (err) {
+          console.error('Error updating ticket status:', err);
+          return false;
         }
-        return;
-      }
-      const response = cache.responses.find(item => (item.receipt || '').toUpperCase() === query);
-      if(response){
-        const detailHtml = `<div><b>Receipt:</b> <span class="mono">${response.receipt}</span><br>` +
-          `<b>Guest:</b> ${response.name || '—'} (${response.email || '—'})<br>` +
-          `<b>Brand:</b> ${response.brand || '—'} / ${response.branch || '—'}<br>` +
-          `<b>Submitted:</b> ${new Date(response.created_at).toLocaleString()}<br>` +
-          `<b>Current code:</b> <span class="mono">${response.code || '—'}</span></div>`;
-        const prompts = response.code ? ['If the guest reports a failed redemption, verify first before issuing a new code.'] : ['No rewards code issued yet. You may generate one for this receipt.'];
-        setCodeUI('ℹ️ Receipt found.', detailHtml, prompts);
-        if(codeGenBtn){
-          codeGenBtn.disabled = false;
-          codeGenBtn.onclick = () => generateReplacementFor(response);
+      },
+
+      async markRewardClaimed(id) {
+        try {
+          const { error } = await sb
+            .from('survey_responses')
+            .update({
+              reward_claimed: true,
+              reward_claimed_at: new Date().toISOString(),
+              reward_claimed_by: currentUser?.email || 'admin'
+            })
+            .eq('id', id);
+
+          if (error) throw error;
+          return true;
+        } catch (err) {
+          console.error('Error marking reward claimed:', err);
+          return false;
         }
-      } else {
-        setCodeUI('❓ No matching code or receipt was found.', '', ['Confirm the receipt ID format (AAAA-000000-000000).','Collect proof of purchase before issuing a manual code.']);
-        if(codeGenBtn){
-          codeGenBtn.disabled = false;
-          codeGenBtn.onclick = () => generateReplacementFor(null, query);
-        }
-      }
-    }
+      },
 
-    function generateReplacementFor(response, query){
-      const base = response ? (brandMeta[response.brand]?.route || 'NHSH') : 'NHSH';
-      const code = `${base}-${Math.random().toString(36).slice(2,8).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-      const payload = {
-        code,
-        status:'valid',
-        response_id: response?.id || null,
-        created_at:new Date().toISOString(),
-        notes: response ? 'replacement issued via validator' : (`manual code for ${query || ''}`)
-      };
-      cache.codes.push(payload);
-      if(response){ response.code = code; }
-      persistDemoDataset();
-      setCodeUI('✅ Replacement generated.', `<div>New code: <b class="mono">${code}</b></div>`, ['Share the code securely with the guest.','Mark the related case as Resolved once confirmed.']);
-      if(codeGenBtn){ codeGenBtn.disabled = true; }
-    }
+      async findByCodeOrReceipt(query) {
+        try {
+          // Try to find by reward code first
+          let { data, error } = await sb
+            .from('survey_responses')
+            .select('*')
+            .eq('reward_code', query.toUpperCase())
+            .single();
 
-    if(codeCheckBtn){ codeCheckBtn.addEventListener('click', checkCode); }
-    if(codeGenBtn){ codeGenBtn.disabled = true; }
-    if(codeInput){
-      codeInput.addEventListener('keydown', event => {
-        if(event.key === 'Enter'){
-          event.preventDefault();
-          checkCode();
-        }
-      });
-    }
-
-
-    /* ---------- Search / Filters ---------- */
-    const filtersStorageKey = 'nh-admin-filters-v2';
-    const filters = { q:'', brand:null, branch:null, from:null, to:null, focus:'all' };
-    let filterTimer;
-
-    const focusPills = Array.from(document.querySelectorAll('.pill'));
-    const queryInput = document.getElementById('fQuery');
-    const brandSelect = document.getElementById('fBrand');
-    const branchInput = document.getElementById('fBranch');
-    const fromInput = document.getElementById('fFrom');
-    const toInput = document.getElementById('fTo');
-
-    function updateFilterBadge(){
-      const active = ['q','brand','branch','from','to'].reduce((acc,key)=> acc + (filters[key] ? 1 : 0), 0) + (filters.focus !== 'all' ? 1 : 0);
-      if(active > 0){
-        searchToggle.setAttribute('data-badge', String(active));
-        const label = `Search & Filters (${active} active)`;
-        searchToggle.setAttribute('aria-label', label);
-        searchToggle.title = label;
-      } else {
-        searchToggle.removeAttribute('data-badge');
-        searchToggle.setAttribute('aria-label', 'Search & Filters');
-        searchToggle.title = 'Search & Filters';
-      }
-    }
-
-    function saveFilters(){
-      try{ sessionStorage.setItem(filtersStorageKey, JSON.stringify(filters)); }catch(_err){}
-    }
-    function restoreFilters(){
-      try{
-        const stored = JSON.parse(sessionStorage.getItem(filtersStorageKey) || '{}');
-        if(stored){
-          if(typeof stored.q === 'string'){ queryInput.value = stored.q; filters.q = stored.q; }
-          if(typeof stored.brand === 'string'){
-            const match = Array.from(brandSelect.options).some(opt => opt.value === stored.brand);
-            if(match){ brandSelect.value = stored.brand; filters.brand = stored.brand || null; }
+          if (!data) {
+            // Try to find by receipt
+            const result = await sb
+              .from('survey_responses')
+              .select('*')
+              .eq('receipt', query.toUpperCase())
+              .single();
+            data = result.data;
+            error = result.error;
           }
-          if(typeof stored.branch === 'string'){ branchInput.value = stored.branch; filters.branch = stored.branch || null; }
-          if(typeof stored.from === 'string'){ fromInput.value = stored.from; filters.from = stored.from || null; }
-          if(typeof stored.to === 'string'){ toInput.value = stored.to; filters.to = stored.to || null; }
-          if(stored.focus && focusPills.some(p => p.dataset.focus === stored.focus)){ filters.focus = stored.focus; }
+
+          if (error && error.code !== 'PGRST116') throw error;
+          return data;
+        } catch (err) {
+          console.error('Error finding response:', err);
+          return null;
         }
-      } catch(_err){}
-      focusPills.forEach(pill => pill.setAttribute('aria-pressed', String(pill.dataset.focus === filters.focus)));
-      updateFilterBadge();
-    }
+      },
 
-    function readFilters(){
-      filters.q = (queryInput.value||'').trim();
-      filters.brand = brandSelect.value || null;
-      filters.branch = branchInput.value || null;
-      filters.from = fromInput.value || null;
-      filters.to = toInput.value || null;
-      updateFilterBadge();
-      saveFilters();
-      return { ...filters };
-    }
+      getDetractors(responses) {
+        return responses
+          .filter(r => r.q12 !== null && r.q12 <= 6)
+          .sort((a, b) => new Date(a.completed_at) - new Date(b.completed_at)); // Oldest first
+      },
 
-    function clearFilters(evt){
-      if(evt){ evt.preventDefault(); }
-      queryInput.value = '';
-      brandSelect.value = '';
-      branchInput.value = '';
-      fromInput.value = '';
-      toInput.value = '';
-      filters.q=''; filters.brand=null; filters.branch=null; filters.from=null; filters.to=null; filters.focus='all';
-      focusPills.forEach(p=> p.setAttribute('aria-pressed', String(p.dataset.focus==='all')));
-      updateFilterBadge();
-      saveFilters();
-    }
+      calculateNPS(responses) {
+        const scored = responses.filter(r => r.q12 !== null);
+        if (scored.length === 0) return { score: 0, promoters: 0, passives: 0, detractors: 0, total: 0 };
 
-    function scheduleFilterRefresh(delay = 0){
-      clearTimeout(filterTimer);
-      filterTimer = setTimeout(()=>{
-        readFilters();
-        refreshAll();
-      }, delay);
-    }
+        const promoters = scored.filter(r => r.q12 >= 9).length;
+        const passives = scored.filter(r => r.q12 >= 7 && r.q12 <= 8).length;
+        const detractors = scored.filter(r => r.q12 <= 6).length;
+        const total = scored.length;
 
-    function toggleFilters(force){
-      const isOpen = filterBar.getAttribute('data-open') === 'true';
-      const next = typeof force === 'boolean' ? force : !isOpen;
-      filterBar.setAttribute('data-open', String(next));
-      filterBar.setAttribute('aria-hidden', String(!next));
-      searchToggle.setAttribute('aria-expanded', String(next));
-      if(next){
-        requestAnimationFrame(()=>{ try{ queryInput.focus({ preventScroll:true }); } catch(_err){ queryInput.focus(); } });
+        const score = Math.round(((promoters - detractors) / total) * 100);
+
+        return { score, promoters, passives, detractors, total };
+      },
+
+      calculateBrandNPS(responses) {
+        const brandData = {};
+        for (const brand of Object.keys(brandMeta)) {
+          const brandResponses = responses.filter(r => r.brand === brand);
+          brandData[brand] = this.calculateNPS(brandResponses);
+        }
+        return brandData;
       }
-      // header height may change a bit (badge etc.)
-      requestAnimationFrame(syncAppOffset);
-    }
-
-    searchToggle.addEventListener('click', ()=> toggleFilters());
-
-    document.getElementById('applyFilters').addEventListener('click', evt=>{
-      evt.preventDefault();
-      readFilters();
-      refreshAll();
-      toggleFilters(false);
-      try{ searchToggle.focus({ preventScroll:true }); } catch(_err){ searchToggle.focus(); }
-    });
-    document.getElementById('clearFilters').addEventListener('click', evt=>{
-      clearFilters(evt);
-      readFilters();
-      refreshAll();
-    });
-    focusPills.forEach(p=> p.addEventListener('click', ()=>{
-      focusPills.forEach(x=> x.setAttribute('aria-pressed','false'));
-      p.setAttribute('aria-pressed','true'); filters.focus=p.dataset.focus || 'all';
-      updateFilterBadge();
-      saveFilters();
-      refreshAll();
-    }));
-    queryInput.addEventListener('input', ()=> scheduleFilterRefresh(260)); // a touch more debounce for smoothness
-    branchInput.addEventListener('input', ()=> scheduleFilterRefresh(260));
-    [brandSelect, fromInput, toInput].forEach(el => el.addEventListener('change', ()=> scheduleFilterRefresh(0)));
-    queryInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); readFilters(); refreshAll(); toggleFilters(false); try{ searchToggle.focus({ preventScroll:true }); } catch(_err){ searchToggle.focus(); } } });
-    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && filterBar.getAttribute('data-open')==='true'){ toggleFilters(false); try{ searchToggle.focus({ preventScroll:true }); } catch(_err){ searchToggle.focus(); } } });
-
-    /* ---------- Data & painting ---------- */
-    let cache = { responses:[], answers:[], issues:[], codes:[] };
-    try{
-      const storedDataset = JSON.parse(sessionStorage.getItem('nh-admin-dataset') || '{}');
-      if(Array.isArray(storedDataset.responses)){ cache.responses = storedDataset.responses; }
-      if(Array.isArray(storedDataset.codes)){ cache.codes = storedDataset.codes; }
-    }catch(_err){}
-    const brandMeta = {
-      'Yushoken': { color:'#c41e3a', route:'YSHK' },
-      'Mendokoro': { color:'#85754E', route:'MDNK' },
-      'Marudori': { color:'#0e9a5a', route:'MRDR' },
-      'Kazu Cafe': { color:'#ff9d00', route:'KZCF' },
-      'Kazunori': { color:'#1f6feb', route:'KZNM' }
     };
-    const brandRoutes = Object.fromEntries(Object.entries(brandMeta).map(([name, meta]) => [name, meta.route]));
-    const exportFilters = { brands:new Set(), status:'', rating:1, from:'', to:'' };
 
-    async function initApp(){
-      if(DEMO_MODE){
-        seedDemoData();               // now one week, trimmed volume
-        buildBranchesDatalist();
-        buildExportBrandChips();
-        restoreFilters();
-        readFilters();
-        refreshAll();
+    /* ---------- Utility Functions ---------- */
+    function getNPSCategory(score) {
+      if (score === null || score === undefined) return 'unknown';
+      if (score >= 9) return 'promoter';
+      if (score >= 7) return 'passive';
+      return 'detractor';
+    }
+
+    function humanAgo(dateStr) {
+      if (!dateStr) return '-';
+      const ms = Date.now() - new Date(dateStr).getTime();
+      const days = Math.floor(ms / 86400000);
+      const hours = Math.floor((ms % 86400000) / 3600000);
+      if (days > 0) return `${days}d ${hours}h`;
+      if (hours > 0) return `${hours}h`;
+      return '<1h';
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('en-PH', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function getPriorityClass(nps, daysOld) {
+      if (nps <= 3 || daysOld > 7) return 'priority-critical';
+      if (nps <= 6 || daysOld > 3) return 'priority-high';
+      return 'priority-normal';
+    }
+
+    function getAgingBadge(dateStr) {
+      const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+      if (days > 7) return `<span class="aging-badge urgent">${days}d ago</span>`;
+      if (days > 3) return `<span class="aging-badge old">${days}d ago</span>`;
+      return `<span class="aging-badge recent">${humanAgo(dateStr)}</span>`;
+    }
+
+    function brandBadge(brand) {
+      const meta = brandMeta[brand] || { color: '#6b7280' };
+      return `<span class="brandTag" style="--brand-color:${meta.color}">${brand || '-'}</span>`;
+    }
+
+    function npsBadge(score) {
+      if (score === null || score === undefined) return '<span class="nps-badge">-</span>';
+      const cat = getNPSCategory(score);
+      return `<span class="nps-badge ${cat}">${score}</span>`;
+    }
+
+    /* ---------- Login Functions ---------- */
+    function showLoginError(message) {
+      const errorEl = document.getElementById('loginError');
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      setTimeout(() => { errorEl.style.display = 'none'; }, 5000);
+    }
+
+    function setLoginLoading(isLoading) {
+      const btn = document.getElementById('loginBtn');
+      const text = document.getElementById('loginBtnText');
+      const spinner = document.getElementById('loginSpinner');
+      btn.disabled = isLoading;
+      text.textContent = isLoading ? 'Signing in...' : 'Sign in';
+      spinner.style.display = isLoading ? 'inline-block' : 'none';
+    }
+
+    function showApp() {
+      loginView.style.display = 'none';
+      appHeader.classList.add('visible');
+      appView.style.display = 'grid';
+
+      if (currentUser) {
+        userBadge.textContent = currentUser.email;
+        userBadge.title = `${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
+      }
+
+      initApp();
+    }
+
+    function showLogin() {
+      loginView.style.display = 'grid';
+      appHeader.classList.remove('visible');
+      appView.style.display = 'none';
+    }
+
+    /* ---------- Password Toggle ---------- */
+    document.getElementById('togglePassword')?.addEventListener('click', () => {
+      const pw = document.getElementById('password');
+      const toggle = document.getElementById('togglePassword');
+      if (pw.type === 'password') {
+        pw.type = 'text';
+        toggle.textContent = '🙈';
+      } else {
+        pw.type = 'password';
+        toggle.textContent = '👁';
+      }
+    });
+
+    /* ---------- Login Handler ---------- */
+    loginBtn.addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showLoginError('Please enter email and password');
         return;
       }
-      // TODO: fetch from Supabase in prod
-      buildBranchesDatalist();
-      buildExportBrandChips();
-      restoreFilters();
-      readFilters();
-      refreshAll();
+
+      setLoginLoading(true);
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_user', JSON.stringify(data.user));
+          currentUser = data.user;
+          showApp();
+        } else {
+          showLoginError(data.error || 'Invalid credentials');
+        }
+      } catch (err) {
+        console.error('Login failed:', err);
+        showLoginError('Connection failed. Please try again.');
+      } finally {
+        setLoginLoading(false);
+      }
+    });
+
+    // Enter key for login
+    document.getElementById('password')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loginBtn.click();
+    });
+
+    /* ---------- Sign Out Handler ---------- */
+    signOutBtn.addEventListener('click', async () => {
+      const token = localStorage.getItem('admin_token');
+
+      // Clear local storage FIRST to ensure logout even if API fails
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      currentUser = null;
+      userBadge.textContent = '';
+
+      if (token) {
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({})
+          });
+        } catch (err) {
+          console.error('Logout API call failed:', err);
+        }
+      }
+
+      // Force page reload to clear any state
+      window.location.href = window.location.pathname;
+    });
+
+    /* ---------- Tab Navigation ---------- */
+    function setTab(id) {
+      if (!id) return;
+      activeTab = id;
+
+      tabBtns.forEach(btn => {
+        btn.setAttribute('aria-selected', String(btn.dataset.tab === id));
+      });
+
+      tabPanels.forEach(panel => {
+        const isActive = panel.id === 'tab-' + id;
+        panel.hidden = !isActive;
+      });
+
+      if (tabSelect) tabSelect.value = id;
+
+      // Refresh tab content
+      if (id === 'overview') paintOverview();
+      if (id === 'responses') paintResponses();
+      if (id === 'analytics') paintAnalytics();
+      if (id === 'export') updateExportPreview();
     }
-    function refreshAll(){
-      paintKPIs(); paintNegatives(); paintResponses(); buildQuestionPicker(); paintAnalytics({ animate: !prefersReducedMotion });
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => setTab(btn.dataset.tab));
+    });
+
+    if (tabSelect) {
+      tabSelect.addEventListener('change', (e) => setTab(e.target.value));
     }
-    function buildBranchesDatalist(){
-      const dl = document.getElementById('branchesList'); dl.innerHTML='';
-      const uniq = new Set((cache.responses||[]).map(r=>r.branch).filter(Boolean));
-      uniq.forEach(v=>{ const o=document.createElement('option'); o.value=v; dl.appendChild(o); });
+
+    /* ---------- Profile Modal ---------- */
+    userBadge.addEventListener('click', () => {
+      document.getElementById('profileModal').classList.add('visible');
+      document.getElementById('profileEmail').textContent = currentUser?.email || '-';
+      document.getElementById('profileRole').textContent = `${currentUser?.brand || 'All Brands'} - ${currentUser?.role || 'Admin'}`;
+      document.getElementById('passwordMsg').innerHTML = '';
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    });
+
+    document.getElementById('closeProfileBtn').addEventListener('click', () => {
+      document.getElementById('profileModal').classList.remove('visible');
+    });
+
+    document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+      const current = document.getElementById('currentPassword').value;
+      const newPw = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+      const msgEl = document.getElementById('passwordMsg');
+
+      if (!current || !newPw || !confirm) {
+        msgEl.innerHTML = '<div class="error-msg">Please fill in all fields</div>';
+        return;
+      }
+
+      if (newPw !== confirm) {
+        msgEl.innerHTML = '<div class="error-msg">New passwords do not match</div>';
+        return;
+      }
+
+      if (newPw.length < 8) {
+        msgEl.innerHTML = '<div class="error-msg">Password must be at least 8 characters</div>';
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('admin_token');
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/change-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ current_password: current, new_password: newPw })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          msgEl.innerHTML = '<div class="success-msg">Password changed successfully! Signing out...</div>';
+          setTimeout(() => {
+            document.getElementById('profileModal').classList.remove('visible');
+            signOutBtn.click();
+          }, 2000);
+        } else {
+          msgEl.innerHTML = `<div class="error-msg">${data.error || 'Failed to change password'}</div>`;
+        }
+      } catch (err) {
+        console.error('Password change failed:', err);
+        msgEl.innerHTML = '<div class="error-msg">Connection failed. Please try again.</div>';
+      }
+    });
+
+    // Close modal on overlay click
+    document.getElementById('profileModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('profileModal')) {
+        document.getElementById('profileModal').classList.remove('visible');
+      }
+    });
+
+    /* ---------- App Initialization ---------- */
+    async function initApp() {
+      // Fetch real data from Supabase
+      allResponses = await DataService.fetchResponses();
+      filteredResponses = [...allResponses];
+
+      // Paint initial view
+      setTab('overview');
     }
-    function buildExportBrandChips(){
-      if(!exportBrandChips) return;
-      exportBrandChips.innerHTML = Object.keys(brandMeta).map(name => {
-        const meta = brandMeta[name];
-        const active = exportFilters.brands.has(name);
-        return `<label class="chip-option" data-brand="${name}" style="--brand-color:${meta.color}" data-active="${active}">
-          <input type="checkbox" value="${name}" ${active ? 'checked' : ''}>
-          <span>${name}</span>
-        </label>`;
-      }).join('');
-      exportBrandChips.querySelectorAll('.chip-option').forEach(option => {
-        const name = option.dataset.brand;
-        const input = option.querySelector('input');
-        const update = () => {
-          if(input.checked){
-            exportFilters.brands.add(name);
-            option.dataset.active = 'true';
-          } else {
-            exportFilters.brands.delete(name);
-            option.dataset.active = 'false';
+
+    /* ---------- Overview Tab ---------- */
+    function paintOverview() {
+      const detractors = DataService.getDetractors(allResponses);
+      const critical = detractors.filter(r => r.q12 <= 3);
+      const openTickets = allResponses.filter(r => r.ticket_status === 'open' || !r.ticket_status);
+
+      // Calculate oldest unresolved
+      let oldestUnresolved = '-';
+      const unresolvedDetractors = detractors.filter(r => r.ticket_status !== 'resolved');
+      if (unresolvedDetractors.length > 0) {
+        const oldest = unresolvedDetractors[0]; // Already sorted oldest first
+        const days = Math.floor((Date.now() - new Date(oldest.completed_at).getTime()) / 86400000);
+        oldestUnresolved = `${days}d`;
+      }
+
+      // Update KPIs
+      document.getElementById('kpiCritical').textContent = critical.length;
+      document.getElementById('kpiDetractors').textContent = detractors.length - critical.length;
+      document.getElementById('kpiOpenTickets').textContent = openTickets.length;
+      document.getElementById('kpiOldestUnresolved').textContent = oldestUnresolved;
+
+      // Paint detractors table
+      const tbody = document.getElementById('detractorsBody');
+      tbody.innerHTML = '';
+
+      if (detractors.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">🎉</div>No detractors found! Great job!</div></td></tr>`;
+        return;
+      }
+
+      detractors.forEach(r => {
+        const daysOld = Math.floor((Date.now() - new Date(r.completed_at).getTime()) / 86400000);
+        const priorityClass = getPriorityClass(r.q12, daysOld);
+        const priority = r.q12 <= 3 ? 'Critical' : daysOld > 7 ? 'Urgent' : daysOld > 3 ? 'High' : 'Normal';
+
+        const tr = document.createElement('tr');
+        tr.className = priorityClass;
+        tr.innerHTML = `
+          <td data-label="Age">${getAgingBadge(r.completed_at)}</td>
+          <td data-label="NPS">${npsBadge(r.q12)}</td>
+          <td data-label="Brand / Branch">${brandBadge(r.brand)}<br><small style="color:var(--muted)">${r.branch || '-'}</small></td>
+          <td data-label="Customer">${r.name || '-'}<br><small style="color:var(--muted)">${r.email || ''}</small></td>
+          <td data-label="Concern" style="max-width:200px">${r.q12_follow || '-'}</td>
+          <td data-label="Priority"><span class="aging-badge ${priority === 'Critical' ? 'urgent' : priority === 'Urgent' || priority === 'High' ? 'old' : 'recent'}">${priority}</span></td>
+          <td data-label="Status">
+            <select class="statusSel ${(r.ticket_status || 'open')}" data-id="${r.id}">
+              <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
+              <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+              <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
+            </select>
+          </td>
+          <td data-label="Actions"><button class="btn" data-view="${r.id}">View</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Status change handlers
+      tbody.querySelectorAll('.statusSel').forEach(sel => {
+        sel.addEventListener('change', async (e) => {
+          const id = e.target.dataset.id;
+          const newStatus = e.target.value;
+          e.target.className = `statusSel ${newStatus}`;
+
+          const success = await DataService.updateTicketStatus(id, newStatus);
+          if (success) {
+            // Update local data
+            const response = allResponses.find(r => r.id === id);
+            if (response) response.ticket_status = newStatus;
           }
-        };
-        update();
-        input.addEventListener('change', update);
+        });
+      });
+
+      // View button handlers
+      tbody.querySelectorAll('[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => showResponseDetail(btn.dataset.view));
       });
     }
 
-    if(exportStatusSel){ exportStatusSel.addEventListener('change', e => { exportFilters.status = e.target.value || ''; }); }
-    if(exportRatingInput){ exportRatingInput.addEventListener('change', e => { exportFilters.rating = Math.min(5, Math.max(1, Number(e.target.value) || 1)); }); }
-    if(exportFromInput){ exportFromInput.addEventListener('change', e => { exportFilters.from = e.target.value || ''; }); }
-    if(exportToInput){ exportToInput.addEventListener('change', e => { exportFilters.to = e.target.value || ''; }); }
-    if(exportPlanBtn){ exportPlanBtn.addEventListener('click', evt => { evt.preventDefault(); alert('Excel export will be available in the live build.'); }); }
-    exportFilters.status = exportStatusSel ? exportStatusSel.value || '' : exportFilters.status;
-    exportFilters.rating = exportRatingInput ? Math.min(5, Math.max(1, Number(exportRatingInput.value) || 1)) : exportFilters.rating;
-    exportFilters.from = exportFromInput ? exportFromInput.value || '' : exportFilters.from;
-    exportFilters.to = exportToInput ? exportToInput.value || '' : exportFilters.to;
+    /* ---------- Responses Tab ---------- */
+    function paintResponses() {
+      const tbody = document.getElementById('responsesBody');
+      tbody.innerHTML = '';
 
-    /* Helpers */
-    function isNegativeAnswer(a){
-      if(typeof a.rating==='number' && a.rating <= 2) return true;
-      if(a.answer_text && /(^|\s)poor(\s|$)|very\s*poor/i.test(a.answer_text)) return true;
-      return false;
-    }
-    function humanAgo(ts){
-      if(!ts) return '—';
-      const ms = Date.now() - new Date(ts).getTime();
-      const d = Math.floor(ms/86400000), h=Math.floor(ms%86400000/3600000), m=Math.floor(ms%3600000/60000);
-      if(d>0) return d+'d '+h+'h'; if(h>0) return h+'h '+m+'m'; return m+'m';
-    }
-    function getIssue(response_id){ return (cache.issues||[]).find(x=>x.response_id===response_id); }
-    function statusBadge(status){
-      const s = (status||'Pending').toLowerCase();
-      const cls = s==='resolved' ? 'resolved' : s.startsWith('on') ? 'ongoing' : 'pending';
-      const label = s==='ongoing' || s==='on-going' ? 'On-going' : s[0].toUpperCase()+s.slice(1);
-      return `<span class="status ${cls}">${label}</span>`;
-    }
-    function statusStyle(status){
-      if(/resolved/i.test(status||'')) return 'resolved';
-      if(/on-?going/i.test(status||'')) return 'ongoing';
-      return 'pending';
-    }
-    function brandBadge(brand, branch){
-      const meta = brandMeta[brand] || { color:'#6b7280' };
-      const label = brand || '—';
-      const branchLabel = branch ? `<span class="hint">${branch}</span>` : '';
-      return `<span class="brandTag" style="--brand-color:${meta.color}">${label}</span>${branchLabel ? ' '+branchLabel : ''}`;
-    }
-    function matchesFocus(response){
-      const focus = filters.focus || 'all';
-      if(focus === 'negative'){
-        return (cache.answers||[]).some(ans => ans.response_id === response.id && isNegativeAnswer(ans));
-      }
-      if(focus === 'unresolved'){
-        const issue = getIssue(response.id);
-        return !issue || !/resolved/i.test((issue.status||''));
-      }
-      if(focus === 'comments'){
-        return (cache.answers||[]).some(ans => ans.response_id === response.id && (ans.answer_text||'').trim());
-      }
-      return true;
-    }
-    function passesFilters(r){
-      if(filters.brand && r.brand!==filters.brand) return false;
-      if(filters.branch && !(r.branch||'').toLowerCase().includes(filters.branch.toLowerCase())) return false;
-      if(filters.from && r.created_at < filters.from) return false;
-      if(filters.to && r.created_at > filters.to+'T23:59:59') return false;
-      if(filters.q){
-        const q = filters.q.toLowerCase();
-        const hay = [r.name, r.email, r.branch, r.brand, r.receipt, r.code].map(v=> (v||'').toString().toLowerCase()).join(' | ');
-        if(!hay.includes(q)) return false;
-      }
-      if(!matchesFocus(r)) return false;
-      return true;
-    }
-    async function updateIssue(response_id, nextStatus){
-      const now = new Date().toISOString();
-      const existing = getIssue(response_id);
-      if(existing){ existing.status = nextStatus; existing.status_updated_at = now; }
-      else{ cache.issues.push({ response_id, status: nextStatus, first_marked_at: now, status_updated_at: now }); }
-      refreshAll();
-    }
-
-    /* KPIs */
-    function paintKPIs(){
-      const total = (cache.responses||[]).filter(passesFilters).length;
-      const negAns = (cache.answers||[]).filter(a=>{
-        const r = cache.responses.find(x=>x.id===a.response_id);
-        return r && passesFilters(r) && isNegativeAnswer(a);
-      });
-      const negRespSet = new Set(negAns.map(a=>a.response_id));
-      const openIssues = (cache.issues||[]).filter(x=>{
-        const r = cache.responses.find(y=>y.id===x.response_id);
-        return r && passesFilters(r) && (x.status||'Pending').toLowerCase()!=='resolved';
-      }).length;
-      const oldestAging = (cache.issues||[]).reduce((acc, x)=>{
-        const r = cache.responses.find(y=>y.id===x.response_id);
-        if(!r || !passesFilters(r)) return acc;
-        const since = x.first_marked_at || r.created_at;
-        if(!since) return acc;
-        const ms = Date.now() - new Date(since).getTime();
-        return Math.max(acc, ms);
-      }, 0);
-      document.getElementById('kpiResponses').textContent = total.toLocaleString();
-      document.getElementById('kpiNeg').textContent = negRespSet.size.toLocaleString();
-      document.getElementById('kpiOpen').textContent = openIssues.toLocaleString();
-      document.getElementById('kpiAging').textContent = oldestAging ? humanAgo(Date.now()-oldestAging) : '—';
-    }
-
-    /* Overview table */
-    function paintNegatives(){
-      const tbody = document.querySelector('#negTable tbody'); tbody.innerHTML='';
-      const rows = [];
-      (cache.answers||[]).forEach(a=>{
-        if(!isNegativeAnswer(a)) return;
-        const r = (cache.responses||[]).find(x=>x.id===a.response_id);
-        if(!r || !passesFilters(r)) return; rows.push({ a, r });
-      });
-      rows.sort((x,y)=> new Date(y.r.created_at) - new Date(x.r.created_at));
-      if(!rows.length){
-        tbody.innerHTML = `<tr><td colspan="10"><div class="empty">No negative feedback matches your filters yet.</div></td></tr>`;
+      if (filteredResponses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📋</div>No responses found</div></td></tr>`;
         return;
       }
-      rows.forEach(({a,r})=>{
+
+      filteredResponses.forEach(r => {
+        const npsCategory = getNPSCategory(r.q12);
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td data-label="When">${new Date(r.created_at).toLocaleString()}</td>
-          <td data-label="Brand/Branch">${brandBadge(r.brand, r.branch)}</td>
-          <td data-label="Customer">${r.name||'—'}<br><span class="hint">${r.email||''}</span></td>
-          <td data-label="Receipt" class="mono">${r.receipt||'—'}</td>
-          <td data-label="Question">${a.question_text||('Q'+a.question_id)}</td>
-          <td data-label="Rating">${typeof a.rating==='number' ? a.rating : (a.answer_text||'—')}</td>
-          <td data-label="Comment" style="max-width:320px">${a.answer_text||'—'}</td>
-          <td data-label="Status">
-  <select data-resp="${r.id}" aria-label="Update status"
-          class="statusSel ${statusStyle(getIssue(r.id)?.status)}">
-    <option ${/pending/i.test(getIssue(r.id)?.status||'')?'selected':''}>Pending</option>
-    <option ${/on-?going/i.test(getIssue(r.id)?.status||'')?'selected':''}>On-going</option>
-    <option ${/resolved/i.test(getIssue(r.id)?.status||'')?'selected':''}>Resolved</option>
-  </select>
-</td>
-          <td data-label="Aging">${humanAgo(getIssue(r.id)?.first_marked_at || r.created_at)}</td>
-          <td data-label="">
-            <button class="btn small" data-jump="${r.id}">Open</button>
-          </td>`;
+          <td data-label="Date">${formatDate(r.completed_at)}</td>
+          <td data-label="Customer">
+            <div style="font-weight:600">${r.name || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${r.email || '-'}</div>
+            ${r.phone ? `<div style="font-size:11px;color:var(--muted)">${r.phone}</div>` : ''}
+          </td>
+          <td data-label="Brand / Branch">${brandBadge(r.brand)}<br><small style="color:var(--muted)">${r.branch || '-'}</small></td>
+          <td data-label="Receipt" class="mono">${r.receipt || '-'}</td>
+          <td data-label="NPS">${npsBadge(r.q12)}</td>
+          <td data-label="Ticket">
+            <select class="statusSel ${r.ticket_status || 'open'}" data-id="${r.id}">
+              <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
+              <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+              <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
+            </select>
+          </td>
+          <td data-label="Reward"><span class="status-badge ${r.reward_claimed ? 'claimed' : 'unclaimed'}">${r.reward_claimed ? 'Claimed' : 'Unclaimed'}</span></td>
+          <td data-label="Actions"><button class="btn" data-view="${r.id}">View</button></td>
+        `;
         tbody.appendChild(tr);
       });
-      tbody.querySelectorAll('.statusSel').forEach(sel=> sel.addEventListener('change', e=>{
-        const rid = Number(e.target.getAttribute('data-resp')); updateIssue(rid, e.target.value);
-      }));
-      tbody.querySelectorAll('button[data-jump]').forEach(b=> b.addEventListener('click', ()=>{
-        setTab('responses', { skipScroll:true });
-        const rid = Number(b.getAttribute('data-jump'));
-        const row = document.querySelector(`#respTable tbody tr[data-id="${rid}"]`);
-        if(row){ row.scrollIntoView({behavior:'smooth', block:'center'}); row.style.outline='2px solid var(--gold)'; setTimeout(()=>row.style.outline='none', 1200); }
-      }));
+
+      // Status change handlers
+      tbody.querySelectorAll('.statusSel').forEach(sel => {
+        sel.addEventListener('change', async (e) => {
+          const id = e.target.dataset.id;
+          const newStatus = e.target.value;
+          e.target.className = `statusSel ${newStatus}`;
+
+          const success = await DataService.updateTicketStatus(id, newStatus);
+          if (success) {
+            const response = allResponses.find(r => r.id === id);
+            if (response) response.ticket_status = newStatus;
+          }
+        });
+      });
+
+      // View button handlers
+      tbody.querySelectorAll('[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => showResponseDetail(btn.dataset.view));
+      });
     }
 
-    /* Responses table */
-    function paintResponses(){
-      const tbody = document.querySelector('#respTable tbody'); tbody.innerHTML='';
-      const rows = (cache.responses||[]).filter(passesFilters).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
-      if(!rows.length){
-        tbody.innerHTML = `<tr><td colspan="9"><div class="empty">No responses match your filters yet.</div></td></tr>`;
+    // Response filters
+    document.getElementById('respApplyFilters')?.addEventListener('click', () => {
+      const search = document.getElementById('respFilterSearch').value.toLowerCase();
+      const brand = document.getElementById('respFilterBrand').value;
+      const npsFilter = document.getElementById('respFilterNps').value;
+      const from = document.getElementById('respFilterFrom').value;
+      const to = document.getElementById('respFilterTo').value;
+
+      filteredResponses = allResponses.filter(r => {
+        if (search) {
+          const haystack = [r.name, r.email, r.receipt, r.branch].join(' ').toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        if (brand && r.brand !== brand) return false;
+        if (npsFilter) {
+          const cat = getNPSCategory(r.q12);
+          if (cat !== npsFilter) return false;
+        }
+        if (from && r.completed_at < from) return false;
+        if (to && r.completed_at > to + 'T23:59:59') return false;
+        return true;
+      });
+
+      paintResponses();
+    });
+
+    document.getElementById('respClearFilters')?.addEventListener('click', () => {
+      document.getElementById('respFilterSearch').value = '';
+      document.getElementById('respFilterBrand').value = '';
+      document.getElementById('respFilterNps').value = '';
+      document.getElementById('respFilterFrom').value = '';
+      document.getElementById('respFilterTo').value = '';
+      filteredResponses = [...allResponses];
+      paintResponses();
+    });
+
+    /* ---------- Validator Tab ---------- */
+    let currentValidationResponse = null;
+
+    document.getElementById('validateBtn')?.addEventListener('click', async () => {
+      const query = document.getElementById('validatorInput').value.trim();
+      const statusEl = document.getElementById('validatorStatus');
+      const detailsEl = document.getElementById('validatorDetails');
+      const actionsEl = document.getElementById('validatorActions');
+
+      if (!query) {
+        statusEl.textContent = 'Please enter a code or receipt number';
+        statusEl.className = 'status invalid';
+        detailsEl.style.display = 'none';
+        actionsEl.style.display = 'none';
         return;
       }
-      rows.forEach(r=>{
-        const status = (getIssue(r.id)?.status) || 'Pending';
-        const tr=document.createElement('tr'); tr.setAttribute('data-id', r.id);
-        tr.innerHTML = `
-          <td data-label="When">${new Date(r.created_at).toLocaleString()}</td>
-          <td data-label="Brand / Branch">${brandBadge(r.brand, r.branch)}</td>
-          <td data-label="Guest">${r.name||'—'}${r.population ? `<span class=\"hint\" style=\"display:block\"></span>` : ''}<span class="hint" style="display:block">${r.email||''}</span></td>
-          <td data-label="Contact">${r.phone||'—'}</td>
-          <td data-label="Receipt" class="mono">${r.receipt||'—'}</td>
-          <td data-label="Dietary">${r.dietary||'—'}</td>
-          <td data-label="Code" class="mono">${r.code||'—'}</td>
-          <td data-label="Status">${statusBadge(status)}</td>
-          <td data-label=""><button class="btn small" data-open="${r.id}">View</button></td>`;
-        tbody.appendChild(tr);
-      });
-      tbody.querySelectorAll('button[data-open]').forEach(b=> b.addEventListener('click', ()=>{
-        setTab('overview', { skipScroll:true });
-        const rid = Number(b.getAttribute('data-open'));
-        const jump = document.querySelector(`button[data-jump="${rid}"]`); if(jump) jump.click();
-      }));
-    }
 
-    /* Analytics */
-    let barChart;
-    function buildQuestionPicker(){
-      const sel = document.getElementById('qSelect');
-      const uniq = new Map();
-      (cache.answers||[]).forEach(a=>{ if(!uniq.has(a.question_id)) uniq.set(a.question_id, a.question_text || ('Question '+a.question_id)); });
-      sel.innerHTML='';
-      [...uniq.entries()].sort((a,b)=> a[0]-b[0]).forEach(([id,txt])=>{
-        const o=document.createElement('option'); o.value=id; o.textContent=`Q${id} — ${txt}`; sel.appendChild(o);
-      });
-      if(!sel.value && sel.options.length){ sel.value = sel.options[0].value; }
-    }
-    function paintAnalytics(options = {}){
-      const animate = options.animate && !prefersReducedMotion;
-      const sel = document.getElementById('qSelect');
-      if(!sel) return;
-      const qid = Number(sel.value || 0);
-      const answers = (cache.answers||[]).filter(a=>{
-        const r = cache.responses.find(x=>x.id===a.response_id);
-        return r && passesFilters(r) && a.question_id===qid;
-      });
-      const ratings = answers.map(a=> Number(a.rating)).filter(x=>!isNaN(x));
-      const n = ratings.length || 1;
-      const pos = ratings.filter(x=>x>=4).length / n;
-      const neu = ratings.filter(x=>x===3).length / n;
-      const neg = ratings.filter(x=>x<=2).length / n;
-      document.getElementById('kpiPositive').textContent = (pos*100 || 0).toFixed(1)+'%';
-      document.getElementById('kpiNeutral').textContent  = (neu*100 || 0).toFixed(1)+'%';
-      document.getElementById('kpiNegative').textContent = (neg*100 || 0).toFixed(1)+'%';
-      document.getElementById('kpiN').textContent = ratings.length.toLocaleString();
+      statusEl.textContent = 'Searching...';
+      statusEl.className = 'status';
 
-      const brandCounts = {};
-      answers.forEach(a=>{
-        const r = cache.responses.find(x=>x.id===a.response_id);
-        if(r){ brandCounts[r.brand] = (brandCounts[r.brand] || 0) + 1; }
-      });
-      const legend = document.getElementById('brandLegend');
-      if(legend){
-        legend.innerHTML = Object.keys(brandMeta).map(name => {
-          const meta = brandMeta[name];
-          const count = brandCounts[name] || 0;
-          return `<span style="--brand-color:${meta.color}">${name} (${count})</span>`;
-        }).join('');
+      const response = await DataService.findByCodeOrReceipt(query);
+
+      if (!response) {
+        statusEl.textContent = '❌ No matching record found';
+        statusEl.className = 'status invalid';
+        detailsEl.style.display = 'none';
+        actionsEl.style.display = 'none';
+        currentValidationResponse = null;
+        return;
       }
 
-      const buckets = { 'Very Poor (1)':0, 'Poor (2)':0, 'OK (3)':0, 'Good (4)':0, 'Excellent (5)':0 };
-      ratings.forEach(x=>{
-        if(x<=1) buckets['Very Poor (1)']++;
-        else if(x===2) buckets['Poor (2)']++;
-        else if(x===3) buckets['OK (3)']++;
-        else if(x===4) buckets['Good (4)']++;
-        else if(x>=5) buckets['Excellent (5)']++;
-      });
-      const labels = Object.keys(buckets);
-      const data = Object.values(buckets);
-      const colors = ['#c41e3a','#ff9d00','#6b7280','#0e9a5a','#1f6feb'];
-      const ctx = document.getElementById('barTop').getContext('2d');
-      if(barChart) barChart.destroy();
-      barChart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ label:'Responses', data, backgroundColor:colors, borderRadius:6, maxBarThickness:48 }]},
-        options: { responsive:true, animation: animate ? { duration:600, easing:'easeOutQuart' } : false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{ color:'var(--muted)' } }, y:{ beginAtZero:true, ticks:{ precision:0 } } } }
-      });
+      currentValidationResponse = response;
 
-      const list = document.getElementById('commentsList');
-      list.innerHTML='';
-      let commentCount = 0;
-      answers.filter(a=> (a.answer_text && a.answer_text.trim()) || (a.rating<=2))
-        .sort((a,b)=> (a.rating||99) - (b.rating||99))
-        .slice(0,120)
-        .forEach(a=>{
-          const r = cache.responses.find(x=>x.id===a.response_id);
-          const div = document.createElement('div');
-          div.className='card';
-          div.innerHTML=`
-            <div class="flex" style="justify-content:space-between; gap:8px; flex-wrap:wrap">
-              <div>${brandBadge(r?.brand, r?.branch)}</div>
-              <span class="hint">${new Date(r?.created_at||Date.now()).toLocaleString()}</span>
-              <span class="hint">Receipt <span class="mono">${r?.receipt||'—'}</span></span>
-              <span class="hint">Rating <b>${a.rating??'—'}</b></span>
-            </div>
-            <div style="margin-top:6px">${(a.answer_text||'(no comment)').replace(/</g,'&lt;')}</div>`;
-          list.appendChild(div);
-          commentCount++;
-        });
-      if(commentCount === 0){
-        const placeholder = document.createElement('div');
-        placeholder.className = 'empty';
-        placeholder.textContent = 'No verbatim comments for this question yet.';
-        list.appendChild(placeholder);
-      }
-    }
-    document.addEventListener('change', (e)=>{ if(e.target && e.target.id==='qSelect') paintAnalytics({ animate: !prefersReducedMotion }); });
+      // Populate details
+      document.getElementById('valCustomer').textContent = response.name || '-';
+      document.getElementById('valNps').innerHTML = npsBadge(response.q12);
+      document.getElementById('valReceipt').textContent = response.receipt || '-';
+      document.getElementById('valCode').textContent = response.reward_code || '-';
+      document.getElementById('valDate').textContent = formatDate(response.completed_at);
 
-    /* ---------- Demo seed (ONE WEEK, trimmed) ---------- */
-    function seedDemoData(){
-      const brands = ['Yushoken','Mendokoro','Marudori','Kazu Cafe','Kazunori'];
-      const branches = ['BGC','Alabang','Makati','Molito','SM North','Greenhills','Rockwell','Salcedo'];
-      const diets = ['No Meat','No Pork','Vegetarian','Gluten-free','No Egg'];
-      const qs = [
-        [1,'Was this your first time at this restaurant\'s branch?'],[2,'How often do you visit?'],[3,'Overall customer experience'],
-        [4,'Value for money'],[5,'Food quality (taste, freshness, appearance)'],[6,'Staff friendliness'],
-        [7,'Orders served correctly'],[8,'Promptness of service'],[9,'Cleanliness & orderliness (incl. restroom)'],
-        [10,'Likelihood to recommend this branch'],[11,'Dietary restrictions/preferences'],
-        [12,'Additional toppings or side dishes you want'],[13,'Suggestions for local/seasonal ingredients'],
-        [14,'Where do you want us to open next?'],[15,'What were the last five restaurants you\\'ve visited?'],[16,'Any other comments?']
-      ];
-      const today = new Date();
-      const responses = []; const answers=[]; const issues=[]; const codes=[];
-      let idCounter = 1;
-      function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
-      function pick(a){ return a[rand(0,a.length-1)]; }
-      function buildReceipt(brand, branch, day){
-        const route = (brandRoutes[brand] || 'NHSH').toUpperCase();
-        const prefix = route.length >= 4 ? route.slice(0,4) : (route + 'XXXX').slice(0,4);
-        const stamp = day.toISOString().slice(0,10).replace(/-/g,'');
-        const first = stamp.slice(-6);
-        const second = String(rand(0,999999)).padStart(6,'0');
-        return `${prefix}-${first}-${second}`;
+      if (response.reward_claimed) {
+        statusEl.textContent = '⚠️ Reward Already Claimed';
+        statusEl.className = 'status claimed';
+        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--warn)">Claimed on ${formatDate(response.reward_claimed_at)}</span>`;
+        actionsEl.style.display = 'none';
+      } else {
+        statusEl.textContent = '✅ Valid - Reward Available';
+        statusEl.className = 'status valid';
+        document.getElementById('valRewardStatus').innerHTML = '<span style="color:var(--ok)">Unclaimed</span>';
+        actionsEl.style.display = 'flex';
       }
-      for(let d=0; d<7; d++){            // 7 days only
-        const day = new Date(today.getTime() - d*86400000);
-        const perDay = rand(4,8);        // trimmed volume per day for smoother demo
-        for(let i=0;i<perDay;i++){
-          const id = idCounter++;
-          const brand = pick(brands); const branch = pick(branches);
-          const firstname = ['Juan','Mika','Ken','Aya','Paolo','Jiro','Kei','Rina'][rand(0,7)];
-          const lastname  = ['Santos','Delos Reyes','Lee','Tan','Mori','Garcia'][rand(0,5)];
-          const name = firstname + ' ' + lastname;
-          const email = (firstname+lastname).toLowerCase()+'@mail.com';
-          const phone = '09'+rand(10,99)+rand(10000000,99999999);
-          const receipt = buildReceipt(brand, branch, day);
-          const dietary = Math.random()<.25 ? pick(diets) : '';
-          const population = ['Solo','Couple','Family','Friends'][rand(0,3)];
-          const spend = rand(2500, 14500);
-          const code = Math.random()<.5 ? 'NH-' + rand(100000,999999) : ''; // slightly fewer codes
-          const created_at = new Date(day.getTime() + rand(9,21)*3600000 + rand(0,59)*60000).toISOString();
-          responses.push({ id, created_at, receipt, email, phone, name, brand, branch, population, dietary, spend, code });
-          qs.forEach(([qid, qtxt])=>{
-            let rating = null, answer_text = '';
-            if(qid<=10){ rating = Math.min(5, Math.max(1, Math.round( (Math.random()**1.2)*5 ))); }
-            if(qid===11){ answer_text = dietary; }
-            if(qid===12){ answer_text = Math.random()<.18 ? 'Gyoza, Ajitama, Corn' : ''; }
-            if(qid===13){ answer_text = Math.random()<.16 ? 'Local scallions, Tagaytay mushrooms' : ''; }
-            if(qid===14){ answer_text = Math.random()<.12 ? 'Quezon City' : ''; }
-            if(qid===15){
-              const restos = ['Kazunori','1210','Tsurumaru Udon','Mendokoro','Marugame','Gyu-Kaku','Ippudo','Yardstick'];
-              const picks = new Set(); while(picks.size<rand(3,5)) picks.add(pick(restos));
-              answer_text = Array.from(picks).join(', ');
-            }
-            if(qid===16){ answer_text = Math.random()<.16 ? 'Parking was tight' : ''; }
-            if(qid<=10 && Math.random()<.05){ rating = 2; answer_text = 'Poor'; }
-            answers.push({ id: (answers.length+1), response_id:id, question_id:qid, question_text:qtxt, rating, answer_text });
-            if(qid<=10 && (rating||99) <=2 && Math.random()<.55){
-              const first = created_at;
-              const states = ['Pending','On-going','Resolved']; const s = pick(states);
-              const su = new Date(new Date(first).getTime() + rand(1,72)*3600000).toISOString();
-              issues.push({ response_id:id, status:s, first_marked_at:first, status_updated_at:su });
-            }
-          });
-          if(code){
-            const st = Math.random()<.1 ? 'redeemed' : (Math.random()<.08 ? 'expired' : 'valid');
-            const cts = new Date(new Date(created_at).getTime() - rand(1,48)*3600000).toISOString();
-            codes.push({ code, status:st, response_id:id, created_at:cts, notes:'' });
+
+      detailsEl.style.display = 'block';
+    });
+
+    document.getElementById('markRedeemedBtn')?.addEventListener('click', async () => {
+      if (!currentValidationResponse) return;
+
+      const btn = document.getElementById('markRedeemedBtn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      const success = await DataService.markRewardClaimed(currentValidationResponse.id);
+
+      if (success) {
+        document.getElementById('validatorStatus').textContent = '✅ Marked as Redeemed!';
+        document.getElementById('validatorStatus').className = 'status valid';
+        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${currentUser?.email}</span>`;
+        document.getElementById('validatorActions').style.display = 'none';
+
+        // Update local data
+        const response = allResponses.find(r => r.id === currentValidationResponse.id);
+        if (response) {
+          response.reward_claimed = true;
+          response.reward_claimed_at = new Date().toISOString();
+          response.reward_claimed_by = currentUser?.email;
+        }
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Mark as Redeemed';
+        alert('Failed to mark as redeemed. Please try again.');
+      }
+    });
+
+    // Enter key for validator
+    document.getElementById('validatorInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('validateBtn').click();
+    });
+
+    /* ---------- Analytics Tab ---------- */
+    function paintAnalytics() {
+      // Filter by period
+      let periodResponses = allResponses;
+      if (analyticsPeriod !== 'all') {
+        const cutoff = new Date(Date.now() - analyticsPeriod * 86400000);
+        periodResponses = allResponses.filter(r => new Date(r.completed_at) >= cutoff);
+      }
+
+      const npsData = DataService.calculateNPS(periodResponses);
+      const brandNPS = DataService.calculateBrandNPS(periodResponses);
+
+      // Update KPIs
+      const npsEl = document.getElementById('kpiNpsScore');
+      npsEl.textContent = npsData.score;
+      npsEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
+
+      document.getElementById('kpiPromoters').textContent = `${npsData.total ? Math.round((npsData.promoters / npsData.total) * 100) : 0}%`;
+      document.getElementById('kpiPassives').textContent = `${npsData.total ? Math.round((npsData.passives / npsData.total) * 100) : 0}%`;
+      document.getElementById('kpiDetractorsPct').textContent = `${npsData.total ? Math.round((npsData.detractors / npsData.total) * 100) : 0}%`;
+      document.getElementById('kpiTotalResponses').textContent = npsData.total;
+
+      // Destroy existing charts
+      Object.values(charts).forEach(chart => chart?.destroy());
+
+      // NPS Category Chart (Doughnut)
+      const catCtx = document.getElementById('npsCategoryChart').getContext('2d');
+      charts.category = new Chart(catCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Promoters (9-10)', 'Passives (7-8)', 'Detractors (0-6)'],
+          datasets: [{
+            data: [npsData.promoters, npsData.passives, npsData.detractors],
+            backgroundColor: ['#0e9a5a', '#ff9d00', '#c41e3a'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
           }
         }
-      }
-      cache.responses = responses; cache.answers = answers; cache.issues = issues; cache.codes = codes;
-      persistDemoDataset();
+      });
+
+      // Brand NPS Comparison (Horizontal Bar)
+      const brandLabels = Object.keys(brandMeta);
+      const brandScores = brandLabels.map(b => brandNPS[b]?.score || 0);
+      const brandColors = brandLabels.map(b => brandMeta[b].color);
+
+      const brandCtx = document.getElementById('brandNpsChart').getContext('2d');
+      charts.brand = new Chart(brandCtx, {
+        type: 'bar',
+        data: {
+          labels: brandLabels,
+          datasets: [{
+            label: 'NPS Score',
+            data: brandScores,
+            backgroundColor: brandColors,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { min: -100, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }
+          }
+        }
+      });
+
+      // NPS Trend Over Time (Line)
+      const trendData = calculateTrendData(periodResponses);
+      const trendCtx = document.getElementById('npsTrendChart').getContext('2d');
+      charts.trend = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: trendData.labels,
+          datasets: [{
+            label: 'NPS Score',
+            data: trendData.scores,
+            borderColor: '#85754E',
+            backgroundColor: 'rgba(133,117,78,0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { min: -100, max: 100 }
+          }
+        }
+      });
+
+      // Responses by Brand (Bar)
+      const brandCounts = brandLabels.map(b => periodResponses.filter(r => r.brand === b).length);
+      const respCtx = document.getElementById('brandResponsesChart').getContext('2d');
+      charts.responses = new Chart(respCtx, {
+        type: 'bar',
+        data: {
+          labels: brandLabels,
+          datasets: [{
+            label: 'Responses',
+            data: brandCounts,
+            backgroundColor: brandColors,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // Detractor comments
+      paintDetractorComments(periodResponses);
     }
 
-    /* Boot */
-    showLogin();
+    function calculateTrendData(responses) {
+      const days = analyticsPeriod === 'all' ? 30 : Math.min(analyticsPeriod, 30);
+      const labels = [];
+      const scores = [];
+
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(Date.now() - i * 86400000);
+        const dateStr = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+        labels.push(dateStr);
+
+        const dayStart = new Date(date.setHours(0, 0, 0, 0));
+        const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+
+        const dayResponses = responses.filter(r => {
+          const d = new Date(r.completed_at);
+          return d >= dayStart && d <= dayEnd;
+        });
+
+        const nps = DataService.calculateNPS(dayResponses);
+        scores.push(dayResponses.length > 0 ? nps.score : null);
+      }
+
+      return { labels, scores };
+    }
+
+    function paintDetractorComments(responses) {
+      const container = document.getElementById('detractorComments');
+      const detractors = responses.filter(r => r.q12 <= 6 && r.q12_follow).slice(0, 10);
+
+      if (detractors.length === 0) {
+        container.innerHTML = '<div class="empty">No detractor comments in this period</div>';
+        return;
+      }
+
+      container.innerHTML = detractors.map(r => `
+        <div style="padding:12px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+            ${brandBadge(r.brand)}
+            ${npsBadge(r.q12)}
+          </div>
+          <p style="font-size:13px; margin:0">"${r.q12_follow}"</p>
+          <div style="font-size:11px; color:var(--muted); margin-top:8px">${formatDate(r.completed_at)}</div>
+        </div>
+      `).join('');
+    }
+
+    // Period selector
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        analyticsPeriod = btn.dataset.period === 'all' ? 'all' : parseInt(btn.dataset.period);
+        paintAnalytics();
+      });
+    });
+
+    /* ---------- Export Tab ---------- */
+    function getExportData() {
+      const brand = document.getElementById('exportBrand').value;
+      const npsFilter = document.getElementById('exportNps').value;
+      const from = document.getElementById('exportFrom').value;
+      const to = document.getElementById('exportTo').value;
+
+      return allResponses.filter(r => {
+        if (brand && r.brand !== brand) return false;
+        if (npsFilter) {
+          const cat = getNPSCategory(r.q12);
+          if (cat !== npsFilter) return false;
+        }
+        if (from && r.completed_at < from) return false;
+        if (to && r.completed_at > to + 'T23:59:59') return false;
+        return true;
+      });
+    }
+
+    function updateExportPreview() {
+      const data = getExportData();
+      document.getElementById('exportPreviewCount').textContent = data.length;
+    }
+
+    // Update preview on filter change
+    ['exportBrand', 'exportNps', 'exportFrom', 'exportTo'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', updateExportPreview);
+    });
+
+    document.getElementById('exportExcelBtn')?.addEventListener('click', () => {
+      const data = getExportData();
+      if (data.length === 0) {
+        alert('No data to export');
+        return;
+      }
+
+      const exportRows = data.map(r => ({
+        'Date': formatDate(r.completed_at),
+        'Brand': r.brand,
+        'Branch': r.branch,
+        'Receipt': r.receipt || r.receipt || '-',
+        'Customer Name': r.name || '-',
+        'Customer Email': r.email || '-',
+        'Data Privacy Consent': r.dpa ? 'Yes' : 'No',
+        'Promo Consent': r.promo ? 'Yes' : 'No',
+        'NPS Score': r.q12,
+        'NPS Category': getNPSCategory(r.q12),
+        'NPS Feedback': r.q12_follow || '-',
+        'First Visit': r.q2 || '-',
+        'Visit Frequency': r.q3 || '-',
+        'Party Size': r.q4 || '-',
+        'Overall Experience': r.q5 || '-',
+        'Food Quality': r.q6 || '-',
+        'Staff Friendliness': r.q7 || '-',
+        'Orders Correct': r.q8 || '-',
+        'Value for Money': r.q10 || '-',
+        'Service Promptness': r.q11 || '-',
+        'Ticket Status': r.ticket_status || 'open',
+        'Reward Code': r.reward_code || '-',
+        'Reward Claimed': r.reward_claimed ? 'Yes' : 'No',
+        'Reward Claimed At': r.reward_claimed_at ? formatDate(r.reward_claimed_at) : '-'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Survey Responses');
+
+      const filename = `survey_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    });
+
+    document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
+      const data = getExportData();
+      if (data.length === 0) {
+        alert('No data to export');
+        return;
+      }
+
+      const exportRows = data.map(r => ({
+        'Date': formatDate(r.completed_at),
+        'Brand': r.brand,
+        'Branch': r.branch,
+        'Receipt': r.receipt || r.receipt || '-',
+        'Customer Name': r.name || '-',
+        'Customer Email': r.email || '-',
+        'Data Privacy Consent': r.dpa ? 'Yes' : 'No',
+        'Promo Consent': r.promo ? 'Yes' : 'No',
+        'NPS Score': r.q12,
+        'NPS Category': getNPSCategory(r.q12),
+        'NPS Feedback': r.q12_follow || '-',
+        'Ticket Status': r.ticket_status || 'open',
+        'Reward Code': r.reward_code || '-',
+        'Reward Claimed': r.reward_claimed ? 'Yes' : 'No'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const csv = XLSX.utils.sheet_to_csv(ws);
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `survey_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+    });
+
+    /* ---------- Response Detail Modal ---------- */
+    function formatRating(value, max = 5) {
+      if (value === null || value === undefined || value === '') return '-';
+      return `${value}/${max}`;
+    }
+
+    function formatAnswer(value) {
+      if (value === null || value === undefined || value === '') return '-';
+      return value;
+    }
+
+    function showResponseDetail(id) {
+      const response = allResponses.find(r => r.id === id);
+      if (!response) return;
+
+      document.getElementById('detailSubtitle').textContent = `${response.brand || '-'} - ${response.branch || '-'} | ${formatDate(response.completed_at)}`;
+
+      const content = document.getElementById('responseDetailContent');
+      content.innerHTML = `
+        <div style="display:grid; gap:16px">
+          <!-- Customer Info -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div style="padding:12px; background:rgba(0,0,0,0.03); border-radius:8px">
+              <div style="font-size:11px; color:var(--muted); margin-bottom:4px">Customer</div>
+              <div style="font:700 14px var(--font)">${response.name || '-'}</div>
+              <div style="font-size:12px; color:var(--muted)">${response.email || '-'}</div>
+              ${response.phone ? `<div style="font-size:12px; color:var(--muted)">${response.phone}</div>` : ''}
+            </div>
+            <div style="padding:12px; background:rgba(0,0,0,0.03); border-radius:8px">
+              <div style="font-size:11px; color:var(--muted); margin-bottom:4px">NPS Score (0-10)</div>
+              <div>${npsBadge(response.q12)} <span style="color:var(--muted); font-size:12px">${getNPSCategory(response.q12)}</span></div>
+            </div>
+          </div>
+
+          <!-- Receipt & Reward -->
+          <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
+            <div style="font:700 12px var(--font); margin-bottom:8px">Receipt & Reward</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13px">
+              <div><span style="color:var(--muted)">Receipt:</span> <span class="mono">${response.receipt || response.receipt || '-'}</span></div>
+              <div><span style="color:var(--muted)">Reward Code:</span> <span class="mono">${response.reward_code || '-'}</span></div>
+              <div><span style="color:var(--muted)">Claimed:</span> ${response.reward_claimed ? 'Yes' : 'No'}</div>
+              <div><span style="color:var(--muted)">Ticket Status:</span> ${response.ticket_status || 'open'}</div>
+            </div>
+          </div>
+
+          <!-- Consent -->
+          <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
+            <div style="font:700 12px var(--font); margin-bottom:8px">Consent</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13px">
+              <div><span style="color:var(--muted)">Data Privacy Act:</span> ${response.dpa ? '<span style="color:var(--ok)">Agreed</span>' : '<span style="color:var(--bad)">-</span>'}</div>
+              <div><span style="color:var(--muted)">Promo Updates:</span> ${response.promo ? '<span style="color:var(--ok)">Subscribed</span>' : '<span style="color:var(--muted)">-</span>'}</div>
+            </div>
+          </div>
+
+          ${response.q12_follow ? `
+          <!-- NPS Feedback -->
+          <div style="padding:12px; border:1px solid var(--line); border-radius:8px; background:rgba(196,30,58,0.03)">
+            <div style="font:700 12px var(--font); margin-bottom:8px">NPS Feedback</div>
+            <p style="font-size:13px; margin:0">"${response.q12_follow}"</p>
+          </div>
+          ` : ''}
+
+          <!-- Visit Information -->
+          <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
+            <div style="font:700 12px var(--font); margin-bottom:12px">Visit Information</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13px">
+              <div><span style="color:var(--muted)">First Visit:</span> ${formatAnswer(response.q2)}</div>
+              <div><span style="color:var(--muted)">Visit Frequency:</span> ${formatAnswer(response.q3)}</div>
+              <div><span style="color:var(--muted)">Party Size:</span> ${formatAnswer(response.q4)}</div>
+            </div>
+          </div>
+
+          <!-- Ratings (1-5 scale) -->
+          <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
+            <div style="font:700 12px var(--font); margin-bottom:12px">Ratings (1-5 scale)</div>
+            <div style="display:grid; gap:8px; font-size:13px">
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Overall Experience</span> <strong>${formatRating(response.q5)}</strong></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Food Quality</span> <strong>${formatRating(response.q6)}</strong></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Staff Friendliness</span> <strong>${formatRating(response.q7)}</strong></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Orders Correct</span> <strong>${formatRating(response.q8)}</strong></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Value for Money</span> <strong>${formatRating(response.q10)}</strong></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Service Promptness</span> <strong>${formatRating(response.q11)}</strong></div>
+            </div>
+          </div>
+
+          <!-- Additional Feedback -->
+          ${(response.q13 || response.q14 || response.q15 || response.q16 || response.q17 || response.q18) ? `
+          <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
+            <div style="font:700 12px var(--font); margin-bottom:12px">Additional Feedback</div>
+            <div style="display:grid; gap:8px; font-size:13px">
+              ${response.q13 ? `<div><span style="color:var(--muted)">Q13:</span> ${response.q13}</div>` : ''}
+              ${response.q14 ? `<div><span style="color:var(--muted)">Q14:</span> ${response.q14}</div>` : ''}
+              ${response.q15 ? `<div><span style="color:var(--muted)">Q15:</span> ${response.q15}</div>` : ''}
+              ${response.q16 ? `<div><span style="color:var(--muted)">Q16:</span> ${response.q16}</div>` : ''}
+              ${response.q17 ? `<div><span style="color:var(--muted)">Q17:</span> ${response.q17}</div>` : ''}
+              ${response.q18 ? `<div><span style="color:var(--muted)">Q18:</span> ${response.q18}</div>` : ''}
+            </div>
+          </div>
+          ` : ''}
+        </div>
+      `;
+
+      document.getElementById('responseDetailModal').classList.add('visible');
+    }
+
+    document.getElementById('closeDetailBtn')?.addEventListener('click', () => {
+      document.getElementById('responseDetailModal').classList.remove('visible');
+    });
+
+    document.getElementById('responseDetailModal')?.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('responseDetailModal')) {
+        document.getElementById('responseDetailModal').classList.remove('visible');
+      }
+    });
+
+    /* ---------- Session Verification ---------- */
+    async function checkExistingSession() {
+      const token = localStorage.getItem('admin_token');
+      const storedUser = localStorage.getItem('admin_user');
+
+      // No token or user stored - show login
+      if (!token || !storedUser) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_user');
+        showLogin();
+        return;
+      }
+
+      try {
+        // Verify the token with the server
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({})
+        });
+
+        // Check if response is OK and parse JSON
+        if (!response.ok) {
+          console.log('Session verification failed with status:', response.status);
+          throw new Error('Verification failed');
+        }
+
+        const data = await response.json();
+
+        // Strictly check that valid is true and user exists
+        if (data.valid === true && data.user && data.user.email) {
+          currentUser = data.user;
+          showApp();
+          return;
+        } else {
+          console.log('Session verification returned invalid:', data);
+          throw new Error('Invalid session data');
+        }
+      } catch (err) {
+        console.error('Session verification failed:', err);
+        // Clear invalid session data
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_user');
+        showLogin();
+      }
+    }
+
+    /* ---------- Keyboard Shortcuts ---------- */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('profileModal').classList.remove('visible');
+        document.getElementById('responseDetailModal').classList.remove('visible');
+      }
+    });
+
+    /* ---------- Force Logout via URL ---------- */
+    // Add ?logout to URL to force clear session (e.g., admin.html?logout)
+    function checkForceLogout() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('logout')) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_user');
+        // Remove the ?logout from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return true;
+      }
+      return false;
+    }
+
+    /* ---------- Boot ---------- */
+    // Check if force logout requested
+    if (checkForceLogout()) {
+      showLogin();
+    } else {
+      checkExistingSession();
+    }
   </script>
 </body>
 </html>

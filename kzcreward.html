@@ -232,7 +232,7 @@
               });
               document.body.appendChild(msg);
               requestAnimationFrame(()=>{ msg.style.opacity='1'; });
-              setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 1100);
+              setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(), 200); }, 2000);
             }catch(e){
               alert('Copy failed');
             }
@@ -303,7 +303,16 @@
 
       } catch (error) {
           console.error('Error verifying reward:', error);
-          cardEl.innerHTML = `<h1>Error</h1><p>${error.message}</p><p>Could not verify your reward. Please try again or contact support.</p>`;
+          const errorH1 = document.createElement('h1');
+          errorH1.textContent = 'Error';
+          const errorP1 = document.createElement('p');
+          errorP1.textContent = error.message;
+          const errorP2 = document.createElement('p');
+          errorP2.textContent = 'Could not verify your reward. Please try again or contact support.';
+          cardEl.innerHTML = '';
+          cardEl.appendChild(errorH1);
+          cardEl.appendChild(errorP1);
+          cardEl.appendChild(errorP2);
       }
     })();
   </script>

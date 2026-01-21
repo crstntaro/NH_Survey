@@ -1,0 +1,8 @@
+# Credentials
+CREDENTIALS.md
+
+# Environment variables
+.env
+.env.local
+admin/.env
+scripts/.env

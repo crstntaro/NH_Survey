@@ -2,13 +2,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Get allowed origins from environment or use default
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph').split(',');
+
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+// Cryptographically secure reward code generation
+function generateSecureRewardCode(): string {
+  const array = new Uint8Array(6);
+  crypto.getRandomValues(array);
+  const code = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+  return `GZ${code}`;
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -47,7 +64,7 @@ serve(async (req) => {
     }
 
     // 3. Generate a new unique reward code
-    const newRewardCode = `GZ${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+    const newRewardCode = generateSecureRewardCode();
 
     // 4. Update the record with the new reward code and mark as completed
     const { data: updatedResponse, error: updateError } = await supabaseAdmin
