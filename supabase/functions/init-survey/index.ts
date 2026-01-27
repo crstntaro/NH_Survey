@@ -3,13 +3,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Get allowed origins from environment or use default (includes localhost for dev)
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,http://localhost:3000,http://localhost:5500,http://127.0.0.1:3000,http://127.0.0.1:5500,http://localhost:8080,http://127.0.0.1:8080').split(',');
+// Get allowed origins from environment or use default
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,https://tarotaro-nh.github.io,https://crstntaro.github.io,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080').split(',');
 
 function getCorsHeaders(origin: string | null) {
-  // Allow any localhost origin for development
-  const isLocalhost = origin && (origin.includes('localhost') || origin.includes('127.0.0.1'));
-  const allowedOrigin = isLocalhost ? origin : (origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+  // Allow null origin for file:// protocol
+  if (!origin || origin === 'null') {
+    return {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+  // Allow any localhost or github.io origin for development
+  const isAllowed = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('github.io');
+  const allowedOrigin = isAllowed ? origin : (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -81,12 +89,16 @@ serve(async (req) => {
     }
 
     // Create a new survey response
+    // Generate unique placeholder email using receipt and timestamp
+    const placeholderEmail = `survey_${receipt}_${Date.now()}@placeholder.local`;
+
     const { data: newResponse, error: insertError } = await supabaseAdmin
       .from('survey_responses')
       .insert({
         receipt: receipt,
         brand: brand || null,
         branch: branch || null,
+        email: placeholderEmail,
         created_at: new Date().toISOString(),
       })
       .select('id')
@@ -94,7 +106,7 @@ serve(async (req) => {
 
     if (insertError || !newResponse) {
       console.error('Insert Error:', insertError);
-      throw new Error("Could not create survey response")
+      throw new Error(`Could not create survey response: ${insertError?.message || 'Unknown error'}`)
     }
 
     return new Response(JSON.stringify({
