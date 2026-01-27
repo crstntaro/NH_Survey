@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nippon Hasha — Admin Dashboard</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="nhlogo.png">
+  <link rel="apple-touch-icon" href="nhlogo.png">
+
   <!-- Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,6 +79,30 @@
     }
     @keyframes fadeIn{ to{ opacity:1; transform:none } }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    @keyframes scaleIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:none; } }
+    @keyframes successPulse { 0% { transform:scale(1); } 50% { transform:scale(1.05); } 100% { transform:scale(1); } }
+
+    /* Tab panel animations */
+    .tabpanel { animation: fadeInUp 0.3s var(--ease); }
+    .tabpanel[hidden] { display:none; }
+
+    /* Card hover effects */
+    .card { transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+    .card:hover { box-shadow: var(--elev-2); }
+
+    /* KPI card animations */
+    .kpi { transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+    .kpi:hover { transform: translateY(-2px); box-shadow: var(--elev-2); }
+
+    /* Table row animations */
+    .table tbody tr { transition: background var(--dur-fast) var(--ease); }
+
+    /* Button press effect */
+    .btn:active { transform: scale(0.97); }
+
+    /* Status select transition */
+    .statusSel { transition: all var(--dur-fast) var(--ease); }
 
     /* Admin-specific header - Dark theme */
     .site-header{
@@ -90,13 +118,13 @@
       max-width:1200px; margin:0 auto; padding:12px 16px; width:100%;
       display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px;
     }
-    .brand{ display:flex; align-items:center; gap:12px; }
-    .brand img{ height:36px; width:auto; }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .brand img{ height:40px; width:auto; }
     .brand .title{
       font:800 14px/1 var(--font); letter-spacing:.02em; color:#fff;
       display:flex; flex-direction:column; gap:2px;
     }
-    .brand .title small { font-size:10px; color:var(--gold); font-weight:600; letter-spacing:.1em; }
+    .brand .title small { font-size:11px; color:var(--gold); font-weight:700; letter-spacing:.12em; }
 
     .tabs{ display:flex; gap:6px; align-items:center; justify-content:center; flex-wrap:wrap; }
     .tab{
@@ -111,12 +139,12 @@
 
     .header-actions{ display:flex; gap:10px; align-items:center; }
     .user-badge {
-      font-size:12px; color:rgba(255,255,255,0.7); max-width:160px;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;
-      padding:6px 12px; border-radius:8px; background:rgba(255,255,255,0.1);
-      transition:background var(--dur-fast) var(--ease);
+      height:36px; width:36px; display:grid; place-items:center; border-radius:50%;
+      border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1);
+      cursor:pointer; color:#fff; font-size:18px;
+      transition:all var(--dur-fast) var(--ease);
     }
-    .user-badge:hover { background:rgba(255,255,255,0.2); }
+    .user-badge:hover { background:rgba(255,255,255,0.2); transform:translateY(-1px); }
 
     .icon-btn{
       height:36px; width:36px; display:grid; place-items:center; border-radius:10px;
@@ -220,6 +248,8 @@
     .statusSel.open { background-color:rgba(255,157,0,0.15); color:var(--warn); border-color:var(--warn); }
     .statusSel.in_progress { background-color:rgba(31,111,235,0.15); color:var(--info); border-color:var(--info); }
     .statusSel.resolved { background-color:rgba(14,154,90,0.15); color:var(--ok); border-color:var(--ok); }
+    .statusSel.voc { background-color:rgba(128,128,128,0.15); color:#666; border-color:#999; }
+    .statusSel.inactive { background-color:rgba(0,0,0,0.1); color:#444; border-color:#666; }
 
     /* Brand tags */
     .brandTag{
@@ -244,9 +274,9 @@
       padding:32px; box-shadow:var(--elev-2);
     }
     .login-card .logo-wrap { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
-    .login-card .logo-wrap img { height:40px; }
+    .login-card .logo-wrap img { height:44px; }
     .login-card .logo-wrap .title { font:800 16px var(--font); color:var(--black); }
-    .login-card .logo-wrap .title small { display:block; font-size:11px; color:var(--gold); font-weight:600; letter-spacing:.1em; margin-top:2px; }
+    .login-card .logo-wrap .title small { display:block; font-size:12px; color:var(--gold); font-weight:700; letter-spacing:.12em; }
     .login-card h1{ font:800 24px/1.2 var(--font); margin-bottom:8px; color:var(--black); }
     .login-card p{ color:var(--muted); font-size:14px; margin-bottom:20px; }
     .login-card label{ font:700 12px/1 var(--font); color:var(--muted); margin-top:16px; display:block; }
@@ -394,6 +424,24 @@
     }
     .filter-actions { display:flex; gap:10px; margin-top:16px; justify-content:flex-end; }
 
+    /* Collapsible search/filter */
+    .search-toggle-wrap { margin-bottom:16px; }
+    .search-toggle-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 16px; border:1px solid var(--line); border-radius:999px;
+      background:var(--surface); font:700 13px var(--font); cursor:pointer;
+      transition:all var(--dur-fast) var(--ease); box-shadow:var(--elev-1);
+    }
+    .search-toggle-btn:hover { background:color-mix(in oklab, var(--surface) 95%, var(--gold)); transform:translateY(-1px); }
+    .search-toggle-btn.active { background:var(--gold); color:#fff; border-color:var(--gold); }
+    .search-toggle-btn .icon { font-size:16px; }
+    .collapsible-filters {
+      display:none; margin-top:12px;
+      animation:slideDown .25s var(--ease);
+    }
+    .collapsible-filters.open { display:block; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:none; } }
+
     /* Scrollable table wrapper */
     .table-wrap { overflow-x:auto; }
 
@@ -426,8 +474,8 @@
   <main id="loginView" class="login-wrap">
     <section class="login-card">
       <div class="logo-wrap">
-        <img src="nhlogo.png" alt="Nippon Hasha">
-        <div class="title">Nippon Hasha<small>ADMIN DASHBOARD</small></div>
+        <img src="nhlogo.png" alt="Logo">
+        <div class="title"><small>ADMIN DASHBOARD</small></div>
       </div>
       <h1>Welcome back</h1>
       <p>Sign in to access the admin dashboard.</p>
@@ -454,14 +502,15 @@
   <header class="site-header" id="appHeader">
     <nav class="nav">
       <div class="brand">
-        <img src="nhlogo.png" alt="Nippon Hasha Inc.">
-        <div class="title">Nippon Hasha<small>ADMIN DASHBOARD</small></div>
+        <img src="nhlogo.png" alt="Logo">
+        <div class="title"><small>ADMIN DASHBOARD</small></div>
       </div>
 
       <div class="tabs" role="tablist">
         <button class="tab" data-tab="overview" aria-selected="true">Overview</button>
         <button class="tab" data-tab="responses">Responses</button>
         <button class="tab" data-tab="validator">Validator</button>
+        <button class="tab" data-tab="redeemed">Redeemed</button>
         <button class="tab" data-tab="analytics">Analytics</button>
         <button class="tab" data-tab="export">Export</button>
       </div>
@@ -471,13 +520,14 @@
           <option value="overview">Overview</option>
           <option value="responses">Responses</option>
           <option value="validator">Validator</option>
+          <option value="redeemed">Redeemed</option>
           <option value="analytics">Analytics</option>
           <option value="export">Export</option>
         </select>
       </div>
 
       <div class="header-actions">
-        <span class="user-badge" id="userBadge" title="Click to manage profile"></span>
+        <button class="user-badge" id="userBadge" title="Click to manage profile">👤</button>
         <button id="signOutBtn" class="btn">Sign out</button>
       </div>
     </nav>
@@ -537,45 +587,60 @@
         <h3>All Responses</h3>
         <p class="subtitle">View all completed survey responses from Supabase.</p>
 
-        <div class="filters-panel">
-          <h4>Filters</h4>
-          <div class="filters-grid">
-            <div class="field">
-              <label>Search</label>
-              <input type="text" id="respFilterSearch" placeholder="Name, receipt, email...">
+        <div class="search-toggle-wrap">
+          <button class="search-toggle-btn" id="respSearchToggle">
+            <span class="icon">🔍</span>
+            <span>Search & Filter</span>
+          </button>
+        </div>
+
+        <div class="collapsible-filters" id="respFiltersCollapsible">
+          <div class="filters-panel">
+            <h4>Filters</h4>
+            <div class="filters-grid">
+              <div class="field">
+                <label>Search</label>
+                <input type="text" id="respFilterSearch" placeholder="Name, receipt, email...">
+              </div>
+              <div class="field">
+                <label>Brand</label>
+                <select id="respFilterBrand">
+                  <option value="">All Brands</option>
+                  <option value="Yushoken">Yushoken</option>
+                  <option value="Mendokoro">Mendokoro</option>
+                  <option value="Marudori">Marudori</option>
+                  <option value="Kazu Cafe">Kazu Cafe</option>
+                  <option value="Kazunori">Kazunori</option>
+                </select>
+              </div>
+              <div class="field" id="branchFilterWrap" style="display:none">
+                <label>Branch/Store</label>
+                <select id="respFilterBranch">
+                  <option value="">All Branches</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>NPS Category</label>
+                <select id="respFilterNps">
+                  <option value="">All</option>
+                  <option value="detractor">Detractors (0-6)</option>
+                  <option value="passive">Passives (7-8)</option>
+                  <option value="promoter">Promoters (9-10)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Date From</label>
+                <input type="date" id="respFilterFrom">
+              </div>
+              <div class="field">
+                <label>Date To</label>
+                <input type="date" id="respFilterTo">
+              </div>
             </div>
-            <div class="field">
-              <label>Brand</label>
-              <select id="respFilterBrand">
-                <option value="">All Brands</option>
-                <option value="Yushoken">Yushoken</option>
-                <option value="Mendokoro">Mendokoro</option>
-                <option value="Marudori">Marudori</option>
-                <option value="Kazu Cafe">Kazu Cafe</option>
-                <option value="Kazunori">Kazunori</option>
-              </select>
+            <div class="filter-actions">
+              <button class="btn" id="respClearFilters">Clear</button>
+              <button class="btn primary" id="respApplyFilters">Apply Filters</button>
             </div>
-            <div class="field">
-              <label>NPS Category</label>
-              <select id="respFilterNps">
-                <option value="">All</option>
-                <option value="detractor">Detractors (0-6)</option>
-                <option value="passive">Passives (7-8)</option>
-                <option value="promoter">Promoters (9-10)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Date From</label>
-              <input type="date" id="respFilterFrom">
-            </div>
-            <div class="field">
-              <label>Date To</label>
-              <input type="date" id="respFilterTo">
-            </div>
-          </div>
-          <div class="filter-actions">
-            <button class="btn" id="respClearFilters">Clear</button>
-            <button class="btn primary" id="respApplyFilters">Apply Filters</button>
           </div>
         </div>
 
@@ -632,6 +697,94 @@
 
         <div class="validator-actions" id="validatorActions" style="display:none">
           <button class="btn success" id="markRedeemedBtn">Mark as Redeemed</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- REDEEMED TAB -->
+    <section class="tabpanel" id="tab-redeemed" hidden>
+      <div class="card">
+        <h3>Redeemed Rewards</h3>
+        <p class="subtitle">View all claimed rewards with their redemption details.</p>
+
+        <div class="search-toggle-wrap">
+          <button class="search-toggle-btn" id="redeemedSearchToggle">
+            <span class="icon">🔍</span>
+            <span>Search & Filter</span>
+          </button>
+        </div>
+
+        <div class="collapsible-filters" id="redeemedFiltersCollapsible">
+          <div class="filters-panel">
+            <h4>Filters</h4>
+            <div class="filters-grid">
+              <div class="field">
+                <label>Search</label>
+                <input type="text" id="redeemedFilterSearch" placeholder="Name, code, receipt, email...">
+              </div>
+              <div class="field">
+                <label>Brand</label>
+                <select id="redeemedFilterBrand">
+                  <option value="">All Brands</option>
+                  <option value="Yushoken">Yushoken</option>
+                  <option value="Mendokoro">Mendokoro</option>
+                  <option value="Marudori">Marudori</option>
+                  <option value="Kazu Cafe">Kazu Cafe</option>
+                  <option value="Kazunori">Kazunori</option>
+                </select>
+              </div>
+              <div class="field" id="redeemedBranchFilterWrap" style="display:none">
+                <label>Branch/Store</label>
+                <select id="redeemedFilterBranch">
+                  <option value="">All Branches</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Date From</label>
+                <input type="date" id="redeemedFilterFrom">
+              </div>
+              <div class="field">
+                <label>Date To</label>
+                <input type="date" id="redeemedFilterTo">
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn" id="redeemedClearFilters">Clear</button>
+              <button class="btn primary" id="redeemedApplyFilters">Apply Filters</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpis" id="redeemedKpis">
+          <div class="kpi success">
+            <div class="v" id="kpiTotalRedeemed">-</div>
+            <div class="l">Total Redeemed</div>
+          </div>
+          <div class="kpi info">
+            <div class="v" id="kpiRedeemedToday">-</div>
+            <div class="l">Redeemed Today</div>
+          </div>
+          <div class="kpi warning">
+            <div class="v" id="kpiRedeemedThisWeek">-</div>
+            <div class="l">This Week</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="redeemedTable">
+            <thead>
+              <tr>
+                <th>Redeemed At</th>
+                <th>Customer</th>
+                <th>Reward Code</th>
+                <th>Receipt</th>
+                <th>Survey Brand/Branch</th>
+                <th>Redeemed By</th>
+                <th>Redeemed At (Location)</th>
+              </tr>
+            </thead>
+            <tbody id="redeemedBody"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -876,12 +1029,19 @@
 
       async updateTicketStatus(id, status) {
         try {
-          const { error } = await sb
-            .from('survey_responses')
-            .update({ ticket_status: status })
-            .eq('id', id);
+          const token = localStorage.getItem('admin_token');
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/update-status`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({ id, status })
+          });
 
-          if (error) throw error;
+          const data = await response.json();
+          if (!response.ok || !data.success) throw new Error(data.error || 'Update failed');
           return true;
         } catch (err) {
           console.error('Error updating ticket status:', err);
@@ -891,17 +1051,19 @@
 
       async markRewardClaimed(id) {
         try {
-          const { error } = await sb
-            .from('survey_responses')
-            .update({
-              reward_claimed: true,
-              reward_claimed_at: new Date().toISOString(),
-              reward_claimed_by: currentUser?.email || 'admin',
-              reward_claimed_branch: currentUser?.branch || 'Unknown'
-            })
-            .eq('id', id);
+          const token = localStorage.getItem('admin_token');
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/mark-redeemed`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({ id })
+          });
 
-          if (error) throw error;
+          const data = await response.json();
+          if (!response.ok || !data.success) throw new Error(data.error || 'Update failed');
           return true;
         } catch (err) {
           console.error('Error marking reward claimed:', err);
@@ -1047,8 +1209,7 @@
       appView.style.display = 'grid';
 
       if (currentUser) {
-        userBadge.textContent = currentUser.email;
-        userBadge.title = `${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
+        userBadge.title = `${currentUser.email}\n${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
       }
 
       initApp();
@@ -1098,9 +1259,18 @@
         const data = await response.json();
 
         if (response.ok && data.success) {
+          // Store tokens and user info
           localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_refresh_token', data.refresh_token);
           localStorage.setItem('admin_user', JSON.stringify(data.user));
           currentUser = data.user;
+
+          // Set the session on the Supabase client for authenticated operations
+          await sb.auth.setSession({
+            access_token: data.token,
+            refresh_token: data.refresh_token
+          });
+
           showApp();
         } else {
           showLoginError(data.error || 'Invalid credentials');
@@ -1124,9 +1294,13 @@
 
       // Clear local storage FIRST to ensure logout even if API fails
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_refresh_token');
       localStorage.removeItem('admin_user');
       currentUser = null;
-      userBadge.textContent = '';
+      userBadge.title = 'Click to manage profile';
+
+      // Sign out from Supabase client
+      await sb.auth.signOut();
 
       if (token) {
         try {
@@ -1164,9 +1338,13 @@
 
       if (tabSelect) tabSelect.value = id;
 
+      // Scroll to top smoothly when switching tabs
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
       // Refresh tab content
       if (id === 'overview') paintOverview();
       if (id === 'responses') paintResponses();
+      if (id === 'redeemed') paintRedeemed();
       if (id === 'analytics') paintAnalytics();
       if (id === 'export') updateExportPreview();
     }
@@ -1228,7 +1406,7 @@
         currentUser.display_name = name;
         currentUser.profile_pic = pic;
         localStorage.setItem('admin_user', JSON.stringify(currentUser));
-        userBadge.textContent = name || currentUser.email;
+        userBadge.title = `${name || currentUser.email}\n${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
         msgEl.innerHTML = '<div class="success-msg">Profile saved!</div>';
       } catch (err) {
         msgEl.innerHTML = '<div class="error-msg">Failed to save</div>';
@@ -1315,6 +1493,37 @@
       // For Responses/Analytics/Export: filter by user access
       filteredResponses = filterByUserAccess([...allResponses]);
 
+      // Show branch filter for super admin and populate with unique branches
+      if (isSuperAdmin()) {
+        const uniqueBranches = [...new Set(allResponses.map(r => r.branch).filter(Boolean))].sort();
+
+        // Responses tab branch filter
+        const branchFilterWrap = document.getElementById('branchFilterWrap');
+        const branchSelect = document.getElementById('respFilterBranch');
+        if (branchFilterWrap && branchSelect) {
+          branchFilterWrap.style.display = 'block';
+          uniqueBranches.forEach(branch => {
+            const option = document.createElement('option');
+            option.value = branch;
+            option.textContent = branch;
+            branchSelect.appendChild(option);
+          });
+        }
+
+        // Redeemed tab branch filter
+        const redeemedBranchFilterWrap = document.getElementById('redeemedBranchFilterWrap');
+        const redeemedBranchSelect = document.getElementById('redeemedFilterBranch');
+        if (redeemedBranchFilterWrap && redeemedBranchSelect) {
+          redeemedBranchFilterWrap.style.display = 'block';
+          uniqueBranches.forEach(branch => {
+            const option = document.createElement('option');
+            option.value = branch;
+            option.textContent = branch;
+            redeemedBranchSelect.appendChild(option);
+          });
+        }
+      }
+
       // Paint initial view
       setTab('overview');
     }
@@ -1368,6 +1577,8 @@
               <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
               <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
               <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
+              <option value="voc" ${r.ticket_status === 'voc' ? 'selected' : ''}>VOC</option>
+              <option value="inactive" ${r.ticket_status === 'inactive' ? 'selected' : ''}>Inactive</option>
             </select>
           </td>
           <td data-label="Actions"><button class="btn" data-view="${r.id}">View</button></td>
@@ -1425,6 +1636,8 @@
               <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
               <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
               <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
+              <option value="voc" ${r.ticket_status === 'voc' ? 'selected' : ''}>VOC</option>
+              <option value="inactive" ${r.ticket_status === 'inactive' ? 'selected' : ''}>Inactive</option>
             </select>
           </td>
           <td data-label="Reward"><span class="status-badge ${r.reward_claimed ? 'claimed' : 'unclaimed'}">${r.reward_claimed ? 'Claimed' : 'Unclaimed'}</span></td>
@@ -1454,10 +1667,19 @@
       });
     }
 
+    // Search & Filter toggle for Responses tab
+    document.getElementById('respSearchToggle')?.addEventListener('click', () => {
+      const btn = document.getElementById('respSearchToggle');
+      const panel = document.getElementById('respFiltersCollapsible');
+      btn.classList.toggle('active');
+      panel.classList.toggle('open');
+    });
+
     // Response filters
     document.getElementById('respApplyFilters')?.addEventListener('click', () => {
       const search = document.getElementById('respFilterSearch').value.toLowerCase();
       const brand = document.getElementById('respFilterBrand').value;
+      const branch = document.getElementById('respFilterBranch').value;
       const npsFilter = document.getElementById('respFilterNps').value;
       const from = document.getElementById('respFilterFrom').value;
       const to = document.getElementById('respFilterTo').value;
@@ -1468,6 +1690,7 @@
           if (!haystack.includes(search)) return false;
         }
         if (brand && r.brand !== brand) return false;
+        if (branch && r.branch !== branch) return false;
         if (npsFilter) {
           const cat = getNPSCategory(r.q12);
           if (cat !== npsFilter) return false;
@@ -1483,6 +1706,7 @@
     document.getElementById('respClearFilters')?.addEventListener('click', () => {
       document.getElementById('respFilterSearch').value = '';
       document.getElementById('respFilterBrand').value = '';
+      document.getElementById('respFilterBranch').value = '';
       document.getElementById('respFilterNps').value = '';
       document.getElementById('respFilterFrom').value = '';
       document.getElementById('respFilterTo').value = '';
@@ -1534,7 +1758,10 @@
       if (response.reward_claimed) {
         statusEl.textContent = '⚠️ Reward Already Claimed';
         statusEl.className = 'status claimed';
-        const claimInfo = `Claimed on ${formatDate(response.reward_claimed_at)}${response.reward_claimed_branch ? ` at ${response.reward_claimed_branch}` : ''}`;
+        let claimInfo = `Claimed on ${formatDate(response.reward_claimed_at)}`;
+        if (response.reward_claimed_branch) claimInfo += ` at ${response.reward_claimed_branch}`;
+        if (response.reward_claimed_brand) claimInfo += ` (${response.reward_claimed_brand})`;
+        if (response.reward_claimed_by) claimInfo += ` by ${response.reward_claimed_by}`;
         document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--warn)">${claimInfo}</span>`;
         actionsEl.style.display = 'none';
       } else {
@@ -1557,29 +1784,137 @@
       const success = await DataService.markRewardClaimed(currentValidationResponse.id);
 
       if (success) {
-        document.getElementById('validatorStatus').textContent = '✅ Marked as Redeemed!';
-        document.getElementById('validatorStatus').className = 'status valid';
-        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${currentUser?.email}</span>`;
+        const claimedAt = new Date().toISOString();
+        const statusEl = document.getElementById('validatorStatus');
+        statusEl.textContent = '✅ Marked as Redeemed!';
+        statusEl.className = 'status valid';
+        statusEl.style.animation = 'none';
+        statusEl.offsetHeight; // Trigger reflow
+        statusEl.style.animation = 'successPulse 0.5s ease';
+
+        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${currentUser?.email} at ${currentUser?.branch} (${currentUser?.brand})</span>`;
         document.getElementById('validatorActions').style.display = 'none';
 
         // Update local data
         const response = allResponses.find(r => r.id === currentValidationResponse.id);
         if (response) {
           response.reward_claimed = true;
-          response.reward_claimed_at = new Date().toISOString();
+          response.reward_claimed_at = claimedAt;
           response.reward_claimed_by = currentUser?.email;
           response.reward_claimed_branch = currentUser?.branch;
+          response.reward_claimed_brand = currentUser?.brand;
         }
+
+        // Refresh the redeemed tab data if needed
+        if (activeTab === 'redeemed') paintRedeemed();
       } else {
         btn.disabled = false;
         btn.textContent = 'Mark as Redeemed';
-        alert('Failed to mark as redeemed. Please try again.');
+        document.getElementById('validatorStatus').textContent = '❌ Failed to mark as redeemed';
+        document.getElementById('validatorStatus').className = 'status invalid';
       }
     });
 
     // Enter key for validator
     document.getElementById('validatorInput')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('validateBtn').click();
+    });
+
+    /* ---------- Redeemed Tab ---------- */
+    let filteredRedeemed = [];
+
+    function paintRedeemed() {
+      // Get all redeemed responses
+      const redeemedResponses = filterByUserAccess(allResponses).filter(r => r.reward_claimed);
+
+      // Apply filters
+      const search = document.getElementById('redeemedFilterSearch')?.value.toLowerCase() || '';
+      const brand = document.getElementById('redeemedFilterBrand')?.value || '';
+      const branch = document.getElementById('redeemedFilterBranch')?.value || '';
+      const from = document.getElementById('redeemedFilterFrom')?.value || '';
+      const to = document.getElementById('redeemedFilterTo')?.value || '';
+
+      filteredRedeemed = redeemedResponses.filter(r => {
+        if (search) {
+          const haystack = [r.name, r.email, r.reward_code, r.receipt, r.reward_claimed_by].join(' ').toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        if (brand && r.brand !== brand) return false;
+        if (branch && r.branch !== branch) return false;
+        if (from && r.reward_claimed_at < from) return false;
+        if (to && r.reward_claimed_at > to + 'T23:59:59') return false;
+        return true;
+      });
+
+      // Sort by redemption date (newest first)
+      filteredRedeemed.sort((a, b) => new Date(b.reward_claimed_at) - new Date(a.reward_claimed_at));
+
+      // Update KPIs
+      const today = new Date().toISOString().split('T')[0];
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+      document.getElementById('kpiTotalRedeemed').textContent = redeemedResponses.length;
+      document.getElementById('kpiRedeemedToday').textContent = redeemedResponses.filter(r => r.reward_claimed_at?.startsWith(today)).length;
+      document.getElementById('kpiRedeemedThisWeek').textContent = redeemedResponses.filter(r => r.reward_claimed_at >= weekAgo).length;
+
+      // Paint table
+      const tbody = document.getElementById('redeemedBody');
+      tbody.innerHTML = '';
+
+      if (filteredRedeemed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🎁</div>No redeemed rewards found</div></td></tr>`;
+        return;
+      }
+
+      filteredRedeemed.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Redeemed At">${formatDate(r.reward_claimed_at)}</td>
+          <td data-label="Customer">
+            <div style="font-weight:600">${r.name || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${r.email || '-'}</div>
+          </td>
+          <td data-label="Reward Code" class="mono">${r.reward_code || '-'}</td>
+          <td data-label="Receipt" class="mono">${r.receipt || '-'}</td>
+          <td data-label="Survey Brand/Branch">
+            ${brandBadge(r.brand)}<br>
+            <small style="color:var(--muted)">${r.branch || '-'}</small>
+          </td>
+          <td data-label="Redeemed By">${r.reward_claimed_by || '-'}</td>
+          <td data-label="Redeemed At (Location)">
+            <div style="font-weight:600">${r.reward_claimed_branch || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${r.reward_claimed_brand || '-'}</div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Search & Filter toggle for Redeemed tab
+    document.getElementById('redeemedSearchToggle')?.addEventListener('click', () => {
+      const btn = document.getElementById('redeemedSearchToggle');
+      const panel = document.getElementById('redeemedFiltersCollapsible');
+      btn.classList.toggle('active');
+      panel.classList.toggle('open');
+    });
+
+    // Redeemed filters
+    document.getElementById('redeemedApplyFilters')?.addEventListener('click', () => {
+      paintRedeemed();
+    });
+
+    document.getElementById('redeemedClearFilters')?.addEventListener('click', () => {
+      document.getElementById('redeemedFilterSearch').value = '';
+      document.getElementById('redeemedFilterBrand').value = '';
+      document.getElementById('redeemedFilterBranch').value = '';
+      document.getElementById('redeemedFilterFrom').value = '';
+      document.getElementById('redeemedFilterTo').value = '';
+      paintRedeemed();
+    });
+
+    // Enter key for redeemed search
+    document.getElementById('redeemedFilterSearch')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('redeemedApplyFilters').click();
     });
 
     /* ---------- Analytics Tab ---------- */
@@ -1987,11 +2322,13 @@
     /* ---------- Session Verification ---------- */
     async function checkExistingSession() {
       const token = localStorage.getItem('admin_token');
+      const refreshToken = localStorage.getItem('admin_refresh_token');
       const storedUser = localStorage.getItem('admin_user');
 
       // No token or user stored - show login
       if (!token || !storedUser) {
         localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refresh_token');
         localStorage.removeItem('admin_user');
         showLogin();
         return;
@@ -2020,6 +2357,15 @@
         // Strictly check that valid is true and user exists
         if (data.valid === true && data.user && data.user.email) {
           currentUser = data.user;
+
+          // Restore the Supabase session for authenticated operations
+          if (refreshToken) {
+            await sb.auth.setSession({
+              access_token: token,
+              refresh_token: refreshToken
+            });
+          }
+
           showApp();
           return;
         } else {
@@ -2030,6 +2376,7 @@
         console.error('Session verification failed:', err);
         // Clear invalid session data
         localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refresh_token');
         localStorage.removeItem('admin_user');
         showLogin();
       }
@@ -2049,7 +2396,9 @@
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('logout')) {
         localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refresh_token');
         localStorage.removeItem('admin_user');
+        sb.auth.signOut();
         // Remove the ?logout from URL
         window.history.replaceState({}, document.title, window.location.pathname);
         return true;

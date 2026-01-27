@@ -4,7 +4,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.0/mod.ts';
 
 // Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,https://tarotaro-nh.github.io').split(',');
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,https://tarotaro-nh.github.io,https://crstntaro.github.io').split(',');
 
 function getCorsHeaders(origin: string | null) {
   // Allow null origin for file:// protocol and localhost variations
@@ -82,6 +82,12 @@ serve(async (req) => {
         break;
       case '/admin-auth/change-password':
         response = await handleChangePassword(req, supabaseAdmin, corsHeaders);
+        break;
+      case '/admin-auth/mark-redeemed':
+        response = await handleMarkRedeemed(req, supabaseAdmin, corsHeaders);
+        break;
+      case '/admin-auth/update-status':
+        response = await handleUpdateStatus(req, supabaseAdmin, corsHeaders);
         break;
       default:
         response = new Response(JSON.stringify({ error: 'Not found' }), {
@@ -192,6 +198,7 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
   return new Response(JSON.stringify({
     success: true,
     token: refreshedSessionData.session.access_token,
+    refresh_token: refreshedSessionData.session.refresh_token,
     user: {
       id: adminUser.id,
       email: adminUser.email,
@@ -321,6 +328,90 @@ async function handleChangePassword(req: Request, supabase: SupabaseClient, cors
     await supabase.auth.admin.signOut(user.id);
 
     return new Response(JSON.stringify({ success: true, message: 'Password updated. Please log in again.' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { id } = await req.json();
+    if (!id) {
+        return new Response(JSON.stringify({ error: 'Survey ID is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { error } = await supabase
+        .from('survey_responses')
+        .update({
+            reward_claimed: true,
+            reward_claimed_at: new Date().toISOString(),
+            reward_claimed_by: user.email || 'admin',
+            reward_claimed_branch: user.app_metadata?.branch || 'Unknown',
+            reward_claimed_brand: user.app_metadata?.brand || 'Unknown'
+        })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error marking reward as redeemed:', error);
+        return new Response(JSON.stringify({ error: 'Failed to mark as redeemed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Log the action
+    await supabase.from('admin_audit_log').insert({
+        admin_id: user.app_metadata?.admin_id,
+        action: 'reward_redeemed',
+        resource_type: 'survey_response',
+        resource_id: id,
+        details: { email: user.email }
+    });
+
+    return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleUpdateStatus(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { id, status } = await req.json();
+    if (!id || !status) {
+        return new Response(JSON.stringify({ error: 'Survey ID and status are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const validStatuses = ['open', 'in_progress', 'resolved', 'voc', 'inactive'];
+    if (!validStatuses.includes(status)) {
+        return new Response(JSON.stringify({ error: 'Invalid status' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { error } = await supabase
+        .from('survey_responses')
+        .update({ ticket_status: status })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating ticket status:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update status' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

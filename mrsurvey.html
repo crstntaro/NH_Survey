@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Marudori Survey — Nippon Hasha</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="marudorilogo.png">
+  <link rel="apple-touch-icon" href="marudorilogo.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -577,8 +582,57 @@
     const urlParams = new URLSearchParams(window.location.search);
     const receiptParam = urlParams.get("receipt") || "";
     const branchParam = urlParams.get("branch") || "";
-    const responseId = urlParams.get("response_id") || "";
+    let responseId = urlParams.get("response_id") || "";
     const branchField = document.getElementById('branchField');
+
+    async function initSurveyResponse() {
+      if (responseId) return true;
+      if (!receiptParam) {
+        document.body.innerHTML = `
+          <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);">
+            <div style="background:#fff;border-radius:20px;padding:32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+              <img src="marudorilogo.png" alt="Marudori" style="height:50px;margin-bottom:16px;">
+              <h2 style="font:800 22px/1.2 var(--font);margin:0 0 12px;color:#d85626;">Receipt Required</h2>
+              <p style="font:500 14px/1.5 var(--font);color:#4b5563;margin:0 0 20px;">Please scan the QR code on your receipt to access the survey.</p>
+            </div>
+          </div>`;
+        return false;
+      }
+      try {
+        const { data, error } = await supabase.functions.invoke('init-survey', {
+          body: { receipt: receiptParam, brand: 'Marudori', branch: branchParam }
+        });
+        if (error) throw error;
+        if (data.error) {
+          document.body.innerHTML = `
+            <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);">
+              <div style="background:#fff;border-radius:20px;padding:32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+                <img src="marudorilogo.png" alt="Marudori" style="height:50px;margin-bottom:16px;">
+                <h2 style="font:800 22px/1.2 var(--font);margin:0 0 12px;color:#d85626;">Receipt Already Used</h2>
+                <p style="font:500 14px/1.5 var(--font);color:#4b5563;margin:0 0 20px;">This receipt has already been used to claim a reward.</p>
+              </div>
+            </div>`;
+          return false;
+        }
+        responseId = data.response_id;
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('response_id', responseId);
+        window.history.replaceState({}, '', newUrl);
+        return true;
+      } catch (err) {
+        console.error('Init survey error:', err);
+        document.body.innerHTML = `
+          <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);">
+            <div style="background:#fff;border-radius:20px;padding:32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+              <img src="marudorilogo.png" alt="Marudori" style="height:50px;margin-bottom:16px;">
+              <h2 style="font:800 22px/1.2 var(--font);margin:0 0 12px;color:#d85626;">Connection Error</h2>
+              <p style="font:500 14px/1.5 var(--font);color:#4b5563;margin:0 0 20px;">Unable to connect. Please try again.</p>
+              <button onclick="location.reload()" style="padding:12px 24px;border-radius:12px;font:800 14px/1 var(--font);color:#fff;background:#ff6b35;border:none;cursor:pointer;">Retry</button>
+            </div>
+          </div>`;
+        return false;
+      }
+    }
     const RECEIPT_BRANCHES = {
       MDKA:'Molito (Alabang)',
       MDKB:'Bonifacio Global City',
@@ -1396,14 +1450,36 @@
 
       } catch (error) {
         console.error('Error submitting survey:', error);
-        state.textContent = 'An error occurred. Please try again.';
         if (overlay) {
           overlay.style.display = 'none';
+        }
+
+        // Check if receipt was already used
+        if (error.message && error.message.includes('already been used')) {
+          const alreadyUsedModal = document.createElement('div');
+          alreadyUsedModal.id = 'alreadyUsedModal';
+          alreadyUsedModal.innerHTML = `
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1001;display:flex;align-items:center;justify-content:center;padding:20px;">
+              <div style="background:#fff;border-radius:20px;padding:24px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+                <img src="marudorilogo.png" alt="Marudori" style="height:40px;margin-bottom:12px;">
+                <h2 style="font:800 20px/1.2 var(--font);margin:0 0 8px;color:#d85626;">Receipt Already Used</h2>
+                <p style="font:500 14px/1.5 var(--font);color:#4b5563;margin:0 0 16px;">This receipt has already been used to claim a reward. Each receipt can only be used once.</p>
+                <p style="font:600 13px/1.4 var(--font);color:#6b7280;margin:0 0 16px;">If you believe this is an error, please contact our staff for assistance.</p>
+                <button onclick="window.location.href=window.location.pathname" style="padding:12px 24px;border-radius:12px;font:800 14px/1 var(--font);color:#fff;background:var(--accent);border:none;cursor:pointer;box-shadow:0 8px 16px rgba(255,107,53,0.3);">Start New Survey</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(alreadyUsedModal);
+          state.textContent = '';
+        } else {
+          state.textContent = 'An error occurred. Please try again.';
         }
         submitBtn.disabled = false; nextBtn.disabled = false; backBtn.disabled = false;
       }
     });
-    window.addEventListener('load',()=>{
+    window.addEventListener('load', async ()=>{
+      const initialized = await initSurveyResponse();
+      if (!initialized) return;
       steps.forEach((s,i)=>{ s.style.display = (i===0) ? 'block' : 'none'; s.classList.toggle('active', i===0); });
       refreshStageHeight(true);
       updateUI();

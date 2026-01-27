@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Marudori — Reward</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="marudorilogo.png">
+  <link rel="apple-touch-icon" href="marudorilogo.png">
+
   <!-- Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,6 +98,28 @@
 
     .small{ font-size:12.5px; color:#6b7280; margin-top:8px }
 
+    /* Mobile Responsiveness */
+    @media (max-width: 640px) {
+      .wrap { padding: 16px; }
+      .card { padding: 16px; border-radius: 16px; }
+      .logo { height: 36px; }
+      h1 { font-size: clamp(18px, 5vw, 24px); margin: 6px 0 4px; }
+      p.lead { font-size: 14px; margin: 4px 0 12px; }
+      .code { padding: 12px 14px; font-size: clamp(18px, 5vw, 24px); }
+      .actions { gap: 8px; }
+      .btn { padding: 14px 18px; font-size: 13px; width: 100%; }
+      .receipt { padding: 12px; margin-top: 14px; }
+      .rec-title { font-size: 14px; }
+      .rec-row { font-size: 12px; }
+      .footer { font-size: 11px; }
+    }
+
+    @media (max-width: 380px) {
+      .brand-name { font-size: 14px; }
+      .brand-sub { font-size: 10px; }
+      .code { letter-spacing: .04em; }
+    }
+
     /* Receipt */
     .receipt{
       margin:18px auto 0; width:min(580px,100%); background:#fff; border:1px dashed #a3a3a3;
@@ -173,8 +199,23 @@
       const recNo   = document.getElementById('recNo');
       const recDate = document.getElementById('recDate');
 
+      // Security: Validate required parameters
       if (!responseId || !rewardCodeFromUrl) {
-          cardEl.innerHTML = '<h1>Error</h1><p>Invalid reward link. Please complete a survey to get a reward.</p>';
+          cardEl.innerHTML = '<img class="logo" src="marudorilogo.png" alt="Marudori"><h1>Invalid Link</h1><p>This reward link is invalid or incomplete.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+          return;
+      }
+
+      // Security: Validate UUID format for response_id
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(responseId)) {
+          cardEl.innerHTML = '<img class="logo" src="marudorilogo.png" alt="Marudori"><h1>Invalid Link</h1><p>This reward link is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+          return;
+      }
+
+      // Security: Validate reward code format (GZ + 12 hex chars)
+      const rewardCodeRegex = /^GZ[0-9A-F]{12}$/i;
+      if (!rewardCodeRegex.test(rewardCodeFromUrl)) {
+          cardEl.innerHTML = '<img class="logo" src="marudorilogo.png" alt="Marudori"><h1>Invalid Code</h1><p>The reward code format is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
           return;
       }
 
@@ -193,7 +234,8 @@
               throw new Error('Survey not yet completed.');
           }
 
-          if (data.reward_code !== rewardCodeFromUrl) {
+          // Security: Verify reward code matches (case-insensitive)
+          if (data.reward_code.toUpperCase() !== rewardCodeFromUrl.toUpperCase()) {
               throw new Error('Invalid reward code.');
           }
 
@@ -275,7 +317,12 @@
 
       } catch (error) {
           console.error('Error verifying reward:', error);
-          cardEl.innerHTML = `<h1>Error</h1><p>${error.message}</p><p>Could not verify your reward. Please try again or contact support.</p>`;
+          cardEl.innerHTML = `
+            <img class="logo" src="marudorilogo.png" alt="Marudori">
+            <h1>Unable to Verify Reward</h1>
+            <p>${error.message}</p>
+            <p class="small">Please contact our staff for assistance or try completing a new survey.</p>
+          `;
       }
     })();
   </script>

@@ -1,0 +1,30 @@
+# Netlify Redirects - Clean URLs (remove .html extensions)
+# Survey Pages
+/mdsurvey/*    /mdsurvey.html    200
+/yksurvey/*    /yksurvey.html    200
+/kzsurvey/*    /kzsurvey.html    200
+/kzcsurvey/*   /kzcsurvey.html   200
+/mrsurvey/*    /mrsurvey.html    200
+
+/mdsurvey      /mdsurvey.html    200
+/yksurvey      /yksurvey.html    200
+/kzsurvey      /kzsurvey.html    200
+/kzcsurvey     /kzcsurvey.html   200
+/mrsurvey      /mrsurvey.html    200
+
+# Reward Pages
+/mdreward/*    /mdreward.html    200
+/ykreward/*    /ykreward.html    200
+/kzreward/*    /kzreward.html    200
+/kzcreward/*   /kzcreward.html   200
+/mrreward/*    /mrreward.html    200
+
+/mdreward      /mdreward.html    200
+/ykreward      /ykreward.html    200
+/kzreward      /kzreward.html    200
+/kzcreward     /kzcreward.html   200
+/mrreward      /mrreward.html    200
+
+# Admin Pages
+/admin         /admin.html       200
+/admin/*       /admin.html       200
