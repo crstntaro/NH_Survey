@@ -2,24 +2,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,https://tarotaro-nh.github.io,https://crstntaro.github.io,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080').split(',');
+// Strict allowed origins list - EXACT MATCH ONLY
+const ALLOWED_ORIGINS: string[] = [
+  'https://nipponhasha.ph',
+  'https://www.nipponhasha.ph',
+  'https://tarotaro-nh.github.io',
+  'https://crstntaro.github.io',
+  // Development origins (remove in production)
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:8080',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:3000',
+];
 
-function getCorsHeaders(origin: string | null) {
-  // Allow null origin for file:// protocol
-  if (!origin || origin === 'null') {
-    return {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-  // Allow any localhost or github.io origin for development
-  const isAllowed = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('github.io');
-  const allowedOrigin = isAllowed ? origin : (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // SECURITY: Only allow exact origin matches
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const allowedOrigin = isAllowed ? origin : ALLOWED_ORIGINS[0];
+
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
   };
 }
@@ -32,11 +37,16 @@ function generateSecureRewardCode(): string {
   return `GZ${code}`;
 }
 
-// Validate receipt number format (should start with valid prefix)
+// SECURITY: Validate receipt number format with strict rules
 function isValidReceiptFormat(receipt: string): boolean {
   if (!receipt || typeof receipt !== 'string') return false;
   const trimmed = receipt.trim();
-  if (trimmed.length < 5) return false;
+
+  // SECURITY: Enforce length limits (min 5, max 50 characters)
+  if (trimmed.length < 5 || trimmed.length > 50) return false;
+
+  // SECURITY: Only allow alphanumeric characters and hyphens
+  if (!/^[A-Za-z0-9\-]+$/.test(trimmed)) return false;
 
   // Valid prefixes: MDKA, MDKB, MDKC, MDKK, MDKM, MDKP, YSKA, YSKC, YSKO, YSKP, MRDR, MRDV, KZCF, KZNM
   const validPrefixes = ['MDKA', 'MDKB', 'MDKC', 'MDKK', 'MDKM', 'MDKP', 'YSKA', 'YSKC', 'YSKO', 'YSKP', 'MRDR', 'MRDV', 'KZCF', 'KZNM'];
@@ -147,7 +157,9 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error:', error);
+    // SECURITY: Return generic error to prevent information disclosure
+    return new Response(JSON.stringify({ error: 'An error occurred while processing your request.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

@@ -5,9 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nippon Hasha — Admin Dashboard</title>
 
+  <!-- SECURITY: Security headers via meta tags -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="nhlogo.png">
-  <link rel="apple-touch-icon" href="nhlogo.png">
+  <link rel="icon" type="image/png" href="assets/logos/nglogocircle.png">
+  <link rel="apple-touch-icon" href="assets/logos/nglogocircle.png">
 
   <!-- Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,10 +78,20 @@
     @keyframes float{ from{ background-position:0 0 } to{ background-position:400px 0 } }
 
     *{ box-sizing:border-box; margin:0; padding:0 }
-    html,body{ min-height:100vh }
+    html{
+      height:100%;
+      overflow:hidden;
+      background:var(--bg);
+      overscroll-behavior:none;
+    }
     body{
-      font-family:var(--font); color:var(--ink); background:transparent;
-      line-height:1.55; overflow-x:hidden;
+      height:100%;
+      overflow-y:auto;
+      overflow-x:hidden;
+      overscroll-behavior:none;
+      -webkit-overflow-scrolling:touch;
+      font-family:var(--font); color:var(--ink); background:var(--bg);
+      line-height:1.55;
       opacity:0; transform:translateY(6px); animation:fadeIn .35s var(--ease) forwards;
     }
     @keyframes fadeIn{ to{ opacity:1; transform:none } }
@@ -303,14 +320,32 @@
     /* Modal */
     .modal-overlay {
       position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100;
-      display:none; place-items:center; backdrop-filter:blur(4px);
+      display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px);
     }
-    .modal-overlay.visible { display:grid; }
+    .modal-overlay.visible { display:flex; }
     .modal {
+      position:relative;
       background:var(--surface); border-radius:var(--radius); padding:24px;
-      width:min(480px, 90vw); max-height:90vh; overflow-y:auto;
+      width:min(480px, 90vw); max-height:85vh; overflow-y:auto;
       box-shadow:var(--elev-2); animation:modalIn .25s var(--ease);
     }
+    .modal-close {
+      position:absolute;
+      top:16px;
+      right:16px;
+      width:32px;
+      height:32px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.05);
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      color:var(--muted);
+      transition:all var(--dur-fast) var(--ease);
+    }
+    .modal-close:hover { background:rgba(0,0,0,0.1); color:var(--ink); }
     @keyframes modalIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
     .modal h2 { font:800 20px var(--font); margin-bottom:8px; }
     .modal .subtitle { color:var(--muted); font-size:13px; margin-bottom:20px; }
@@ -325,8 +360,8 @@
     .modal .btn:hover { background:color-mix(in oklab, var(--surface) 95%, var(--gold)); }
     .modal .btn.primary { background:var(--gold); color:#fff; border-color:var(--gold); }
     .modal .btn.primary:hover { background:var(--gold-dk); }
-    .modal .success-msg { background:rgba(14,154,90,0.1); color:var(--ok); padding:12px; border-radius:8px; font-size:13px; margin-top:16px; }
-    .modal .error-msg { background:rgba(196,30,58,0.1); color:var(--bad); padding:12px; border-radius:8px; font-size:13px; margin-top:16px; }
+    .modal .success-msg, .success-msg { background:rgba(14,154,90,0.1); color:var(--ok); padding:12px; border-radius:8px; font-size:13px; margin-top:16px; }
+    .modal .error-msg, .error-msg { background:rgba(196,30,58,0.1); color:var(--bad); padding:12px; border-radius:8px; font-size:13px; margin-top:16px; }
 
     /* Validator panel */
     .validator-bar {
@@ -445,24 +480,268 @@
     /* Scrollable table wrapper */
     .table-wrap { overflow-x:auto; }
 
+    /* Hamburger Menu (mobile only) */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .hamburger:hover { background: rgba(255,255,255,0.1); }
+    .hamburger span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    /* Sidebar Overlay (mobile only) */
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 40;
+      opacity: 0;
+      visibility: hidden;
+      transition: all var(--dur-med) var(--ease);
+      display: none;
+    }
+    .sidebar-overlay.visible { opacity: 1; visibility: visible; }
+
+    /* Sidebar - Always visible on desktop */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 240px;
+      height: 100vh;
+      background: linear-gradient(180deg, #2d2a24 0%, #1a1815 100%);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(0);
+      transition: transform var(--dur-med) var(--ease);
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-close {
+      display: none;
+      margin-left: auto;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .sidebar-close:hover { background: rgba(255,255,255,0.2); }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+    }
+    .sidebar-tab {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      color: rgba(255,255,255,0.8);
+      font: 600 14px var(--font);
+      text-align: left;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .sidebar-tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar-tab.active { background: var(--gold); color: #fff; }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-footer .btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+    }
+    .sidebar-footer .btn:hover { background: rgba(255,255,255,0.1); }
+
+    /* Desktop layout with sidebar */
+    .site-header { display: none !important; }
+    .site-header.visible { display: none !important; }
+    .wrap {
+      margin-left: 240px;
+      width: calc(100% - 240px);
+      max-width: none;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Sidebar hidden by default (shown via JS when logged in) */
+    .sidebar { display: none; }
+    .sidebar[style*="flex"] { display: flex; }
+
+    /* NPS Summary Card */
+    .nps-summary {
+      background: linear-gradient(135deg, #2d2a24 0%, #1a1815 100%);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .nps-summary-inner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nps-main .nps-label {
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 700;
+      letter-spacing: .1em;
+      margin-bottom: 4px;
+    }
+    .nps-main .nps-value {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .nps-main .nps-sublabel {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 4px;
+    }
+    .nps-breakdown {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .nps-stat {
+      text-align: center;
+    }
+    .nps-stat-value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .nps-stat-value.promoter { color: var(--ok); }
+    .nps-stat-value.passive { color: var(--warn); }
+    .nps-stat-value.detractor { color: var(--bad); }
+    .nps-stat-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+    }
+
     /* Mobile responsiveness */
     @media (max-width:900px){
       .kpis { grid-template-columns:repeat(2, 1fr); }
+      .filters-grid { grid-template-columns:repeat(2, 1fr); }
+      .export-filters { grid-template-columns:repeat(2, 1fr); }
+
+      /* Sidebar becomes slide-out on tablet/mobile */
+      .sidebar[style*="flex"] { transform: translateX(-100%); width: 280px; max-width: 85vw; }
+      .sidebar.open { transform: translateX(0) !important; }
+      .sidebar-overlay { display: block; }
+      .sidebar-close { display: grid; }
+      .wrap { margin-left: 0; width: 100%; max-width: 1200px; padding: 16px; margin: 0 auto; }
+
+      /* Show header with hamburger */
+      .site-header.visible { display: flex !important; }
+      .hamburger { display: flex; }
+      .tabs { display: none; }
+      .tab-select-wrap { display: none; }
     }
     @media (max-width:720px){
-      .tabs { display:none; }
-      .tab-select-wrap { display:block; }
-      .nav { grid-template-columns:auto 1fr; }
-      .header-actions { justify-content:flex-end; }
+      .nav { grid-template-columns:auto auto 1fr; gap:10px; padding:10px 12px; }
+      .header-actions { justify-content:flex-end; gap:8px; }
+      .header-actions #signOutBtn { display:none; }
       .brand .title { display:none; }
+      .brand img { height:32px; }
+      .wrap { padding:12px 10px; gap:12px; }
+      .card { padding:16px; border-radius:12px; }
+      .card h3 { font-size:16px; }
+      .validator-input-wrap { flex-direction:column; }
+      .validator-input-wrap .btn { width:100%; height:48px; }
     }
     @media (max-width:640px){
-      .kpis { grid-template-columns:1fr; }
+      .kpis { grid-template-columns:1fr; gap:10px; }
+      .kpi { padding:14px; }
+      .kpi .v { font-size:24px; }
+      .filters-grid { grid-template-columns:1fr; }
+      .export-filters { grid-template-columns:1fr; }
+      .filter-actions { flex-direction:column; }
+      .filter-actions .btn { width:100%; height:44px; }
       .chart-row { grid-template-columns:1fr; }
+      .chart-container { height:250px; }
       .table thead { display:none; }
-      .table tr { display:block; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; }
-      .table td { display:flex; justify-content:space-between; border:none; padding:8px 4px; }
-      .table td::before { content:attr(data-label); font-weight:700; color:var(--muted); }
+      .table tr { display:block; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:var(--surface); }
+      .table td { display:flex; justify-content:space-between; align-items:center; border:none; padding:8px 4px; flex-wrap:wrap; gap:4px; }
+      .table td::before { content:attr(data-label); font-weight:700; color:var(--muted); font-size:11px; }
+      .table td .btn { height:36px; font-size:12px; }
+      .statusSel { font-size:12px; padding:8px 24px 8px 10px; }
+      .brandTag { font-size:10px; padding:3px 8px; }
+      .nps-badge { width:32px; height:32px; font-size:12px; }
+      .aging-badge { font-size:10px; padding:3px 8px; }
+      .period-selector { flex-wrap:wrap; gap:8px; }
+      .period-btn { padding:10px 14px; font-size:11px; }
+      .modal { padding:16px; width:95vw; }
+      .modal h2 { font-size:18px; }
+      .modal-actions { flex-direction:column; }
+      .modal-actions .btn { width:100%; height:44px; }
+      .search-toggle-btn { width:100%; justify-content:center; }
+      .export-actions { flex-direction:column; }
+      .export-actions .btn { width:100%; height:44px; }
+      /* NPS Summary mobile */
+      .nps-summary { padding:16px; }
+      .nps-summary-inner { flex-direction:column; gap:16px; align-items:flex-start; }
+      .nps-main .nps-value { font-size:36px; }
+      .nps-breakdown { width:100%; justify-content:space-between; gap:12px; }
+      .nps-stat { flex:1; min-width:70px; }
+      .nps-stat-value { font-size:20px; }
+    }
+    @media (max-width:400px){
+      .kpi .v { font-size:20px; }
+      .kpi .l { font-size:10px; }
+      .table td { font-size:12px; }
+      .nav { padding:8px 10px; }
+      .wrap { padding:10px 8px; }
+      .card { padding:12px; }
+      .login-card { padding:20px; }
+      .login-card h1 { font-size:20px; }
+      .nps-main .nps-value { font-size:32px; }
+      .nps-stat-value { font-size:18px; }
+      .nps-breakdown { gap:8px; }
     }
   </style>
 </head>
@@ -474,7 +753,7 @@
   <main id="loginView" class="login-wrap">
     <section class="login-card">
       <div class="logo-wrap">
-        <img src="nhlogo.png" alt="Logo">
+        <img src="assets/logos/nglogocircle.png" alt="Logo">
         <div class="title"><small>ADMIN DASHBOARD</small></div>
       </div>
       <h1>Welcome back</h1>
@@ -501,8 +780,15 @@
   <!-- HEADER -->
   <header class="site-header" id="appHeader">
     <nav class="nav">
+      <!-- Hamburger menu button (mobile only) -->
+      <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
       <div class="brand">
-        <img src="nhlogo.png" alt="Logo">
+        <img src="assets/logos/nglogocircle.png" alt="Logo">
         <div class="title"><small>ADMIN DASHBOARD</small></div>
       </div>
 
@@ -510,28 +796,46 @@
         <button class="tab" data-tab="overview" aria-selected="true">Overview</button>
         <button class="tab" data-tab="responses">Responses</button>
         <button class="tab" data-tab="validator">Validator</button>
+        <button class="tab" data-tab="pending">Pending</button>
         <button class="tab" data-tab="redeemed">Redeemed</button>
         <button class="tab" data-tab="analytics">Analytics</button>
         <button class="tab" data-tab="export">Export</button>
       </div>
 
-      <div class="tab-select-wrap">
-        <select id="tabSelect" class="tab-select">
-          <option value="overview">Overview</option>
-          <option value="responses">Responses</option>
-          <option value="validator">Validator</option>
-          <option value="redeemed">Redeemed</option>
-          <option value="analytics">Analytics</option>
-          <option value="export">Export</option>
-        </select>
-      </div>
-
       <div class="header-actions">
-        <button class="user-badge" id="userBadge" title="Click to manage profile">👤</button>
         <button id="signOutBtn" class="btn">Sign out</button>
       </div>
     </nav>
   </header>
+
+  <!-- Mobile Sidebar Menu -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="assets/logos/nglogocircle.png" alt="Logo" style="height:36px">
+      <span style="font:700 14px var(--font); color:var(--gold)">ADMIN</span>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-tab" data-tab="overview">Overview</button>
+      <button class="sidebar-tab" data-tab="responses">Responses</button>
+      <button class="sidebar-tab" data-tab="validator">Validator</button>
+      <button class="sidebar-tab" data-tab="pending">Pending</button>
+      <button class="sidebar-tab" data-tab="redeemed">Redeemed</button>
+      <button class="sidebar-tab" data-tab="analytics">Analytics</button>
+      <button class="sidebar-tab" data-tab="export">Export</button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-tab" data-tab="profile" style="width:100%;margin-bottom:10px;background:rgba(255,255,255,0.05)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        Profile
+      </button>
+      <button id="sidebarSignOut" class="btn" style="width:100%">Sign out</button>
+    </div>
+  </aside>
 
   <!-- MAIN CONTENT -->
   <main id="appView" class="wrap" style="display:none">
@@ -558,6 +862,39 @@
           <div class="kpi">
             <div class="v" id="kpiOldestUnresolved">-</div>
             <div class="l">Oldest Unresolved</div>
+          </div>
+          <div class="kpi" style="border-left:4px solid #444; background:rgba(0,0,0,0.05)">
+            <div class="v" id="kpiInactive" style="color:#444">-</div>
+            <div class="l">Inactive (30+ days)</div>
+          </div>
+        </div>
+
+        <!-- Overall NPS Summary -->
+        <div class="nps-summary">
+          <div class="nps-summary-inner">
+            <div class="nps-main">
+              <div class="nps-label">OVERALL NPS SCORE</div>
+              <div class="nps-value" id="overviewNpsScore">-</div>
+              <div class="nps-sublabel" id="overviewNpsLabel">Net Promoter Score</div>
+            </div>
+            <div class="nps-breakdown">
+              <div class="nps-stat">
+                <div class="nps-stat-value promoter" id="overviewPromoters">-</div>
+                <div class="nps-stat-label">Promoters (9-10)</div>
+              </div>
+              <div class="nps-stat">
+                <div class="nps-stat-value passive" id="overviewPassives">-</div>
+                <div class="nps-stat-label">Passives (7-8)</div>
+              </div>
+              <div class="nps-stat">
+                <div class="nps-stat-value detractor" id="overviewDetractorsPct">-</div>
+                <div class="nps-stat-label">Detractors (0-6)</div>
+              </div>
+              <div class="nps-stat">
+                <div class="nps-stat-value" id="overviewTotalResponses">-</div>
+                <div class="nps-stat-label">Total Responses</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -606,10 +943,10 @@
                 <label>Brand</label>
                 <select id="respFilterBrand">
                   <option value="">All Brands</option>
-                  <option value="Yushoken">Yushoken</option>
-                  <option value="Mendokoro">Mendokoro</option>
+                  <option value="Ramen Yushoken">Ramen Yushoken</option>
+                  <option value="Mendokoro Ramenba">Mendokoro Ramenba</option>
                   <option value="Marudori">Marudori</option>
-                  <option value="Kazu Cafe">Kazu Cafe</option>
+                  <option value="Kazu Café">Kazu Café</option>
                   <option value="Kazunori">Kazunori</option>
                 </select>
               </div>
@@ -701,6 +1038,100 @@
       </div>
     </section>
 
+    <!-- PENDING REWARDS TAB -->
+    <section class="tabpanel" id="tab-pending" hidden>
+      <div class="card">
+        <h3>Pending Rewards</h3>
+        <p class="subtitle">Unclaimed rewards awaiting redemption. Rewards expire 30 days after survey completion.</p>
+
+        <div class="search-toggle-wrap">
+          <button class="search-toggle-btn" id="pendingSearchToggle">
+            <span class="icon">🔍</span>
+            <span>Search & Filter</span>
+          </button>
+        </div>
+
+        <div class="collapsible-filters" id="pendingFiltersCollapsible">
+          <div class="filters-panel">
+            <h4>Filters</h4>
+            <div class="filters-grid">
+              <div class="field">
+                <label>Search</label>
+                <input type="text" id="pendingFilterSearch" placeholder="Name, code, receipt, email...">
+              </div>
+              <div class="field">
+                <label>Brand</label>
+                <select id="pendingFilterBrand">
+                  <option value="">All Brands</option>
+                  <option value="Ramen Yushoken">Ramen Yushoken</option>
+                  <option value="Mendokoro Ramenba">Mendokoro Ramenba</option>
+                  <option value="Marudori">Marudori</option>
+                  <option value="Kazu Café">Kazu Café</option>
+                  <option value="Kazunori">Kazunori</option>
+                </select>
+              </div>
+              <div class="field" id="pendingBranchFilterWrap" style="display:none">
+                <label>Branch/Store</label>
+                <select id="pendingFilterBranch">
+                  <option value="">All Branches</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select id="pendingFilterStatus">
+                  <option value="">All</option>
+                  <option value="valid">Valid (< 30 days)</option>
+                  <option value="expiring">Expiring Soon (< 7 days)</option>
+                  <option value="expired">Expired (> 30 days)</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn" id="pendingClearFilters">Clear</button>
+              <button class="btn primary" id="pendingApplyFilters">Apply Filters</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpis" id="pendingKpis">
+          <div class="kpi info">
+            <div class="v" id="kpiTotalPending">-</div>
+            <div class="l">Total Pending</div>
+          </div>
+          <div class="kpi success">
+            <div class="v" id="kpiValidPending">-</div>
+            <div class="l">Valid (< 30 days)</div>
+          </div>
+          <div class="kpi warning">
+            <div class="v" id="kpiExpiringSoon">-</div>
+            <div class="l">Expiring Soon (< 7 days)</div>
+          </div>
+          <div class="kpi critical">
+            <div class="v" id="kpiExpired">-</div>
+            <div class="l">Expired</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="pendingTable">
+            <thead>
+              <tr>
+                <th>Survey Date</th>
+                <th>Customer</th>
+                <th>Reward Code</th>
+                <th>Receipt</th>
+                <th>Brand / Branch</th>
+                <th>Days Left</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pendingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- REDEEMED TAB -->
     <section class="tabpanel" id="tab-redeemed" hidden>
       <div class="card">
@@ -726,10 +1157,10 @@
                 <label>Brand</label>
                 <select id="redeemedFilterBrand">
                   <option value="">All Brands</option>
-                  <option value="Yushoken">Yushoken</option>
-                  <option value="Mendokoro">Mendokoro</option>
+                  <option value="Ramen Yushoken">Ramen Yushoken</option>
+                  <option value="Mendokoro Ramenba">Mendokoro Ramenba</option>
                   <option value="Marudori">Marudori</option>
-                  <option value="Kazu Cafe">Kazu Cafe</option>
+                  <option value="Kazu Café">Kazu Café</option>
                   <option value="Kazunori">Kazunori</option>
                 </select>
               </div>
@@ -873,10 +1304,10 @@
             <label>Brand</label>
             <select id="exportBrand">
               <option value="">All Brands</option>
-              <option value="Yushoken">Yushoken</option>
-              <option value="Mendokoro">Mendokoro</option>
+              <option value="Ramen Yushoken">Ramen Yushoken</option>
+              <option value="Mendokoro Ramenba">Mendokoro Ramenba</option>
               <option value="Marudori">Marudori</option>
-              <option value="Kazu Cafe">Kazu Cafe</option>
+              <option value="Kazu Café">Kazu Café</option>
               <option value="Kazunori">Kazunori</option>
             </select>
           </div>
@@ -912,11 +1343,110 @@
         </div>
       </div>
     </section>
+
+    <!-- PROFILE TAB -->
+    <section class="tabpanel" id="tab-profile" hidden>
+      <!-- Profile Header Card -->
+      <div class="card" style="background:linear-gradient(135deg, #2d2a24 0%, #1a1815 100%); border:none; margin-bottom:16px">
+        <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
+          <div id="tabProfilePicPreview" style="width:72px; height:72px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font:800 24px var(--font); color:#fff; border:3px solid rgba(255,255,255,0.2)">
+            <span id="tabProfileInitials">A</span>
+          </div>
+          <div style="flex:1; min-width:200px">
+            <div style="font:800 20px var(--font); color:#fff" id="tabProfileDisplayName">-</div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-top:4px" id="tabProfileEmail">-</div>
+            <div style="display:inline-block; margin-top:8px; padding:4px 12px; background:var(--gold); border-radius:999px; font:700 11px var(--font); color:#fff" id="tabProfileRole">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Cards Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px">
+        <!-- Profile Settings Card -->
+        <div class="card">
+          <h3 style="display:flex; align-items:center; gap:10px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Profile Settings
+          </h3>
+          <p class="subtitle">Update your display name</p>
+
+          <label style="font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px">Display Name</label>
+          <input type="text" id="tabDisplayNameInput" placeholder="Enter your name" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font:500 14px var(--font); margin-bottom:12px">
+          <div id="tabProfileSaveMsg"></div>
+          <button class="btn primary" id="tabSaveProfileBtn" style="width:100%; height:44px">Save Profile</button>
+        </div>
+
+        <!-- Security Card -->
+        <div class="card">
+          <h3 style="display:flex; align-items:center; gap:10px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Security
+          </h3>
+          <p class="subtitle">Change your password</p>
+
+          <label style="font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px">Current Password</label>
+          <input type="password" id="tabCurrentPassword" placeholder="Enter current password" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font:500 14px var(--font); margin-bottom:12px">
+
+          <label style="font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px">New Password</label>
+          <input type="password" id="tabNewPassword" placeholder="Enter new password" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font:500 14px var(--font); margin-bottom:12px">
+
+          <label style="font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px">Confirm New Password</label>
+          <input type="password" id="tabConfirmPassword" placeholder="Confirm new password" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font:500 14px var(--font); margin-bottom:12px">
+
+          <div id="tabPasswordMsg"></div>
+          <button class="btn" id="tabChangePasswordBtn" style="width:100%; height:44px">Change Password</button>
+        </div>
+
+        <!-- Account Info Card -->
+        <div class="card">
+          <h3 style="display:flex; align-items:center; gap:10px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Account Info
+          </h3>
+          <p class="subtitle">Your account details</p>
+
+          <div style="display:grid; gap:12px">
+            <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(0,0,0,0.03); border-radius:10px">
+              <span style="font:600 13px var(--font); color:var(--muted)">Email</span>
+              <span style="font:600 13px var(--font)" id="tabProfileEmailInfo">-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(0,0,0,0.03); border-radius:10px">
+              <span style="font:600 13px var(--font); color:var(--muted)">Role</span>
+              <span style="font:600 13px var(--font)" id="tabProfileRoleInfo">-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(0,0,0,0.03); border-radius:10px">
+              <span style="font:600 13px var(--font); color:var(--muted)">Brand Access</span>
+              <span style="font:600 13px var(--font)" id="tabProfileBrandInfo">-</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(0,0,0,0.03); border-radius:10px">
+              <span style="font:600 13px var(--font); color:var(--muted)">Branch Access</span>
+              <span style="font:600 13px var(--font)" id="tabProfileBranchInfo">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- PROFILE MODAL -->
   <div class="modal-overlay" id="profileModal">
-    <div class="modal">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" id="profileModalClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
       <h2>Account Settings</h2>
       <p class="subtitle">Manage your admin account</p>
 
@@ -965,7 +1495,13 @@
 
   <!-- RESPONSE DETAIL MODAL -->
   <div class="modal-overlay" id="responseDetailModal">
-    <div class="modal" style="max-width:600px">
+    <div class="modal" style="max-width:600px;position:relative">
+      <button class="modal-close" id="responseDetailModalClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
       <h2>Response Details</h2>
       <p class="subtitle" id="detailSubtitle">-</p>
       <div id="responseDetailContent"></div>
@@ -983,12 +1519,19 @@
 
     /* ---------- Brand Config ---------- */
     const brandMeta = {
-      'Yushoken': { color: '#f4b400', route: 'YSHK' },
-      'Mendokoro': { color: '#c41e3a', route: 'MDNK' },
-      'Marudori': { color: '#0e9a5a', route: 'MRDR' },
-      'Kazu Cafe': { color: '#2f9e6e', route: 'KZCF' },
-      'Kazunori': { color: '#2f9e6e', route: 'KZNR' }
+      'Ramen Yushoken': { color: '#f4b400', route: 'YSHK', branches: ['Molito (Alabang)', 'Cebu', 'Ortigas', 'Pasay'] },
+      'Mendokoro Ramenba': { color: '#c41e3a', route: 'MDNK', branches: ['Molito (Alabang)', 'Bonifacio Global City', 'Cebu', 'Katipunan', 'Salcedo Village (Makati)', 'Pasay'] },
+      'Marudori': { color: '#0e9a5a', route: 'MRDR', branches: ['Rockwell', 'Vertis North'] },
+      'Kazu Café': { color: '#2f9e6e', route: 'KZCF', branches: ['Kazu Café (Makati)'] },
+      'Kazunori': { color: '#2f9e6e', route: 'KZNR', branches: ['Kazunori (Makati)'] }
     };
+
+    // All unique branches across all brands
+    const allBranches = [
+      'Molito (Alabang)', 'Bonifacio Global City', 'Cebu', 'Katipunan',
+      'Salcedo Village (Makati)', 'Pasay', 'Ortigas', 'Rockwell',
+      'Vertis North', 'Kazu Café (Makati)', 'Kazunori (Makati)'
+    ];
 
     /* ---------- State ---------- */
     let currentUser = null;
@@ -1013,16 +1556,23 @@
     const DataService = {
       async fetchResponses() {
         try {
+          console.log('Fetching survey responses...');
           const { data, error } = await sb
             .from('survey_responses')
             .select('*')
             .not('completed_at', 'is', null)
             .order('completed_at', { ascending: false });
 
-          if (error) throw error;
+          if (error) {
+            console.error('Supabase query error:', error);
+            throw error;
+          }
+          console.log(`Fetched ${data?.length || 0} responses`);
           return data || [];
         } catch (err) {
           console.error('Error fetching responses:', err);
+          // Show error to user
+          alert('Failed to load survey data. Please check the console for details and refresh the page.');
           return [];
         }
       },
@@ -1102,7 +1652,29 @@
       getDetractors(responses) {
         return responses
           .filter(r => r.q12 !== null && r.q12 <= 6)
-          .sort((a, b) => new Date(a.completed_at) - new Date(b.completed_at)); // Oldest first
+          .sort((a, b) => {
+            // Sort by priority: Critical (NPS 0-3) first, then by age (oldest first)
+            const aNps = a.q12;
+            const bNps = b.q12;
+            const aDays = Math.floor((Date.now() - new Date(a.completed_at).getTime()) / 86400000);
+            const bDays = Math.floor((Date.now() - new Date(b.completed_at).getTime()) / 86400000);
+
+            // Priority score: lower is higher priority
+            // Critical (NPS 0-3) = 0, Urgent (>7 days) = 1, High (>3 days) = 2, Normal = 3
+            const getPriorityScore = (nps, days) => {
+              if (nps <= 3) return 0; // Critical
+              if (days > 7) return 1; // Urgent
+              if (days > 3) return 2; // High
+              return 3; // Normal
+            };
+
+            const aPriority = getPriorityScore(aNps, aDays);
+            const bPriority = getPriorityScore(bNps, bDays);
+
+            // Sort by priority first, then by days old (oldest first)
+            if (aPriority !== bPriority) return aPriority - bPriority;
+            return bDays - aDays; // Older first within same priority
+          });
       },
 
       calculateNPS(responses) {
@@ -1128,6 +1700,39 @@
         return brandData;
       }
     };
+
+    /* ---------- Security Utility Functions ---------- */
+    // SECURITY: Escape HTML to prevent XSS attacks
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    // SECURITY: Sanitize user input for display
+    function sanitize(str) {
+      return escapeHtml(str);
+    }
+
+    // SECURITY: Validate and sanitize URL for images
+    function sanitizeImageUrl(url) {
+      if (!url) return '';
+      // Only allow data URLs (base64) or https URLs
+      if (url.startsWith('data:image/')) return url;
+      if (url.startsWith('https://')) return encodeURI(url);
+      return ''; // Reject other URLs
+    }
+
+    // SECURITY: Validate password strength
+    function isStrongPassword(password) {
+      if (password.length < 12) return { valid: false, message: 'Password must be at least 12 characters' };
+      if (!/[A-Z]/.test(password)) return { valid: false, message: 'Password must contain at least one uppercase letter' };
+      if (!/[a-z]/.test(password)) return { valid: false, message: 'Password must contain at least one lowercase letter' };
+      if (!/[0-9]/.test(password)) return { valid: false, message: 'Password must contain at least one number' };
+      if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) return { valid: false, message: 'Password must contain at least one special character' };
+      return { valid: true, message: '' };
+    }
 
     /* ---------- Utility Functions ---------- */
     // Calculate average of all slider ratings (q5-q11, 1-5 scale) and convert to 0-10
@@ -1168,11 +1773,22 @@
       return 'priority-normal';
     }
 
-    function getAgingBadge(dateStr) {
+    function getAgingBadge(dateStr, ticketStatus) {
       const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+      // Mark as inactive if 30+ days old and not resolved
+      if (days >= 30 && ticketStatus !== 'resolved') {
+        return `<span class="aging-badge" style="background:#444;color:#fff">${days}d - Inactive</span>`;
+      }
       if (days > 7) return `<span class="aging-badge urgent">${days}d ago</span>`;
       if (days > 3) return `<span class="aging-badge old">${days}d ago</span>`;
       return `<span class="aging-badge recent">${humanAgo(dateStr)}</span>`;
+    }
+
+    function isCustomerInactive(response) {
+      if (!response.completed_at) return false;
+      if (response.ticket_status === 'resolved' || response.ticket_status === 'inactive') return false;
+      const days = Math.floor((Date.now() - new Date(response.completed_at).getTime()) / 86400000);
+      return days >= 30;
     }
 
     function brandBadge(brand) {
@@ -1208,17 +1824,65 @@
       appHeader.classList.add('visible');
       appView.style.display = 'grid';
 
-      if (currentUser) {
+      // Show sidebar
+      if (sidebar) sidebar.style.display = 'flex';
+
+      // Update user badge if it exists
+      if (currentUser && userBadge) {
         userBadge.title = `${currentUser.email}\n${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
       }
 
+      // Apply role-based tab visibility
+      applyRolePermissions();
+
       initApp();
+    }
+
+    function applyRolePermissions() {
+      const role = currentUser?.role || 'validator';
+      const isValidator = role === 'validator';
+      const isSuperAdminRole = role === 'super_admin';
+      const isBrandManager = role === 'brand_manager';
+
+      // Tabs that validators can NOT see
+      const restrictedTabs = ['overview', 'responses', 'pending', 'redeemed', 'analytics', 'export'];
+
+      // Hide/show sidebar tabs based on role
+      sidebarTabs.forEach(tab => {
+        const tabId = tab.dataset.tab;
+        if (isValidator && restrictedTabs.includes(tabId)) {
+          tab.style.display = 'none';
+        } else {
+          tab.style.display = '';
+        }
+      });
+
+      // Hide/show header tabs based on role
+      tabBtns.forEach(tab => {
+        const tabId = tab.dataset.tab;
+        if (isValidator && restrictedTabs.includes(tabId)) {
+          tab.style.display = 'none';
+        } else {
+          tab.style.display = '';
+        }
+      });
+
+      // Set default tab based on role
+      if (isValidator) {
+        setTab('validator');
+      } else {
+        setTab('overview');
+      }
     }
 
     function showLogin() {
       loginView.style.display = 'grid';
       appHeader.classList.remove('visible');
       appView.style.display = 'none';
+
+      // Hide sidebar
+      if (sidebar) sidebar.style.display = 'none';
+      closeSidebar();
     }
 
     /* ---------- Password Toggle ---------- */
@@ -1233,6 +1897,62 @@
         toggle.textContent = '👁';
       }
     });
+
+    /* ---------- Sidebar Menu ---------- */
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebarClose = document.getElementById('sidebarClose');
+    const sidebarTabs = document.querySelectorAll('.sidebar-tab');
+    const sidebarSignOut = document.getElementById('sidebarSignOut');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+      hamburgerBtn?.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+      hamburgerBtn?.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    hamburgerBtn?.addEventListener('click', () => {
+      if (sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+
+    sidebarOverlay?.addEventListener('click', closeSidebar);
+    sidebarClose?.addEventListener('click', closeSidebar);
+
+    sidebarTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        setTab(tabId);
+        closeSidebar();
+        // Update active state
+        sidebarTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    sidebarSignOut?.addEventListener('click', async () => {
+      closeSidebar();
+      await handleSignOut();
+    });
+
+    // Update sidebar active state when tab changes
+    function updateSidebarActiveTab(tabId) {
+      sidebarTabs.forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tabId);
+      });
+    }
 
     /* ---------- Login Handler ---------- */
     loginBtn.addEventListener('click', async () => {
@@ -1289,7 +2009,7 @@
     });
 
     /* ---------- Sign Out Handler ---------- */
-    signOutBtn.addEventListener('click', async () => {
+    async function handleSignOut() {
       const token = localStorage.getItem('admin_token');
 
       // Clear local storage FIRST to ensure logout even if API fails
@@ -1297,7 +2017,7 @@
       localStorage.removeItem('admin_refresh_token');
       localStorage.removeItem('admin_user');
       currentUser = null;
-      userBadge.title = 'Click to manage profile';
+      if (userBadge) userBadge.title = 'Click to manage profile';
 
       // Sign out from Supabase client
       await sb.auth.signOut();
@@ -1320,7 +2040,9 @@
 
       // Force page reload to clear any state
       window.location.href = window.location.pathname;
-    });
+    }
+
+    signOutBtn?.addEventListener('click', handleSignOut);
 
     /* ---------- Tab Navigation ---------- */
     function setTab(id) {
@@ -1338,16 +2060,149 @@
 
       if (tabSelect) tabSelect.value = id;
 
+      // Update sidebar active state
+      if (typeof updateSidebarActiveTab === 'function') {
+        updateSidebarActiveTab(id);
+      }
+
       // Scroll to top smoothly when switching tabs
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       // Refresh tab content
       if (id === 'overview') paintOverview();
       if (id === 'responses') paintResponses();
+      if (id === 'pending') paintPending();
       if (id === 'redeemed') paintRedeemed();
       if (id === 'analytics') paintAnalytics();
       if (id === 'export') updateExportPreview();
+      if (id === 'profile') paintProfile();
     }
+
+    /* ---------- Profile Tab ---------- */
+    function paintProfile() {
+      const name = currentUser?.display_name || '';
+      const role = currentUser?.role || 'admin';
+      const brand = currentUser?.brand || 'All Brands';
+      const branch = currentUser?.branch || 'All Branches';
+
+      // Header section
+      const displayNameEl = document.getElementById('tabProfileDisplayName');
+      const emailEl = document.getElementById('tabProfileEmail');
+      const roleEl = document.getElementById('tabProfileRole');
+      const inputEl = document.getElementById('tabDisplayNameInput');
+      const initialsEl = document.getElementById('tabProfileInitials');
+
+      if (displayNameEl) displayNameEl.textContent = name || currentUser?.email || '-';
+      if (emailEl) emailEl.textContent = currentUser?.email || '-';
+      if (roleEl) roleEl.textContent = role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      if (inputEl) inputEl.value = name;
+      if (initialsEl) initialsEl.textContent = getInitials(name, currentUser?.email);
+
+      // Account Info section
+      const emailInfoEl = document.getElementById('tabProfileEmailInfo');
+      const roleInfoEl = document.getElementById('tabProfileRoleInfo');
+      const brandInfoEl = document.getElementById('tabProfileBrandInfo');
+      const branchInfoEl = document.getElementById('tabProfileBranchInfo');
+
+      if (emailInfoEl) emailInfoEl.textContent = currentUser?.email || '-';
+      if (roleInfoEl) roleInfoEl.textContent = role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      if (brandInfoEl) brandInfoEl.textContent = brand;
+      if (branchInfoEl) branchInfoEl.textContent = branch;
+
+      // Clear messages
+      const pwMsg = document.getElementById('tabPasswordMsg');
+      const saveMsg = document.getElementById('tabProfileSaveMsg');
+      if (pwMsg) pwMsg.innerHTML = '';
+      if (saveMsg) saveMsg.innerHTML = '';
+    }
+
+    function getInitials(name, email) {
+      if (name) {
+        const parts = name.split(' ');
+        return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
+      }
+      return email ? email.substring(0, 2).toUpperCase() : 'A';
+    }
+
+    // Profile tab save button
+    document.getElementById('tabSaveProfileBtn')?.addEventListener('click', async () => {
+      const displayName = document.getElementById('tabDisplayNameInput').value.trim();
+      const msgEl = document.getElementById('tabProfileSaveMsg');
+
+      try {
+        const token = localStorage.getItem('admin_token');
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/update-profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ display_name: displayName })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          currentUser.display_name = displayName;
+          msgEl.innerHTML = '<div class="success-msg">Profile saved successfully!</div>';
+          document.getElementById('tabProfileDisplayName').textContent = displayName || currentUser?.email || '-';
+          document.getElementById('tabProfileInitials').textContent = getInitials(displayName, currentUser?.email);
+        } else {
+          msgEl.innerHTML = `<div class="error-msg">${sanitize(data.error) || 'Failed to save profile'}</div>`;
+        }
+      } catch (err) {
+        msgEl.innerHTML = '<div class="error-msg">Connection failed. Please try again.</div>';
+      }
+    });
+
+    // Profile tab change password
+    document.getElementById('tabChangePasswordBtn')?.addEventListener('click', async () => {
+      const current = document.getElementById('tabCurrentPassword').value;
+      const newPw = document.getElementById('tabNewPassword').value;
+      const confirm = document.getElementById('tabConfirmPassword').value;
+      const msgEl = document.getElementById('tabPasswordMsg');
+
+      if (!current || !newPw || !confirm) {
+        msgEl.innerHTML = '<div class="error-msg">Please fill in all fields</div>';
+        return;
+      }
+      if (newPw !== confirm) {
+        msgEl.innerHTML = '<div class="error-msg">New passwords do not match</div>';
+        return;
+      }
+      // SECURITY: Enforce strong password requirements
+      const passwordCheck = isStrongPassword(newPw);
+      if (!passwordCheck.valid) {
+        msgEl.innerHTML = `<div class="error-msg">${sanitize(passwordCheck.message)}</div>`;
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('admin_token');
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/change-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ current_password: current, new_password: newPw })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          msgEl.innerHTML = '<div class="success-msg">Password changed successfully! Signing out...</div>';
+          document.getElementById('tabCurrentPassword').value = '';
+          document.getElementById('tabNewPassword').value = '';
+          document.getElementById('tabConfirmPassword').value = '';
+          setTimeout(() => {
+            sidebarSignOut.click();
+          }, 2000);
+        } else {
+          msgEl.innerHTML = `<div class="error-msg">${sanitize(data.error) || 'Failed to change password'}</div>`;
+        }
+      } catch (err) {
+        msgEl.innerHTML = '<div class="error-msg">Connection failed. Please try again.</div>';
+      }
+    });
 
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => setTab(btn.dataset.tab));
@@ -1364,7 +2219,7 @@
       return 'A';
     }
 
-    userBadge.addEventListener('click', () => {
+    userBadge?.addEventListener('click', () => {
       document.getElementById('profileModal').classList.add('visible');
       const name = currentUser?.display_name || '';
       const pic = currentUser?.profile_pic || '';
@@ -1375,7 +2230,8 @@
       document.getElementById('profilePicInput').value = pic;
       document.getElementById('profileInitials').textContent = getInitials(name, currentUser?.email);
       if (pic) {
-        document.getElementById('profilePicPreview').innerHTML = `<img src="${pic}" style="width:100%;height:100%;object-fit:cover">`;
+        const safePic = sanitizeImageUrl(pic);
+        document.getElementById('profilePicPreview').innerHTML = safePic ? `<img src="${safePic}" style="width:100%;height:100%;object-fit:cover">` : '';
       }
       document.getElementById('passwordMsg').innerHTML = '';
       document.getElementById('profileSaveMsg').innerHTML = '';
@@ -1390,8 +2246,11 @@
       if (file.size > 500000) { alert('Image must be under 500KB'); return; }
       const reader = new FileReader();
       reader.onload = (ev) => {
-        document.getElementById('profilePicInput').value = ev.target.result;
-        document.getElementById('profilePicPreview').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+        const safePic = sanitizeImageUrl(ev.target.result);
+        if (safePic) {
+          document.getElementById('profilePicInput').value = safePic;
+          document.getElementById('profilePicPreview').innerHTML = `<img src="${safePic}" style="width:100%;height:100%;object-fit:cover">`;
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -1406,7 +2265,7 @@
         currentUser.display_name = name;
         currentUser.profile_pic = pic;
         localStorage.setItem('admin_user', JSON.stringify(currentUser));
-        userBadge.title = `${name || currentUser.email}\n${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
+        if (userBadge) userBadge.title = `${name || currentUser.email}\n${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
         msgEl.innerHTML = '<div class="success-msg">Profile saved!</div>';
       } catch (err) {
         msgEl.innerHTML = '<div class="error-msg">Failed to save</div>';
@@ -1414,6 +2273,10 @@
     });
 
     document.getElementById('closeProfileBtn').addEventListener('click', () => {
+      document.getElementById('profileModal').classList.remove('visible');
+    });
+
+    document.getElementById('profileModalClose')?.addEventListener('click', () => {
       document.getElementById('profileModal').classList.remove('visible');
     });
 
@@ -1433,8 +2296,10 @@
         return;
       }
 
-      if (newPw.length < 8) {
-        msgEl.innerHTML = '<div class="error-msg">Password must be at least 8 characters</div>';
+      // SECURITY: Enforce strong password requirements
+      const passwordCheck = isStrongPassword(newPw);
+      if (!passwordCheck.valid) {
+        msgEl.innerHTML = `<div class="error-msg">${sanitize(passwordCheck.message)}</div>`;
         return;
       }
 
@@ -1459,7 +2324,7 @@
             signOutBtn.click();
           }, 2000);
         } else {
-          msgEl.innerHTML = `<div class="error-msg">${data.error || 'Failed to change password'}</div>`;
+          msgEl.innerHTML = `<div class="error-msg">${sanitize(data.error) || 'Failed to change password'}</div>`;
         }
       } catch (err) {
         console.error('Password change failed:', err);
@@ -1479,19 +2344,43 @@
       return currentUser?.role === 'super_admin' || currentUser?.brand === 'All';
     }
 
+    function isBrandManager() {
+      return currentUser?.role === 'brand_manager';
+    }
+
+    function isValidator() {
+      return currentUser?.role === 'validator';
+    }
+
     function filterByUserAccess(responses) {
+      // Super admin sees everything
       if (isSuperAdmin()) return responses;
-      return responses.filter(r =>
-        r.brand === currentUser?.brand && r.branch === currentUser?.branch
-      );
+
+      // Brand manager sees all branches within their brand
+      if (isBrandManager()) {
+        return responses.filter(r => r.brand === currentUser?.brand);
+      }
+
+      // Branch admin sees only their branch
+      if (currentUser?.branch && currentUser.branch !== 'All') {
+        return responses.filter(r =>
+          r.brand === currentUser?.brand && r.branch === currentUser?.branch
+        );
+      }
+
+      // Default: filter by brand only
+      return responses.filter(r => r.brand === currentUser?.brand);
     }
 
     /* ---------- App Initialization ---------- */
     async function initApp() {
+      console.log('Initializing app...');
       // Fetch real data from Supabase
       allResponses = await DataService.fetchResponses();
+      console.log('Total responses loaded:', allResponses.length);
       // For Responses/Analytics/Export: filter by user access
       filteredResponses = filterByUserAccess([...allResponses]);
+      console.log('Filtered responses:', filteredResponses.length);
 
       // Show branch filter for super admin and populate with unique branches
       if (isSuperAdmin()) {
@@ -1522,6 +2411,19 @@
             redeemedBranchSelect.appendChild(option);
           });
         }
+
+        // Pending tab branch filter
+        const pendingBranchFilterWrap = document.getElementById('pendingBranchFilterWrap');
+        const pendingBranchSelect = document.getElementById('pendingFilterBranch');
+        if (pendingBranchFilterWrap && pendingBranchSelect) {
+          pendingBranchFilterWrap.style.display = 'block';
+          uniqueBranches.forEach(branch => {
+            const option = document.createElement('option');
+            option.value = branch;
+            option.textContent = branch;
+            pendingBranchSelect.appendChild(option);
+          });
+        }
       }
 
       // Paint initial view
@@ -1543,11 +2445,26 @@
         oldestUnresolved = `${days}d`;
       }
 
+      // Count inactive customers (30+ days without resolution)
+      const inactiveCustomers = allResponses.filter(r => isCustomerInactive(r));
+
       // Update KPIs
       document.getElementById('kpiCritical').textContent = critical.length;
       document.getElementById('kpiDetractors').textContent = detractors.length - critical.length;
       document.getElementById('kpiOpenTickets').textContent = openTickets.length;
       document.getElementById('kpiOldestUnresolved').textContent = oldestUnresolved;
+      document.getElementById('kpiInactive').textContent = inactiveCustomers.length;
+
+      // Calculate and display overall NPS
+      const npsData = DataService.calculateNPS(allResponses);
+      const npsScoreEl = document.getElementById('overviewNpsScore');
+      npsScoreEl.textContent = npsData.score;
+      npsScoreEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
+
+      document.getElementById('overviewPromoters').textContent = `${npsData.total ? Math.round((npsData.promoters / npsData.total) * 100) : 0}%`;
+      document.getElementById('overviewPassives').textContent = `${npsData.total ? Math.round((npsData.passives / npsData.total) * 100) : 0}%`;
+      document.getElementById('overviewDetractorsPct').textContent = `${npsData.total ? Math.round((npsData.detractors / npsData.total) * 100) : 0}%`;
+      document.getElementById('overviewTotalResponses').textContent = npsData.total;
 
       // Paint detractors table
       const tbody = document.getElementById('detractorsBody');
@@ -1565,15 +2482,16 @@
 
         const tr = document.createElement('tr');
         tr.className = priorityClass;
+        // SECURITY: All user data is escaped to prevent XSS
         tr.innerHTML = `
-          <td data-label="Age">${getAgingBadge(r.completed_at)}</td>
+          <td data-label="Age">${getAgingBadge(r.completed_at, r.ticket_status)}</td>
           <td data-label="NPS">${npsBadge(r.q12)}</td>
-          <td data-label="Brand / Branch">${brandBadge(r.brand)}<br><small style="color:var(--muted)">${r.branch || '-'}</small></td>
-          <td data-label="Customer">${r.name || '-'}<br><small style="color:var(--muted)">${r.email || ''}</small></td>
-          <td data-label="Concern" style="max-width:200px">${r.q12_follow || '-'}</td>
-          <td data-label="Priority"><span class="aging-badge ${priority === 'Critical' ? 'urgent' : priority === 'Urgent' || priority === 'High' ? 'old' : 'recent'}">${priority}</span></td>
+          <td data-label="Brand / Branch">${brandBadge(sanitize(r.brand))}<br><small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small></td>
+          <td data-label="Customer">${sanitize(r.name) || '-'}<br><small style="color:var(--muted)">${sanitize(r.email) || ''}</small></td>
+          <td data-label="Concern" style="max-width:200px">${sanitize(r.q12_follow) || '-'}</td>
+          <td data-label="Priority"><span class="aging-badge ${priority === 'Critical' || priority === 'Urgent' ? 'urgent' : priority === 'High' ? 'old' : 'recent'}">${priority}</span></td>
           <td data-label="Status">
-            <select class="statusSel ${(r.ticket_status || 'open')}" data-id="${r.id}">
+            <select class="statusSel ${sanitize(r.ticket_status) || 'open'}" data-id="${sanitize(r.id)}">
               <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
               <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
               <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
@@ -1581,7 +2499,7 @@
               <option value="inactive" ${r.ticket_status === 'inactive' ? 'selected' : ''}>Inactive</option>
             </select>
           </td>
-          <td data-label="Actions"><button class="btn" data-view="${r.id}">View</button></td>
+          <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -1621,18 +2539,19 @@
       filteredResponses.forEach(r => {
         const npsCategory = getNPSCategory(r.q12);
         const tr = document.createElement('tr');
+        // SECURITY: All user data is escaped to prevent XSS
         tr.innerHTML = `
           <td data-label="Date">${formatDate(r.completed_at)}</td>
           <td data-label="Customer">
-            <div style="font-weight:600">${r.name || '-'}</div>
-            <div style="font-size:11px;color:var(--muted)">${r.email || '-'}</div>
-            ${r.phone ? `<div style="font-size:11px;color:var(--muted)">${r.phone}</div>` : ''}
+            <div style="font-weight:600">${sanitize(r.name) || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${sanitize(r.email) || '-'}</div>
+            ${r.phone ? `<div style="font-size:11px;color:var(--muted)">${sanitize(r.phone)}</div>` : ''}
           </td>
-          <td data-label="Brand / Branch">${brandBadge(r.brand)}<br><small style="color:var(--muted)">${r.branch || '-'}</small></td>
-          <td data-label="Receipt" class="mono">${r.receipt || '-'}</td>
+          <td data-label="Brand / Branch">${brandBadge(sanitize(r.brand))}<br><small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small></td>
+          <td data-label="Receipt" class="mono">${sanitize(r.receipt) || '-'}</td>
           <td data-label="NPS">${npsBadge(r.q12)}</td>
           <td data-label="Ticket">
-            <select class="statusSel ${r.ticket_status || 'open'}" data-id="${r.id}">
+            <select class="statusSel ${sanitize(r.ticket_status) || 'open'}" data-id="${sanitize(r.id)}">
               <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
               <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
               <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
@@ -1641,7 +2560,7 @@
             </select>
           </td>
           <td data-label="Reward"><span class="status-badge ${r.reward_claimed ? 'claimed' : 'unclaimed'}">${r.reward_claimed ? 'Claimed' : 'Unclaimed'}</span></td>
-          <td data-label="Actions"><button class="btn" data-view="${r.id}">View</button></td>
+          <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -1759,9 +2678,9 @@
         statusEl.textContent = '⚠️ Reward Already Claimed';
         statusEl.className = 'status claimed';
         let claimInfo = `Claimed on ${formatDate(response.reward_claimed_at)}`;
-        if (response.reward_claimed_branch) claimInfo += ` at ${response.reward_claimed_branch}`;
-        if (response.reward_claimed_brand) claimInfo += ` (${response.reward_claimed_brand})`;
-        if (response.reward_claimed_by) claimInfo += ` by ${response.reward_claimed_by}`;
+        if (response.reward_claimed_branch) claimInfo += ` at ${sanitize(response.reward_claimed_branch)}`;
+        if (response.reward_claimed_brand) claimInfo += ` (${sanitize(response.reward_claimed_brand)})`;
+        if (response.reward_claimed_by) claimInfo += ` by ${sanitize(response.reward_claimed_by)}`;
         document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--warn)">${claimInfo}</span>`;
         actionsEl.style.display = 'none';
       } else {
@@ -1792,7 +2711,7 @@
         statusEl.offsetHeight; // Trigger reflow
         statusEl.style.animation = 'successPulse 0.5s ease';
 
-        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${currentUser?.email} at ${currentUser?.branch} (${currentUser?.brand})</span>`;
+        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${sanitize(currentUser?.email)} at ${sanitize(currentUser?.branch)} (${sanitize(currentUser?.brand)})</span>`;
         document.getElementById('validatorActions').style.display = 'none';
 
         // Update local data
@@ -1818,6 +2737,141 @@
     // Enter key for validator
     document.getElementById('validatorInput')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('validateBtn').click();
+    });
+
+    /* ---------- Pending Rewards Tab ---------- */
+    let filteredPending = [];
+
+    function getRewardStatus(completedAt) {
+      if (!completedAt) return { status: 'unknown', daysLeft: 0, class: 'recent' };
+      const completedDate = new Date(completedAt);
+      const now = new Date();
+      const daysSinceCompletion = Math.floor((now - completedDate) / 86400000);
+      const daysLeft = 30 - daysSinceCompletion;
+
+      if (daysLeft <= 0) {
+        return { status: 'expired', daysLeft: 0, class: 'urgent', label: 'Expired' };
+      } else if (daysLeft <= 7) {
+        return { status: 'expiring', daysLeft, class: 'old', label: `${daysLeft}d` };
+      } else {
+        return { status: 'valid', daysLeft, class: 'recent', label: `${daysLeft}d` };
+      }
+    }
+
+    function paintPending() {
+      // Get all unclaimed reward responses
+      const pendingResponses = filterByUserAccess(allResponses).filter(r => r.reward_code && !r.reward_claimed);
+
+      // Apply filters
+      const search = document.getElementById('pendingFilterSearch')?.value.toLowerCase() || '';
+      const brand = document.getElementById('pendingFilterBrand')?.value || '';
+      const branch = document.getElementById('pendingFilterBranch')?.value || '';
+      const statusFilter = document.getElementById('pendingFilterStatus')?.value || '';
+
+      filteredPending = pendingResponses.filter(r => {
+        if (search) {
+          const haystack = [r.name, r.email, r.reward_code, r.receipt].join(' ').toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        if (brand && r.brand !== brand) return false;
+        if (branch && r.branch !== branch) return false;
+        if (statusFilter) {
+          const rewardStatus = getRewardStatus(r.completed_at);
+          if (statusFilter === 'valid' && rewardStatus.status !== 'valid') return false;
+          if (statusFilter === 'expiring' && rewardStatus.status !== 'expiring') return false;
+          if (statusFilter === 'expired' && rewardStatus.status !== 'expired') return false;
+        }
+        return true;
+      });
+
+      // Sort by days left (expired last, then by expiration urgency)
+      filteredPending.sort((a, b) => {
+        const statusA = getRewardStatus(a.completed_at);
+        const statusB = getRewardStatus(b.completed_at);
+        if (statusA.status === 'expired' && statusB.status !== 'expired') return 1;
+        if (statusB.status === 'expired' && statusA.status !== 'expired') return -1;
+        return statusA.daysLeft - statusB.daysLeft; // Fewer days left first
+      });
+
+      // Update KPIs
+      const valid = pendingResponses.filter(r => getRewardStatus(r.completed_at).status === 'valid');
+      const expiring = pendingResponses.filter(r => getRewardStatus(r.completed_at).status === 'expiring');
+      const expired = pendingResponses.filter(r => getRewardStatus(r.completed_at).status === 'expired');
+
+      document.getElementById('kpiTotalPending').textContent = pendingResponses.length;
+      document.getElementById('kpiValidPending').textContent = valid.length;
+      document.getElementById('kpiExpiringSoon').textContent = expiring.length;
+      document.getElementById('kpiExpired').textContent = expired.length;
+
+      // Paint table
+      const tbody = document.getElementById('pendingBody');
+      tbody.innerHTML = '';
+
+      if (filteredPending.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">🎁</div>No pending rewards found</div></td></tr>`;
+        return;
+      }
+
+      filteredPending.forEach(r => {
+        const rewardStatus = getRewardStatus(r.completed_at);
+        const tr = document.createElement('tr');
+        tr.className = rewardStatus.status === 'expired' ? 'priority-critical' : rewardStatus.status === 'expiring' ? 'priority-high' : '';
+        // SECURITY: All user data is escaped to prevent XSS
+        tr.innerHTML = `
+          <td data-label="Survey Date">${formatDate(r.completed_at)}</td>
+          <td data-label="Customer">
+            <div style="font-weight:600">${sanitize(r.name) || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${sanitize(r.email) || '-'}</div>
+          </td>
+          <td data-label="Reward Code" class="mono">${sanitize(r.reward_code) || '-'}</td>
+          <td data-label="Receipt" class="mono">${sanitize(r.receipt) || '-'}</td>
+          <td data-label="Brand / Branch">
+            ${brandBadge(sanitize(r.brand))}<br>
+            <small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small>
+          </td>
+          <td data-label="Days Left">
+            <span class="aging-badge ${rewardStatus.class}">${rewardStatus.label}</span>
+          </td>
+          <td data-label="Status">
+            <span class="status-badge ${rewardStatus.status === 'expired' ? '' : 'unclaimed'}" style="${rewardStatus.status === 'expired' ? 'background:rgba(196,30,58,0.15);color:var(--bad)' : ''}">
+              ${rewardStatus.status === 'expired' ? 'Expired' : 'Pending'}
+            </span>
+          </td>
+          <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // View button handlers
+      tbody.querySelectorAll('[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => showResponseDetail(btn.dataset.view));
+      });
+    }
+
+    // Search & Filter toggle for Pending tab
+    document.getElementById('pendingSearchToggle')?.addEventListener('click', () => {
+      const btn = document.getElementById('pendingSearchToggle');
+      const panel = document.getElementById('pendingFiltersCollapsible');
+      btn.classList.toggle('active');
+      panel.classList.toggle('open');
+    });
+
+    // Pending filters
+    document.getElementById('pendingApplyFilters')?.addEventListener('click', () => {
+      paintPending();
+    });
+
+    document.getElementById('pendingClearFilters')?.addEventListener('click', () => {
+      document.getElementById('pendingFilterSearch').value = '';
+      document.getElementById('pendingFilterBrand').value = '';
+      document.getElementById('pendingFilterBranch').value = '';
+      document.getElementById('pendingFilterStatus').value = '';
+      paintPending();
+    });
+
+    // Enter key for pending search
+    document.getElementById('pendingFilterSearch')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('pendingApplyFilters').click();
     });
 
     /* ---------- Redeemed Tab ---------- */
@@ -1868,22 +2922,23 @@
 
       filteredRedeemed.forEach(r => {
         const tr = document.createElement('tr');
+        // SECURITY: All user data is escaped to prevent XSS
         tr.innerHTML = `
           <td data-label="Redeemed At">${formatDate(r.reward_claimed_at)}</td>
           <td data-label="Customer">
-            <div style="font-weight:600">${r.name || '-'}</div>
-            <div style="font-size:11px;color:var(--muted)">${r.email || '-'}</div>
+            <div style="font-weight:600">${sanitize(r.name) || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${sanitize(r.email) || '-'}</div>
           </td>
-          <td data-label="Reward Code" class="mono">${r.reward_code || '-'}</td>
-          <td data-label="Receipt" class="mono">${r.receipt || '-'}</td>
+          <td data-label="Reward Code" class="mono">${sanitize(r.reward_code) || '-'}</td>
+          <td data-label="Receipt" class="mono">${sanitize(r.receipt) || '-'}</td>
           <td data-label="Survey Brand/Branch">
-            ${brandBadge(r.brand)}<br>
-            <small style="color:var(--muted)">${r.branch || '-'}</small>
+            ${brandBadge(sanitize(r.brand))}<br>
+            <small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small>
           </td>
-          <td data-label="Redeemed By">${r.reward_claimed_by || '-'}</td>
+          <td data-label="Redeemed By">${sanitize(r.reward_claimed_by) || '-'}</td>
           <td data-label="Redeemed At (Location)">
-            <div style="font-weight:600">${r.reward_claimed_branch || '-'}</div>
-            <div style="font-size:11px;color:var(--muted)">${r.reward_claimed_brand || '-'}</div>
+            <div style="font-weight:600">${sanitize(r.reward_claimed_branch) || '-'}</div>
+            <div style="font-size:11px;color:var(--muted)">${sanitize(r.reward_claimed_brand) || '-'}</div>
           </td>
         `;
         tbody.appendChild(tr);
@@ -2077,13 +3132,14 @@
         return;
       }
 
+      // SECURITY: All user data is escaped to prevent XSS
       container.innerHTML = detractors.map(r => `
         <div style="padding:12px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px">
           <div style="display:flex; justify-content:space-between; margin-bottom:8px">
-            ${brandBadge(r.brand)}
+            ${brandBadge(sanitize(r.brand))}
             ${npsBadge(r.q12)}
           </div>
-          <p style="font-size:13px; margin:0">"${r.q12_follow}"</p>
+          <p style="font-size:13px; margin:0">"${sanitize(r.q12_follow)}"</p>
           <div style="font-size:11px; color:var(--muted); margin-top:8px">${formatDate(r.completed_at)}</div>
         </div>
       `).join('');
@@ -2212,14 +3268,14 @@
 
     function formatAnswer(value) {
       if (value === null || value === undefined || value === '') return '-';
-      return value;
+      return sanitize(value);
     }
 
     function showResponseDetail(id) {
       const response = allResponses.find(r => r.id === id);
       if (!response) return;
 
-      document.getElementById('detailSubtitle').textContent = `${response.brand || '-'} - ${response.branch || '-'} | ${formatDate(response.completed_at)}`;
+      document.getElementById('detailSubtitle').textContent = `${sanitize(response.brand) || '-'} - ${sanitize(response.branch) || '-'} | ${formatDate(response.completed_at)}`;
 
       const content = document.getElementById('responseDetailContent');
       content.innerHTML = `
@@ -2228,9 +3284,9 @@
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
             <div style="padding:12px; background:rgba(0,0,0,0.03); border-radius:8px">
               <div style="font-size:11px; color:var(--muted); margin-bottom:4px">Customer</div>
-              <div style="font:700 14px var(--font)">${response.name || '-'}</div>
-              <div style="font-size:12px; color:var(--muted)">${response.email || '-'}</div>
-              ${response.phone ? `<div style="font-size:12px; color:var(--muted)">${response.phone}</div>` : ''}
+              <div style="font:700 14px var(--font)">${sanitize(response.name) || '-'}</div>
+              <div style="font-size:12px; color:var(--muted)">${sanitize(response.email) || '-'}</div>
+              ${response.phone ? `<div style="font-size:12px; color:var(--muted)">${sanitize(response.phone)}</div>` : ''}
             </div>
             <div style="padding:12px; background:rgba(0,0,0,0.03); border-radius:8px">
               <div style="font-size:11px; color:var(--muted); margin-bottom:4px">NPS Score (0-10)</div>
@@ -2242,10 +3298,10 @@
           <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
             <div style="font:700 12px var(--font); margin-bottom:8px">Receipt & Reward</div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13px">
-              <div><span style="color:var(--muted)">Receipt:</span> <span class="mono">${response.receipt || response.receipt || '-'}</span></div>
-              <div><span style="color:var(--muted)">Reward Code:</span> <span class="mono">${response.reward_code || '-'}</span></div>
+              <div><span style="color:var(--muted)">Receipt:</span> <span class="mono">${sanitize(response.receipt) || '-'}</span></div>
+              <div><span style="color:var(--muted)">Reward Code:</span> <span class="mono">${sanitize(response.reward_code) || '-'}</span></div>
               <div><span style="color:var(--muted)">Claimed:</span> ${response.reward_claimed ? 'Yes' : 'No'}</div>
-              <div><span style="color:var(--muted)">Ticket Status:</span> ${response.ticket_status || 'open'}</div>
+              <div><span style="color:var(--muted)">Ticket Status:</span> ${sanitize(response.ticket_status) || 'open'}</div>
             </div>
           </div>
 
@@ -2262,7 +3318,7 @@
           <!-- NPS Feedback -->
           <div style="padding:12px; border:1px solid var(--line); border-radius:8px; background:rgba(196,30,58,0.03)">
             <div style="font:700 12px var(--font); margin-bottom:8px">NPS Feedback</div>
-            <p style="font-size:13px; margin:0">"${response.q12_follow}"</p>
+            <p style="font-size:13px; margin:0">"${sanitize(response.q12_follow)}"</p>
           </div>
           ` : ''}
 
@@ -2294,12 +3350,12 @@
           <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
             <div style="font:700 12px var(--font); margin-bottom:12px">Additional Feedback</div>
             <div style="display:grid; gap:8px; font-size:13px">
-              ${response.q13 ? `<div><span style="color:var(--muted)">Q13:</span> ${response.q13}</div>` : ''}
-              ${response.q14 ? `<div><span style="color:var(--muted)">Q14:</span> ${response.q14}</div>` : ''}
-              ${response.q15 ? `<div><span style="color:var(--muted)">Q15:</span> ${response.q15}</div>` : ''}
-              ${response.q16 ? `<div><span style="color:var(--muted)">Q16:</span> ${response.q16}</div>` : ''}
-              ${response.q17 ? `<div><span style="color:var(--muted)">Q17:</span> ${response.q17}</div>` : ''}
-              ${response.q18 ? `<div><span style="color:var(--muted)">Q18:</span> ${response.q18}</div>` : ''}
+              ${response.q13 ? `<div><span style="color:var(--muted)">Q13:</span> ${sanitize(response.q13)}</div>` : ''}
+              ${response.q14 ? `<div><span style="color:var(--muted)">Q14:</span> ${sanitize(response.q14)}</div>` : ''}
+              ${response.q15 ? `<div><span style="color:var(--muted)">Q15:</span> ${sanitize(response.q15)}</div>` : ''}
+              ${response.q16 ? `<div><span style="color:var(--muted)">Q16:</span> ${sanitize(response.q16)}</div>` : ''}
+              ${response.q17 ? `<div><span style="color:var(--muted)">Q17:</span> ${sanitize(response.q17)}</div>` : ''}
+              ${response.q18 ? `<div><span style="color:var(--muted)">Q18:</span> ${sanitize(response.q18)}</div>` : ''}
             </div>
           </div>
           ` : ''}
@@ -2310,6 +3366,10 @@
     }
 
     document.getElementById('closeDetailBtn')?.addEventListener('click', () => {
+      document.getElementById('responseDetailModal').classList.remove('visible');
+    });
+
+    document.getElementById('responseDetailModalClose')?.addEventListener('click', () => {
       document.getElementById('responseDetailModal').classList.remove('visible');
     });
 
@@ -2357,13 +3417,22 @@
         // Strictly check that valid is true and user exists
         if (data.valid === true && data.user && data.user.email) {
           currentUser = data.user;
+          console.log('Session verified for user:', currentUser.email);
 
           // Restore the Supabase session for authenticated operations
           if (refreshToken) {
-            await sb.auth.setSession({
+            console.log('Setting Supabase session...');
+            const { error: sessionError } = await sb.auth.setSession({
               access_token: token,
               refresh_token: refreshToken
             });
+            if (sessionError) {
+              console.warn('Session set warning:', sessionError);
+            } else {
+              console.log('Supabase session set successfully');
+            }
+          } else {
+            console.warn('No refresh token available');
           }
 
           showApp();

@@ -2,24 +2,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,https://tarotaro-nh.github.io,https://crstntaro.github.io,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080').split(',');
+// Strict allowed origins list - EXACT MATCH ONLY
+const ALLOWED_ORIGINS: string[] = [
+  'https://nipponhasha.ph',
+  'https://www.nipponhasha.ph',
+  'https://tarotaro-nh.github.io',
+  'https://crstntaro.github.io',
+  // Development origins (remove in production)
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:8080',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:3000',
+];
 
-function getCorsHeaders(origin: string | null) {
-  // Allow null origin for file:// protocol
-  if (!origin || origin === 'null') {
-    return {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-  // Allow any localhost or github.io origin for development
-  const isAllowed = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('github.io');
-  const allowedOrigin = isAllowed ? origin : (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // SECURITY: Only allow exact origin matches
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const allowedOrigin = isAllowed ? origin : ALLOWED_ORIGINS[0];
+
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
   };
 }
@@ -32,16 +37,70 @@ function generateSecureRewardCode(): string {
   return `GZ${code}`;
 }
 
-// Validate receipt number format (should start with valid prefix)
+// SECURITY: Validate receipt number format with strict rules
 function isValidReceiptFormat(receipt: string): boolean {
   if (!receipt || typeof receipt !== 'string') return false;
+  // SECURITY: Block null bytes
+  if (receipt.includes('\0')) return false;
   const trimmed = receipt.trim();
-  if (trimmed.length < 5) return false;
+
+  // SECURITY: Enforce length limits (min 5, max 50 characters)
+  if (trimmed.length < 5 || trimmed.length > 50) return false;
+
+  // SECURITY: Only allow alphanumeric characters and hyphens
+  if (!/^[A-Za-z0-9\-]+$/.test(trimmed)) return false;
 
   // Valid prefixes: MDKA, MDKB, MDKC, MDKK, MDKM, MDKP, YSKA, YSKC, YSKO, YSKP, MRDR, MRDV, KZCF, KZNM
   const validPrefixes = ['MDKA', 'MDKB', 'MDKC', 'MDKK', 'MDKM', 'MDKP', 'YSKA', 'YSKC', 'YSKO', 'YSKP', 'MRDR', 'MRDV', 'KZCF', 'KZNM'];
   const prefix = trimmed.substring(0, 4).toUpperCase();
   return validPrefixes.includes(prefix);
+}
+
+// SECURITY: Whitelist of allowed payload fields to prevent injection attacks
+const ALLOWED_PAYLOAD_FIELDS = [
+  'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q10', 'q11',
+  'q12', 'q12_follow', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18',
+  'name', 'email', 'phone', 'dpa', 'promo', 'receipt'
+];
+
+function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const field of ALLOWED_PAYLOAD_FIELDS) {
+    if (field in payload && payload[field] !== undefined) {
+      // SECURITY: Sanitize string values
+      const value = payload[field];
+      if (typeof value === 'string') {
+        // Block null bytes and limit length
+        if (value.includes('\0')) continue;
+        sanitized[field] = value.slice(0, 1000); // Max 1000 chars per field
+      } else if (typeof value === 'number' || typeof value === 'boolean') {
+        sanitized[field] = value;
+      }
+    }
+  }
+  return sanitized;
+}
+
+// SECURITY: Simple rate limiting for public endpoints
+const rateLimitMap = new Map<string, { count: number, timestamp: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 5; // 5 submissions per minute per IP
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { count: 1, timestamp: now });
+    return true;
+  }
+
+  if (record.count >= MAX_REQUESTS) {
+    return false;
+  }
+
+  record.count++;
+  return true;
 }
 
 serve(async (req) => {
@@ -50,6 +109,15 @@ serve(async (req) => {
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // SECURITY: Rate limiting
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 429,
+    });
   }
 
   try {
@@ -83,11 +151,14 @@ serve(async (req) => {
       })
     }
 
+    // SECURITY: Sanitize payload to only allow whitelisted fields
+    const safePayload = sanitizePayload(payload);
+
     // 3. Get receipt from payload or existing response
-    const receiptNumber = payload.receipt || response.receipt;
+    const receiptNumber = safePayload.receipt || response.receipt;
 
     // 4. Check if this receipt already has a reward code (CRITICAL: enforce one reward per receipt)
-    if (receiptNumber && isValidReceiptFormat(receiptNumber)) {
+    if (receiptNumber && isValidReceiptFormat(receiptNumber as string)) {
       const { data: existingReward, error: checkError } = await supabaseAdmin
         .from('survey_responses')
         .select('id, reward_code, completed_at')
@@ -114,7 +185,7 @@ serve(async (req) => {
     // 5. Prepare the final payload and generate reward code
     const newRewardCode = generateSecureRewardCode();
     const finalPayload = {
-      ...payload,
+      ...safePayload,
       completed_at: new Date().toISOString(),
       reward_code: newRewardCode,
       reward_generated_at: new Date().toISOString(),
@@ -152,9 +223,10 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    // Log the full error to the function logs
+    // Log the full error to the function logs (server-side only)
     console.error('Caught Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    // SECURITY: Return generic error message to client to prevent information disclosure
+    return new Response(JSON.stringify({ error: 'An error occurred while processing your request.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

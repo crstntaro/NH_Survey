@@ -1,8 +1,40 @@
-# Credentials
+# Credentials - NEVER COMMIT
 CREDENTIALS.md
+scripts/CREDENTIALS.md
+*.credentials
+*.secret
 
-# Environment variables
+# Environment variables - NEVER COMMIT
 .env
+.env.*
 .env.local
+.env.production
+.env.development
 admin/.env
 scripts/.env
+supabase/.env
+supabase/.env.local
+
+# Keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build outputs
+dist/
+build/

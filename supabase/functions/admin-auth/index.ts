@@ -3,41 +3,47 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.0/mod.ts';
 
-// Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,https://tarotaro-nh.github.io,https://crstntaro.github.io').split(',');
+// Strict allowed origins list - EXACT MATCH ONLY (no wildcards or substring matching)
+const ALLOWED_ORIGINS: string[] = [
+  'https://nipponhasha.ph',
+  'https://www.nipponhasha.ph',
+  'https://tarotaro-nh.github.io',
+  'https://crstntaro.github.io',
+  // Development origins (remove in production)
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:8080',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:3000',
+];
 
-function getCorsHeaders(origin: string | null) {
-  // Allow null origin for file:// protocol and localhost variations
-  if (!origin || origin === 'null') {
-    return {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-  // Allow any localhost origin for development
-  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-    return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // SECURITY: Only allow exact origin matches - no wildcards or substring matching
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+
+  // If origin not in whitelist, use first production origin (requests will fail CORS)
+  const allowedOrigin = isAllowed ? origin : ALLOWED_ORIGINS[0];
+
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
   };
 }
 
 // In-memory store for rate limiting (simple implementation)
 const loginAttempts = new Map<string, { count: number, timestamp: number }>();
+const ipLoginAttempts = new Map<string, { count: number, timestamp: number }>();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const MAX_ATTEMPTS = 5;
+const MAX_IP_ATTEMPTS = 20; // 20 attempts per IP per window (higher since multiple users may share IP)
+
+// SECURITY: Valid roles whitelist
+const VALID_ROLES = ['super_admin', 'brand_admin', 'branch_admin', 'brand_manager', 'validator'];
+
+// SECURITY: Valid brands whitelist
+const VALID_BRANDS = ['Mendokoro', 'Yushoken', 'Kazunori', 'MaruDori', 'Kazu Café', null];
 
 // Function to handle OPTIONS preflight requests
 function handleOptions(origin: string | null) {
@@ -98,7 +104,8 @@ serve(async (req) => {
     return response;
   } catch (error) {
     console.error('Error in main handler:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    // SECURITY: Return generic error to prevent information disclosure
+    return new Response(JSON.stringify({ error: 'An internal error occurred.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -116,6 +123,9 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
 
   // --- Rate Limiting Check ---
   const now = Date.now();
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+
+  // Per-email rate limiting
   const attempts = loginAttempts.get(email) || { count: 0, timestamp: now };
   if (now - attempts.timestamp > RATE_LIMIT_WINDOW) {
     attempts.count = 0;
@@ -123,6 +133,16 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
   }
   if (attempts.count >= MAX_ATTEMPTS) {
     return new Response(JSON.stringify({ error: 'Too many login attempts. Please try again later.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+
+  // SECURITY: Per-IP rate limiting to prevent distributed brute force
+  const ipAttempts = ipLoginAttempts.get(clientIp) || { count: 0, timestamp: now };
+  if (now - ipAttempts.timestamp > RATE_LIMIT_WINDOW) {
+    ipAttempts.count = 0;
+    ipAttempts.timestamp = now;
+  }
+  if (ipAttempts.count >= MAX_IP_ATTEMPTS) {
+    return new Response(JSON.stringify({ error: 'Too many requests from your location. Please try again later.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   // 1. Fetch user from `admin_users` table
@@ -135,7 +155,19 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
   if (adminError || !adminUser) {
     attempts.count++;
     loginAttempts.set(email, attempts);
+    ipAttempts.count++;
+    ipLoginAttempts.set(clientIp, ipAttempts);
     return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+
+  // SECURITY: Validate role and brand from database
+  if (!VALID_ROLES.includes(adminUser.role)) {
+    console.error('Invalid role detected for user:', email, adminUser.role);
+    return new Response(JSON.stringify({ error: 'Invalid user configuration' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  if (adminUser.brand && !VALID_BRANDS.includes(adminUser.brand)) {
+    console.error('Invalid brand detected for user:', email, adminUser.brand);
+    return new Response(JSON.stringify({ error: 'Invalid user configuration' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   // 2. Check if user is active
@@ -153,6 +185,8 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
   if (authError || !authData.session) {
     attempts.count++;
     loginAttempts.set(email, attempts);
+    ipAttempts.count++;
+    ipLoginAttempts.set(clientIp, ipAttempts);
     return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 

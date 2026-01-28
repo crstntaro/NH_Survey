@@ -2,6 +2,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// SECURITY: Constant-time string comparison to prevent timing attacks
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Compare against self to maintain constant time even on length mismatch
+    const dummy = a;
+    let result = a.length ^ b.length;
+    for (let i = 0; i < dummy.length; i++) {
+      result |= dummy.charCodeAt(i) ^ dummy.charCodeAt(i);
+    }
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 // Get allowed origins from environment or use default
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph').split(',');
 
@@ -48,7 +66,8 @@ serve(async (req) => {
       throw new Error('Survey not yet completed.')
     }
 
-    if (data.reward_code !== reward_code) {
+    // SECURITY: Use constant-time comparison to prevent timing attacks
+    if (!timingSafeEqual(data.reward_code.toUpperCase(), reward_code.toUpperCase())) {
       throw new Error('Invalid reward code.')
     }
 
@@ -61,7 +80,10 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    // Log full error server-side
+    console.error('Error:', error);
+    // SECURITY: Return generic error to prevent information disclosure
+    return new Response(JSON.stringify({ error: 'Invalid request or reward code.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

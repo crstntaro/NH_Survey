@@ -3,26 +3,53 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph,https://tarotaro-nh.github.io,https://crstntaro.github.io,http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080').split(',');
+// Strict allowed origins list - EXACT MATCH ONLY
+const ALLOWED_ORIGINS: string[] = [
+  'https://nipponhasha.ph',
+  'https://www.nipponhasha.ph',
+  'https://tarotaro-nh.github.io',
+  'https://crstntaro.github.io',
+  // Development origins (remove in production)
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:8080',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:3000',
+];
 
-function getCorsHeaders(origin: string | null) {
-  // Allow null origin for file:// protocol
-  if (!origin || origin === 'null') {
-    return {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-  // Allow any localhost or github.io origin for development
-  const isAllowed = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('github.io');
-  const allowedOrigin = isAllowed ? origin : (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // SECURITY: Only allow exact origin matches
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const allowedOrigin = isAllowed ? origin : ALLOWED_ORIGINS[0];
+
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
   };
+}
+
+// SECURITY: Simple rate limiting for public endpoints
+const rateLimitMap = new Map<string, { count: number, timestamp: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 10; // 10 requests per minute per IP
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { count: 1, timestamp: now });
+    return true;
+  }
+
+  if (record.count >= MAX_REQUESTS) {
+    return false;
+  }
+
+  record.count++;
+  return true;
 }
 
 serve(async (req) => {
@@ -32,6 +59,15 @@ serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // SECURITY: Rate limiting
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 429,
+    });
   }
 
   try {
@@ -119,7 +155,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    // SECURITY: Return generic error to prevent information disclosure
+    return new Response(JSON.stringify({ error: 'An error occurred while processing your request.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

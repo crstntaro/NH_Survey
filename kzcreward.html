@@ -6,8 +6,8 @@
   <title>Kazu Café — Reward</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="kzclogo.png">
-  <link rel="apple-touch-icon" href="kzclogo.png">
+  <link rel="icon" type="image/png" href="assets/logos/kzclogo.png">
+  <link rel="apple-touch-icon" href="assets/logos/kzclogo.png">
 
   <!-- Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -147,8 +147,8 @@
   <header class="site-header">
     <nav class="nav">
       <div class="brand-left">
-        <!-- per request: header uses kzclogo2.png -->
-        <img class="brand-img" src="kzclogo2.png" alt="Kazu Café">
+        <!-- per request: header uses assets/logos/kzclogo2.png -->
+        <img class="brand-img" src="assets/logos/kzclogo2.png" alt="Kazu Café">
       </div>
       <div class="brand-right">
         <div class="brand-name">KAZU CAFÉ</div>
@@ -163,7 +163,7 @@
   <main class="wrap">
     <section class="card" role="region" aria-label="Kazu Café Reward">
       <!-- on-card logo (standard mark) -->
-      <img class="logo" src="kzclogo2.png" alt="Kazu Café">
+      <img class="logo" src="assets/logos/kzclogo2.png" alt="Kazu Café">
 
       <h1>Thank you for completing the survey!</h1>
       <p class="lead">Show this code on your next visit to claim a <b>FREE 3-piece Gyoza</b>.</p>
@@ -181,7 +181,7 @@
       <div id="receiptCard" class="receipt" aria-hidden="true">
         <div class="rec-head">
           <span class="rec-title">Kazu Café Coupon</span>
-          <img src="kzclogo2.png" alt="" style="height:20px">
+          <img src="assets/logos/kzclogo2.png" alt="" style="height:20px">
         </div>
         <div class="rec-line"></div>
         <div class="rec-row"><span>Date</span><span id="recDate">—</span></div>
@@ -214,21 +214,21 @@
 
       // Security: Validate required parameters
       if (!responseId || !rewardCodeFromUrl) {
-          cardEl.innerHTML = '<img class="logo" src="kzclogo.png" alt="Kazu Café"><h1>Invalid Link</h1><p>This reward link is invalid or incomplete.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+          cardEl.innerHTML = '<img class="logo" src="assets/logos/kzclogo.png" alt="Kazu Café"><h1>Invalid Link</h1><p>This reward link is invalid or incomplete.</p><p class="small">Please complete a survey to receive your reward code.</p>';
           return;
       }
 
       // Security: Validate UUID format for response_id
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(responseId)) {
-          cardEl.innerHTML = '<img class="logo" src="kzclogo.png" alt="Kazu Café"><h1>Invalid Link</h1><p>This reward link is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+          cardEl.innerHTML = '<img class="logo" src="assets/logos/kzclogo.png" alt="Kazu Café"><h1>Invalid Link</h1><p>This reward link is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
           return;
       }
 
       // Security: Validate reward code format (GZ + 12 hex chars)
       const rewardCodeRegex = /^GZ[0-9A-F]{12}$/i;
       if (!rewardCodeRegex.test(rewardCodeFromUrl)) {
-          cardEl.innerHTML = '<img class="logo" src="kzclogo.png" alt="Kazu Café"><h1>Invalid Code</h1><p>The reward code format is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+          cardEl.innerHTML = '<img class="logo" src="assets/logos/kzclogo.png" alt="Kazu Café"><h1>Invalid Code</h1><p>The reward code format is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
           return;
       }
 
@@ -350,7 +350,7 @@
           const errorP1 = document.createElement('p');
           errorP1.textContent = error.message;
           cardEl.innerHTML = `
-            <img class="logo" src="kzclogo.png" alt="Kazu Café">
+            <img class="logo" src="assets/logos/kzclogo.png" alt="Kazu Café">
             <h1>Unable to Verify Reward</h1>
             <p>${error.message}</p>
             <p class="small">Please contact our staff for assistance or try completing a new survey.</p>

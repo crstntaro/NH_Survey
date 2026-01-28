@@ -15,153 +15,210 @@ if (!supabaseUrl || !serviceKey) {
 
 const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-const CREDENTIALS_FILE = 'CREDENTIALS.md';
-
+// All admin accounts to create
 const adminAccounts = [
-  { brand: "Mendokoro Ramenba", branch: "Molito (Alabang)", email: "admin.alabang@mendokoro.com" },
-  { brand: "Mendokoro Ramenba", branch: "Bonifacio Global City", email: "admin.bgc@mendokoro.com" },
-  { brand: "Mendokoro Ramenba", branch: "Cebu", email: "admin.cebu@mendokoro.com" },
-  { brand: "Mendokoro Ramenba", branch: "Katipunan", email: "admin.katipunan@mendokoro.com" },
-  { brand: "Mendokoro Ramenba", branch: "Salcedo Village (Makati)", email: "admin.makati@mendokoro.com" },
-  { brand: "Mendokoro Ramenba", branch: "Pasay", email: "admin.pasay@mendokoro.com" },
-  { brand: "Ramen Yushoken", branch: "Molito (Alabang)", email: "admin.alabang@yushoken.com" },
-  { brand: "Ramen Yushoken", branch: "Cebu", email: "admin.cebu@yushoken.com" },
-  { brand: "Ramen Yushoken", branch: "Ortigas", email: "admin.ortigas@yushoken.com" },
-  { brand: "Ramen Yushoken", branch: "Pasay", email: "admin.pasay@yushoken.com" },
-  { brand: "Kazunori", branch: "Makati", email: "admin@kazunori.com" },
-  { brand: "Kazu Café", branch: "Makati", email: "admin@kazucafe.com" }
+  // SUPER ADMIN
+  {
+    email: "admin@nipponhasha.ph",
+    password: "NHsuper2024!",
+    brand: "All",
+    branch: "All",
+    role: "super_admin"
+  },
+
+  // MENDOKORO RAMENBA
+  {
+    email: "manager.mendokoro@nipponhasha.ph",
+    password: "MDKmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "All",
+    role: "brand_manager"
+  },
+  {
+    email: "validator.mendokoro@nipponhasha.ph",
+    password: "MDKvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "All",
+    role: "validator"
+  },
+
+  // RAMEN YUSHOKEN
+  {
+    email: "manager.yushoken@nipponhasha.ph",
+    password: "YSKmanager24!",
+    brand: "Ramen Yushoken",
+    branch: "All",
+    role: "brand_manager"
+  },
+  {
+    email: "validator.yushoken@nipponhasha.ph",
+    password: "YSKvalidate24!",
+    brand: "Ramen Yushoken",
+    branch: "All",
+    role: "validator"
+  },
+
+  // MARUDORI
+  {
+    email: "manager.marudori@nipponhasha.ph",
+    password: "MRDmanager24!",
+    brand: "Marudori",
+    branch: "All",
+    role: "brand_manager"
+  },
+  {
+    email: "validator.marudori@nipponhasha.ph",
+    password: "MRDvalidate24!",
+    brand: "Marudori",
+    branch: "All",
+    role: "validator"
+  },
+
+  // KAZUNORI
+  {
+    email: "manager.kazunori@nipponhasha.ph",
+    password: "KZNmanager24!",
+    brand: "Kazunori",
+    branch: "All",
+    role: "brand_manager"
+  },
+  {
+    email: "validator.kazunori@nipponhasha.ph",
+    password: "KZNvalidate24!",
+    brand: "Kazunori",
+    branch: "All",
+    role: "validator"
+  },
+
+  // KAZU CAFE
+  {
+    email: "manager.kazucafe@nipponhasha.ph",
+    password: "KZCmanager24!",
+    brand: "Kazu Café",
+    branch: "All",
+    role: "brand_manager"
+  },
+  {
+    email: "validator.kazucafe@nipponhasha.ph",
+    password: "KZCvalidate24!",
+    brand: "Kazu Café",
+    branch: "All",
+    role: "validator"
+  }
 ];
 
-function generateSecurePassword(length = 16): string {
-  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lower = 'abcdefghijklmnopqrstuvwxyz';
-  const numbers = '0123456789';
-  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-  const allChars = upper + lower + numbers + symbols;
-
-  let password = '';
-  password += upper[Math.floor(Math.random() * upper.length)];
-  password += lower[Math.floor(Math.random() * lower.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += symbols[Math.floor(Math.random() * symbols.length)];
-
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
-  }
-
-  return password.split('').sort(() => 0.5 - Math.random()).join('');
-}
-
-function sanitizeForUsername(text: string): string {
-    return text.toLowerCase()
-        .replace(/\s+/g, '_') // Replace spaces with underscores
-        .replace(/\(/g, '')   // Remove parentheses
-        .replace(/\)/g, '')
-        .replace(/[^a-z0-9_]/g, ''); // Remove invalid characters
+function sanitizeForUsername(email: string): string {
+  return email.split('@')[0]
+    .toLowerCase()
+    .replace(/\./g, '_')
+    .replace(/[^a-z0-9_]/g, '');
 }
 
 async function main() {
   console.log('Starting admin user creation script...');
-  let credentialsContent = `# Admin Dashboard Credentials\n\n` +
-    `- **SECURITY WARNING** -\n` + // Corrected from ⚠️ **SECURITY WARNING** ⚠️ to avoid markdown issues in code string
-    `- This file contains sensitive login credentials.\n` + 
-    `- **DO NOT** commit to git (ensure it's in .gitignore).\n` + 
-    `- Store this file securely (e.g., in a password manager).\n` + 
-    `- Passwords should be changed by users after their first login.\n\n`;
+  console.log(`Found ${adminAccounts.length} accounts to create.\n`);
 
   for (const account of adminAccounts) {
-    const { brand, branch, email } = account;
-    const password = generateSecurePassword();
-    const username = sanitizeForUsername(`${brand}_${branch}_admin`);
+    const { email, password, brand, branch, role } = account;
+    const username = sanitizeForUsername(email);
     const password_hash = await bcrypt.hash(password);
 
-    console.log(`\nProcessing: ${email}`);
+    console.log(`\nProcessing: ${email} (${role})`);
 
     // 1. Create user in Supabase Auth
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: true,
     });
 
     let userId;
 
     if (authError) {
       if (authError.message.includes('already been registered') || authError.message.includes('already registered')) {
-        console.warn(`  - 🟡 WARN: Auth user ${email} already exists. Fetching existing user ID...`);
-        // Fetch the existing user's ID
+        console.warn(`  - WARN: Auth user ${email} already exists. Fetching existing user ID...`);
         const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
         if (listError) {
-          console.error(`  - 🔴 ERROR listing users:`, listError.message);
+          console.error(`  - ERROR listing users:`, listError.message);
           continue;
         }
         const existingUser = listData.users.find(u => u.email === email);
         if (!existingUser) {
-          console.error(`  - 🔴 ERROR: Could not find existing user ${email}`);
+          console.error(`  - ERROR: Could not find existing user ${email}`);
           continue;
         }
         userId = existingUser.id;
-        console.log(`  - ✅ Found existing auth user ID: ${userId}`);
+
+        // Update password for existing user
+        await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+        console.log(`  - OK: Found existing auth user, password updated.`);
       } else {
-        console.error(`  - 🔴 ERROR creating auth user ${email}:`, authError.message);
+        console.error(`  - ERROR creating auth user ${email}:`, authError.message);
         continue;
       }
     } else {
-      console.log(`  - ✅ Auth user created successfully for ${email}.`);
+      console.log(`  - OK: Auth user created successfully.`);
       userId = authUser.user.id;
     }
 
-
-    // 2. Insert into `admin_users` table
-    const { data: adminUser, error: dbError } = await supabaseAdmin
+    // 2. Check if user exists in admin_users table
+    const { data: existingAdmin } = await supabaseAdmin
       .from('admin_users')
-      .insert({
-        id: userId, // Use the same ID from Supabase Auth
-        username,
-        email,
-        password_hash,
-        brand,
-        branch,
-        role: 'branch_admin'
-      })
-      .select()
+      .select('id')
+      .eq('email', email)
       .single();
 
-    if (dbError) {
-      if (dbError.code === '23505') { // Unique constraint violation
-        console.warn(`  - 🟡 WARN: Admin user ${email} already exists in the database.`);
+    if (existingAdmin) {
+      // Update existing record
+      const { error: updateError } = await supabaseAdmin
+        .from('admin_users')
+        .update({
+          username,
+          password_hash,
+          brand,
+          branch,
+          role,
+          is_active: true
+        })
+        .eq('email', email);
+
+      if (updateError) {
+        console.error(`  - ERROR updating database for ${email}:`, updateError.message);
       } else {
-        console.error(`  - 🔴 ERROR inserting into database for ${email}:`, dbError.message);
-        continue;
+        console.log(`  - OK: Admin user record updated in database.`);
       }
     } else {
-      console.log(`  - ✅ Admin user record created in database for ${email}.`);
+      // Insert new record
+      const { error: dbError } = await supabaseAdmin
+        .from('admin_users')
+        .insert({
+          id: userId,
+          username,
+          email,
+          password_hash,
+          brand,
+          branch,
+          role,
+          is_active: true
+        });
+
+      if (dbError) {
+        if (dbError.code === '23505') {
+          console.warn(`  - WARN: Admin user ${email} already exists in the database.`);
+        } else {
+          console.error(`  - ERROR inserting into database for ${email}:`, dbError.message);
+          continue;
+        }
+      } else {
+        console.log(`  - OK: Admin user record created in database.`);
+      }
     }
-
-    // Append credentials to the markdown file content
-    credentialsContent += `## ${brand} - ${branch}\n` +
-      `- **Email**: 
-${email}
-` + // Removed unnecessary backticks around email
-      `- **Username**: 
-${username}
-` + // Removed unnecessary backticks around username
-      `- **Temporary Password**: 
-${password}
-` + // Removed unnecessary backticks around password
-      `- **Login URL**: [Your Admin Dashboard URL]/admin/login.html
-` + 
-      `- **Status**: ⏳ Password change required on first login\n\n`;
   }
 
-  // Write the final content to CREDENTIALS.md
-  try {
-    await Deno.writeTextFile(CREDENTIALS_FILE, credentialsContent);
-    console.log(`\n✅ All done! Admin credentials have been saved to ${CREDENTIALS_FILE}`);
-    console.log('**IMPORTANT**: Secure this file immediately and do not commit it to version control.');
-  } catch (e) {
-    console.error(`\n🔴 FAILED to write credentials file:`, e);
-  }
+  console.log('\n========================================');
+  console.log('DONE! All admin users have been processed.');
+  console.log('See CREDENTIALS.md for login details.');
+  console.log('========================================\n');
 }
 
 if (import.meta.main) {

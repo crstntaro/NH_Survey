@@ -137,7 +137,7 @@
   <header class="site-header">
     <nav class="nav">
       <a class="brand" href="index.html" aria-label="Home">
-        <img src="nhlogo.png" alt="Nippon Hasha Inc.">
+        <img src="assets/logos/nhlogo.png" alt="Nippon Hasha Inc.">
       </a>
     </nav>
   </header>
@@ -259,11 +259,11 @@
 
       const meta = getReceiptMeta(raw);
       const brandLogos = {
-          'Mendokoro': 'mendokorologo.png',
-          'Yushoken': 'yushokenlogo.png',
-          'Marudori': 'marudorilogo.png',
-          'Kazu Café': 'kzclogo.png',
-          'Kazunori': 'kazunorilogo.png'
+          'Mendokoro': 'assets/logos/mendokorologo.png',
+          'Yushoken': 'assets/logos/yushokenlogo.png',
+          'Marudori': 'assets/logos/marudorilogo.png',
+          'Kazu Café': 'assets/logos/kzclogo.png',
+          'Kazunori': 'assets/logos/kazunorilogo.png'
       };
 
       if(meta && meta.brand && brandLogos[meta.brand]){
@@ -400,11 +400,11 @@
         const logoEl = document.getElementById('overlayLogo');
         if (logoEl) {
             const brandLogos = {
-                'Mendokoro': 'mendokorologo.png',
-                'Yushoken': 'yushokenlogo.png',
-                'Marudori': 'marudorilogo.png',
-                'Kazu Café': 'kzclogo.png',
-                'Kazunori': 'kazunorilogo.png'
+                'Mendokoro': 'assets/logos/mendokorologo.png',
+                'Yushoken': 'assets/logos/yushokenlogo.png',
+                'Marudori': 'assets/logos/marudorilogo.png',
+                'Kazu Café': 'assets/logos/kzclogo.png',
+                'Kazunori': 'assets/logos/kazunorilogo.png'
             };
             if (meta.brand && brandLogos[meta.brand]) {
                 logoEl.src = brandLogos[meta.brand];
