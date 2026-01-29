@@ -17,7 +17,9 @@ const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
 // All admin accounts to create
 const adminAccounts = [
+  // ============================================================
   // SUPER ADMIN
+  // ============================================================
   {
     email: "admin@nipponhasha.ph",
     password: "NHsuper2024!",
@@ -26,7 +28,9 @@ const adminAccounts = [
     role: "super_admin"
   },
 
-  // MENDOKORO RAMENBA
+  // ============================================================
+  // MENDOKORO RAMENBA - Brand Level
+  // ============================================================
   {
     email: "manager.mendokoro@nipponhasha.ph",
     password: "MDKmanager24!",
@@ -42,7 +46,101 @@ const adminAccounts = [
     role: "validator"
   },
 
-  // RAMEN YUSHOKEN
+  // MENDOKORO RAMENBA - Branch Level
+  // Molito (Alabang)
+  {
+    email: "manager.mdk.alabang@nipponhasha.ph",
+    password: "MDKAmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Molito (Alabang)",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mdk.alabang@nipponhasha.ph",
+    password: "MDKAvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Molito (Alabang)",
+    role: "branch_validator"
+  },
+  // Bonifacio Global City
+  {
+    email: "manager.mdk.bgc@nipponhasha.ph",
+    password: "MDKBmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Bonifacio Global City",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mdk.bgc@nipponhasha.ph",
+    password: "MDKBvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Bonifacio Global City",
+    role: "branch_validator"
+  },
+  // Cebu
+  {
+    email: "manager.mdk.cebu@nipponhasha.ph",
+    password: "MDKCmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Cebu",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mdk.cebu@nipponhasha.ph",
+    password: "MDKCvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Cebu",
+    role: "branch_validator"
+  },
+  // Katipunan
+  {
+    email: "manager.mdk.katipunan@nipponhasha.ph",
+    password: "MDKKmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Katipunan",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mdk.katipunan@nipponhasha.ph",
+    password: "MDKKvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Katipunan",
+    role: "branch_validator"
+  },
+  // Salcedo Village (Makati)
+  {
+    email: "manager.mdk.makati@nipponhasha.ph",
+    password: "MDKMmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Salcedo Village (Makati)",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mdk.makati@nipponhasha.ph",
+    password: "MDKMvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Salcedo Village (Makati)",
+    role: "branch_validator"
+  },
+  // Pasay
+  {
+    email: "manager.mdk.pasay@nipponhasha.ph",
+    password: "MDKPmanager24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Pasay",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mdk.pasay@nipponhasha.ph",
+    password: "MDKPvalidate24!",
+    brand: "Mendokoro Ramenba",
+    branch: "Pasay",
+    role: "branch_validator"
+  },
+
+  // ============================================================
+  // RAMEN YUSHOKEN - Brand Level
+  // ============================================================
   {
     email: "manager.yushoken@nipponhasha.ph",
     password: "YSKmanager24!",
@@ -58,7 +156,71 @@ const adminAccounts = [
     role: "validator"
   },
 
-  // MARUDORI
+  // RAMEN YUSHOKEN - Branch Level
+  // Molito (Alabang)
+  {
+    email: "manager.ysk.alabang@nipponhasha.ph",
+    password: "YSKAmanager24!",
+    brand: "Ramen Yushoken",
+    branch: "Molito (Alabang)",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.ysk.alabang@nipponhasha.ph",
+    password: "YSKAvalidate24!",
+    brand: "Ramen Yushoken",
+    branch: "Molito (Alabang)",
+    role: "branch_validator"
+  },
+  // Cebu
+  {
+    email: "manager.ysk.cebu@nipponhasha.ph",
+    password: "YSKCmanager24!",
+    brand: "Ramen Yushoken",
+    branch: "Cebu",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.ysk.cebu@nipponhasha.ph",
+    password: "YSKCvalidate24!",
+    brand: "Ramen Yushoken",
+    branch: "Cebu",
+    role: "branch_validator"
+  },
+  // Ortigas
+  {
+    email: "manager.ysk.ortigas@nipponhasha.ph",
+    password: "YSKOmanager24!",
+    brand: "Ramen Yushoken",
+    branch: "Ortigas",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.ysk.ortigas@nipponhasha.ph",
+    password: "YSKOvalidate24!",
+    brand: "Ramen Yushoken",
+    branch: "Ortigas",
+    role: "branch_validator"
+  },
+  // Pasay
+  {
+    email: "manager.ysk.pasay@nipponhasha.ph",
+    password: "YSKPmanager24!",
+    brand: "Ramen Yushoken",
+    branch: "Pasay",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.ysk.pasay@nipponhasha.ph",
+    password: "YSKPvalidate24!",
+    brand: "Ramen Yushoken",
+    branch: "Pasay",
+    role: "branch_validator"
+  },
+
+  // ============================================================
+  // MARUDORI - Brand Level
+  // ============================================================
   {
     email: "manager.marudori@nipponhasha.ph",
     password: "MRDmanager24!",
@@ -74,7 +236,41 @@ const adminAccounts = [
     role: "validator"
   },
 
-  // KAZUNORI
+  // MARUDORI - Branch Level
+  // Rockwell
+  {
+    email: "manager.mrd.rockwell@nipponhasha.ph",
+    password: "MRDRmanager24!",
+    brand: "Marudori",
+    branch: "Rockwell",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mrd.rockwell@nipponhasha.ph",
+    password: "MRDRvalidate24!",
+    brand: "Marudori",
+    branch: "Rockwell",
+    role: "branch_validator"
+  },
+  // Vertis North
+  {
+    email: "manager.mrd.vertis@nipponhasha.ph",
+    password: "MRDVmanager24!",
+    brand: "Marudori",
+    branch: "Vertis North",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.mrd.vertis@nipponhasha.ph",
+    password: "MRDVvalidate24!",
+    brand: "Marudori",
+    branch: "Vertis North",
+    role: "branch_validator"
+  },
+
+  // ============================================================
+  // KAZUNORI - Brand Level
+  // ============================================================
   {
     email: "manager.kazunori@nipponhasha.ph",
     password: "KZNmanager24!",
@@ -90,7 +286,26 @@ const adminAccounts = [
     role: "validator"
   },
 
-  // KAZU CAFE
+  // KAZUNORI - Branch Level
+  // Kazunori (Makati)
+  {
+    email: "manager.kzn.makati@nipponhasha.ph",
+    password: "KZNMmanager24!",
+    brand: "Kazunori",
+    branch: "Kazunori (Makati)",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.kzn.makati@nipponhasha.ph",
+    password: "KZNMvalidate24!",
+    brand: "Kazunori",
+    branch: "Kazunori (Makati)",
+    role: "branch_validator"
+  },
+
+  // ============================================================
+  // KAZU CAFÉ - Brand Level
+  // ============================================================
   {
     email: "manager.kazucafe@nipponhasha.ph",
     password: "KZCmanager24!",
@@ -104,6 +319,23 @@ const adminAccounts = [
     brand: "Kazu Café",
     branch: "All",
     role: "validator"
+  },
+
+  // KAZU CAFÉ - Branch Level
+  // Kazu Café (Makati)
+  {
+    email: "manager.kzc.makati@nipponhasha.ph",
+    password: "KZCFmanager24!",
+    brand: "Kazu Café",
+    branch: "Kazu Café (Makati)",
+    role: "branch_manager"
+  },
+  {
+    email: "validator.kzc.makati@nipponhasha.ph",
+    password: "KZCFvalidate24!",
+    brand: "Kazu Café",
+    branch: "Kazu Café (Makati)",
+    role: "branch_validator"
   }
 ];
 
