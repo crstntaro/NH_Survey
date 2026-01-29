@@ -1869,12 +1869,12 @@
 
     function applyRolePermissions() {
       const role = currentUser?.role || 'validator';
-      const isValidator = role === 'validator';
+      const isValidator = role === 'validator' || role === 'branch_validator';
       const isSuperAdminRole = role === 'super_admin';
-      const isBrandManager = role === 'brand_manager';
+      const isBrandManager = role === 'brand_manager' || role === 'branch_manager';
 
-      // Tabs that validators can NOT see
-      const restrictedTabs = ['overview', 'responses', 'pending', 'redeemed', 'analytics', 'export'];
+      // Tabs that validators can NOT see (they can only see: validator, redeemed, profile)
+      const restrictedTabs = ['overview', 'responses', 'pending', 'analytics', 'export'];
 
       // Hide/show sidebar tabs based on role
       sidebarTabs.forEach(tab => {
@@ -2478,11 +2478,11 @@
     }
 
     function isBrandManager() {
-      return currentUser?.role === 'brand_manager';
+      return currentUser?.role === 'brand_manager' || currentUser?.role === 'branch_manager';
     }
 
     function isValidator() {
-      return currentUser?.role === 'validator';
+      return currentUser?.role === 'validator' || currentUser?.role === 'branch_validator';
     }
 
     function filterByUserAccess(responses) {
