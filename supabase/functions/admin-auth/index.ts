@@ -95,6 +95,9 @@ serve(async (req) => {
       case '/admin-auth/update-status':
         response = await handleUpdateStatus(req, supabaseAdmin, corsHeaders);
         break;
+      case '/admin-auth/update-profile':
+        response = await handleUpdateProfile(req, supabaseAdmin, corsHeaders);
+        break;
       default:
         response = new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,
@@ -446,6 +449,58 @@ async function handleUpdateStatus(req: Request, supabase: SupabaseClient, corsHe
     }
 
     return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleUpdateProfile(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { display_name, profile_pic } = await req.json();
+
+    // Validate display_name (max 100 chars, alphanumeric and spaces only)
+    if (display_name && (display_name.length > 100 || !/^[a-zA-Z0-9\s\-\.]+$/.test(display_name))) {
+        return new Response(JSON.stringify({ error: 'Invalid display name format' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Validate profile_pic (must be data URL or https URL, max 500KB base64)
+    if (profile_pic) {
+        const isDataUrl = profile_pic.startsWith('data:image/');
+        const isHttpsUrl = profile_pic.startsWith('https://');
+        if (!isDataUrl && !isHttpsUrl) {
+            return new Response(JSON.stringify({ error: 'Invalid profile picture format' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        // Check size for data URLs (roughly 500KB limit)
+        if (isDataUrl && profile_pic.length > 700000) {
+            return new Response(JSON.stringify({ error: 'Profile picture too large (max 500KB)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+    }
+
+    // Build update object
+    const updateData: Record<string, string | null> = {};
+    if (display_name !== undefined) updateData.display_name = display_name || null;
+    if (profile_pic !== undefined) updateData.profile_pic = profile_pic || null;
+
+    const { error } = await supabase
+        .from('admin_users')
+        .update(updateData)
+        .eq('id', user.app_metadata?.admin_id);
+
+    if (error) {
+        console.error('Error updating profile:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update profile' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ success: true, display_name, profile_pic }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

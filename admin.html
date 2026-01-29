@@ -1371,7 +1371,22 @@
             </svg>
             Profile Settings
           </h3>
-          <p class="subtitle">Update your display name</p>
+          <p class="subtitle">Update your profile information</p>
+
+          <!-- Profile Picture Upload -->
+          <label style="font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px">Profile Picture</label>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+            <div id="tabProfilePicEdit" style="width:64px; height:64px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font:800 20px var(--font); color:#fff; overflow:hidden; border:2px solid var(--line)">
+              <span id="tabProfilePicInitials">A</span>
+            </div>
+            <div style="flex:1">
+              <input type="file" id="tabProfilePicFile" accept="image/*" style="display:none">
+              <button type="button" class="btn" id="tabUploadPicBtn" style="font-size:12px; padding:8px 16px">Upload Photo</button>
+              <button type="button" class="btn" id="tabRemovePicBtn" style="font-size:12px; padding:8px 12px; margin-left:8px; display:none">Remove</button>
+              <p style="font-size:11px; color:var(--muted); margin:6px 0 0">Max 500KB. JPG, PNG, or GIF.</p>
+            </div>
+          </div>
+          <input type="hidden" id="tabProfilePicData">
 
           <label style="font:700 11px var(--font); color:var(--muted); display:block; margin-bottom:6px">Display Name</label>
           <input type="text" id="tabDisplayNameInput" placeholder="Enter your name" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font:500 14px var(--font); margin-bottom:12px">
@@ -2081,6 +2096,7 @@
     /* ---------- Profile Tab ---------- */
     function paintProfile() {
       const name = currentUser?.display_name || '';
+      const pic = currentUser?.profile_pic || '';
       const role = currentUser?.role || 'admin';
       const brand = currentUser?.brand || 'All Brands';
       const branch = currentUser?.branch || 'All Branches';
@@ -2091,12 +2107,41 @@
       const roleEl = document.getElementById('tabProfileRole');
       const inputEl = document.getElementById('tabDisplayNameInput');
       const initialsEl = document.getElementById('tabProfileInitials');
+      const headerPicEl = document.getElementById('tabProfilePicPreview');
 
       if (displayNameEl) displayNameEl.textContent = name || currentUser?.email || '-';
       if (emailEl) emailEl.textContent = currentUser?.email || '-';
       if (roleEl) roleEl.textContent = role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
       if (inputEl) inputEl.value = name;
-      if (initialsEl) initialsEl.textContent = getInitials(name, currentUser?.email);
+
+      const initials = getInitials(name, currentUser?.email);
+      if (initialsEl) initialsEl.textContent = initials;
+
+      // Header profile picture
+      if (headerPicEl) {
+        if (pic) {
+          const safePic = sanitizeImageUrl(pic);
+          headerPicEl.innerHTML = safePic ? `<img src="${safePic}" style="width:100%;height:100%;object-fit:cover">` : `<span id="tabProfileInitials">${initials}</span>`;
+        } else {
+          headerPicEl.innerHTML = `<span id="tabProfileInitials">${initials}</span>`;
+        }
+      }
+
+      // Edit form profile picture
+      const editPicEl = document.getElementById('tabProfilePicEdit');
+      const picDataEl = document.getElementById('tabProfilePicData');
+      const removeBtnEl = document.getElementById('tabRemovePicBtn');
+
+      if (editPicEl) {
+        if (pic) {
+          const safePic = sanitizeImageUrl(pic);
+          editPicEl.innerHTML = safePic ? `<img src="${safePic}" style="width:100%;height:100%;object-fit:cover">` : `<span id="tabProfilePicInitials">${initials}</span>`;
+        } else {
+          editPicEl.innerHTML = `<span id="tabProfilePicInitials">${initials}</span>`;
+        }
+      }
+      if (picDataEl) picDataEl.value = pic || '';
+      if (removeBtnEl) removeBtnEl.style.display = pic ? 'inline-block' : 'none';
 
       // Account Info section
       const emailInfoEl = document.getElementById('tabProfileEmailInfo');
@@ -2109,11 +2154,19 @@
       if (brandInfoEl) brandInfoEl.textContent = brand;
       if (branchInfoEl) branchInfoEl.textContent = branch;
 
-      // Clear messages
+      // Clear messages and password fields
       const pwMsg = document.getElementById('tabPasswordMsg');
       const saveMsg = document.getElementById('tabProfileSaveMsg');
       if (pwMsg) pwMsg.innerHTML = '';
       if (saveMsg) saveMsg.innerHTML = '';
+
+      // Clear password fields
+      const currPw = document.getElementById('tabCurrentPassword');
+      const newPw = document.getElementById('tabNewPassword');
+      const confPw = document.getElementById('tabConfirmPassword');
+      if (currPw) currPw.value = '';
+      if (newPw) newPw.value = '';
+      if (confPw) confPw.value = '';
     }
 
     function getInitials(name, email) {
@@ -2124,10 +2177,52 @@
       return email ? email.substring(0, 2).toUpperCase() : 'A';
     }
 
+    // Profile picture upload button
+    document.getElementById('tabUploadPicBtn')?.addEventListener('click', () => {
+      document.getElementById('tabProfilePicFile').click();
+    });
+
+    // Profile picture file selection
+    document.getElementById('tabProfilePicFile')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 500000) {
+        document.getElementById('tabProfileSaveMsg').innerHTML = '<div class="error-msg">Image must be under 500KB</div>';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target.result;
+        const safeUrl = sanitizeImageUrl(result);
+        if (safeUrl) {
+          document.getElementById('tabProfilePicData').value = safeUrl;
+          document.getElementById('tabProfilePicEdit').innerHTML = `<img src="${safeUrl}" style="width:100%;height:100%;object-fit:cover">`;
+          document.getElementById('tabRemovePicBtn').style.display = 'inline-block';
+          document.getElementById('tabProfileSaveMsg').innerHTML = '<div style="color:var(--gold);font-size:12px">Click "Save Profile" to apply changes</div>';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Remove profile picture button
+    document.getElementById('tabRemovePicBtn')?.addEventListener('click', () => {
+      document.getElementById('tabProfilePicData').value = '';
+      document.getElementById('tabProfilePicEdit').innerHTML = `<span id="tabProfilePicInitials">${getInitials(currentUser?.display_name, currentUser?.email)}</span>`;
+      document.getElementById('tabRemovePicBtn').style.display = 'none';
+      document.getElementById('tabProfileSaveMsg').innerHTML = '<div style="color:var(--gold);font-size:12px">Click "Save Profile" to apply changes</div>';
+    });
+
     // Profile tab save button
     document.getElementById('tabSaveProfileBtn')?.addEventListener('click', async () => {
       const displayName = document.getElementById('tabDisplayNameInput').value.trim();
+      const profilePic = document.getElementById('tabProfilePicData').value;
       const msgEl = document.getElementById('tabProfileSaveMsg');
+      const btn = document.getElementById('tabSaveProfileBtn');
+
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
 
       try {
         const token = localStorage.getItem('admin_token');
@@ -2138,19 +2233,40 @@
             'Authorization': `Bearer ${token}`,
             'apikey': SUPABASE_ANON_KEY
           },
-          body: JSON.stringify({ display_name: displayName })
+          body: JSON.stringify({ display_name: displayName, profile_pic: profilePic })
         });
         const data = await response.json();
         if (response.ok && data.success) {
           currentUser.display_name = displayName;
+          currentUser.profile_pic = profilePic;
+          localStorage.setItem('admin_user', JSON.stringify(currentUser));
+
           msgEl.innerHTML = '<div class="success-msg">Profile saved successfully!</div>';
+
+          // Update header display
           document.getElementById('tabProfileDisplayName').textContent = displayName || currentUser?.email || '-';
           document.getElementById('tabProfileInitials').textContent = getInitials(displayName, currentUser?.email);
+
+          // Update header profile picture
+          const headerPic = document.getElementById('tabProfilePicPreview');
+          if (headerPic) {
+            if (profilePic) {
+              headerPic.innerHTML = `<img src="${sanitizeImageUrl(profilePic)}" style="width:100%;height:100%;object-fit:cover">`;
+            } else {
+              headerPic.innerHTML = `<span id="tabProfileInitials">${getInitials(displayName, currentUser?.email)}</span>`;
+            }
+          }
+
+          // Update remove button visibility
+          document.getElementById('tabRemovePicBtn').style.display = profilePic ? 'inline-block' : 'none';
         } else {
           msgEl.innerHTML = `<div class="error-msg">${sanitize(data.error) || 'Failed to save profile'}</div>`;
         }
       } catch (err) {
         msgEl.innerHTML = '<div class="error-msg">Connection failed. Please try again.</div>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Profile';
       }
     });
 
