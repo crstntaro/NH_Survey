@@ -599,10 +599,20 @@
     /* Desktop layout with sidebar */
     .site-header { display: none !important; }
     .site-header.visible { display: none !important; }
-    .wrap {
-      margin-left: 240px;
-      width: calc(100% - 240px);
-      max-width: none;
+
+    /* Fixed sidebar + scrollable content layout (only when app is visible) */
+    body.app-visible {
+      height: 100%;
+      overflow: hidden;
+    }
+    body.app-visible .wrap {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 240px;
+      overflow-y: auto;
+      overflow-x: hidden;
       padding: 20px;
       box-sizing: border-box;
     }
@@ -674,7 +684,8 @@
       .sidebar.open { transform: translateX(0) !important; }
       .sidebar-overlay { display: block; }
       .sidebar-close { display: grid; }
-      .wrap { margin-left: 0; width: 100%; max-width: 1200px; padding: 16px; margin: 0 auto; }
+      body.app-visible { height: auto; overflow: auto; }
+      body.app-visible .wrap { position: static; left: 0; width: 100%; max-width: 1200px; padding: 16px; margin: 0 auto; overflow: visible; }
 
       /* Show header with hamburger */
       .site-header.visible { display: flex !important; }
@@ -1842,6 +1853,9 @@
       // Show sidebar
       if (sidebar) sidebar.style.display = 'flex';
 
+      // Enable fixed sidebar layout
+      document.body.classList.add('app-visible');
+
       // Update user badge if it exists
       if (currentUser && userBadge) {
         userBadge.title = `${currentUser.email}\n${currentUser.brand || 'All Brands'} - ${currentUser.role || 'admin'}`;
@@ -1898,6 +1912,9 @@
       // Hide sidebar
       if (sidebar) sidebar.style.display = 'none';
       closeSidebar();
+
+      // Disable fixed sidebar layout
+      document.body.classList.remove('app-visible');
     }
 
     /* ---------- Password Toggle ---------- */
