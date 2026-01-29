@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Multi-brand restaurant survey administration platform for Nippon Hasha restaurants (Mendokoro Ramenba, Ramen Yushoken, Kazunori, Kazu Café). Built on Supabase with PostgreSQL backend, Deno Edge Functions, and static HTML/JavaScript frontend.
+Multi-brand restaurant survey administration platform for Nippon Hasha restaurants (Mendokoro, Ramen Yushoken, Kazunori, Kazu Café). Built on Supabase with PostgreSQL backend, Deno Edge Functions, and static HTML/JavaScript frontend.
 
 ## Tech Stack
 

@@ -138,7 +138,7 @@
   <header class="site-header">
     <nav class="nav">
       <div class="brand-left">
-        <img class="brand-img" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba">
+        <img class="brand-img" src="assets/logos/mendokorologo.png" alt="Mendokoro">
       </div>
       <div class="brand-right">
         <div class="brand-name">MENDOKORO RAMENBA</div>
@@ -149,7 +149,7 @@
 
   <main class="wrap">
     <section class="card" role="region" aria-label="Mendokoro Reward">
-      <img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba">
+      <img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro">
 
       <h1>Thank you for completing the survey!</h1>
       <p class="lead">Show this code on your next visit to claim a <b>FREE 3-piece Gyoza</b>.</p>
@@ -166,7 +166,7 @@
       <!-- Export target (receipt look) -->
       <div id="receiptCard" class="receipt" aria-hidden="true">
         <div class="rec-head">
-          <span class="rec-title">Mendokoro Ramenba Coupon</span>
+          <span class="rec-title">Mendokoro Coupon</span>
           <img src="assets/logos/mendokorologo.png" alt="" style="height:20px">
         </div>
         <div class="rec-line"></div>
@@ -200,21 +200,21 @@
 
       // Security: Validate required parameters
       if (!responseId || !rewardCodeFromUrl) {
-        cardEl.innerHTML = '<img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba"><h1>Invalid Link</h1><p>This reward link is invalid or incomplete.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+        cardEl.innerHTML = '<img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro"><h1>Invalid Link</h1><p>This reward link is invalid or incomplete.</p><p class="small">Please complete a survey to receive your reward code.</p>';
         return;
       }
 
       // Security: Validate UUID format for response_id
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(responseId)) {
-        cardEl.innerHTML = '<img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba"><h1>Invalid Link</h1><p>This reward link is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+        cardEl.innerHTML = '<img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro"><h1>Invalid Link</h1><p>This reward link is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
         return;
       }
 
       // Security: Validate reward code format (GZ + 12 hex chars)
       const rewardCodeRegex = /^GZ[0-9A-F]{12}$/i;
       if (!rewardCodeRegex.test(rewardCodeFromUrl)) {
-        cardEl.innerHTML = '<img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba"><h1>Invalid Code</h1><p>The reward code format is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
+        cardEl.innerHTML = '<img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro"><h1>Invalid Code</h1><p>The reward code format is invalid.</p><p class="small">Please complete a survey to receive your reward code.</p>';
         return;
       }
 
@@ -332,7 +332,7 @@
       } catch (error) {
         console.error('Error verifying reward:', error);
         cardEl.innerHTML = `
-          <img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba">
+          <img class="logo" src="assets/logos/mendokorologo.png" alt="Mendokoro">
           <h1>Unable to Verify Reward</h1>
           <p>${error.message}</p>
           <p class="small">Please contact our staff for assistance or try completing a new survey.</p>

@@ -34,14 +34,14 @@ const adminAccounts = [
   {
     email: "manager.mendokoro@nipponhasha.ph",
     password: "MDKmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "All",
     role: "brand_manager"
   },
   {
     email: "validator.mendokoro@nipponhasha.ph",
     password: "MDKvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "All",
     role: "validator"
   },
@@ -51,14 +51,14 @@ const adminAccounts = [
   {
     email: "manager.mdk.alabang@nipponhasha.ph",
     password: "MDKAmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Molito (Alabang)",
     role: "branch_manager"
   },
   {
     email: "validator.mdk.alabang@nipponhasha.ph",
     password: "MDKAvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Molito (Alabang)",
     role: "branch_validator"
   },
@@ -66,14 +66,14 @@ const adminAccounts = [
   {
     email: "manager.mdk.bgc@nipponhasha.ph",
     password: "MDKBmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Bonifacio Global City",
     role: "branch_manager"
   },
   {
     email: "validator.mdk.bgc@nipponhasha.ph",
     password: "MDKBvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Bonifacio Global City",
     role: "branch_validator"
   },
@@ -81,14 +81,14 @@ const adminAccounts = [
   {
     email: "manager.mdk.cebu@nipponhasha.ph",
     password: "MDKCmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Cebu",
     role: "branch_manager"
   },
   {
     email: "validator.mdk.cebu@nipponhasha.ph",
     password: "MDKCvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Cebu",
     role: "branch_validator"
   },
@@ -96,14 +96,14 @@ const adminAccounts = [
   {
     email: "manager.mdk.katipunan@nipponhasha.ph",
     password: "MDKKmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Katipunan",
     role: "branch_manager"
   },
   {
     email: "validator.mdk.katipunan@nipponhasha.ph",
     password: "MDKKvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Katipunan",
     role: "branch_validator"
   },
@@ -111,14 +111,14 @@ const adminAccounts = [
   {
     email: "manager.mdk.makati@nipponhasha.ph",
     password: "MDKMmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Salcedo Village (Makati)",
     role: "branch_manager"
   },
   {
     email: "validator.mdk.makati@nipponhasha.ph",
     password: "MDKMvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Salcedo Village (Makati)",
     role: "branch_validator"
   },
@@ -126,14 +126,14 @@ const adminAccounts = [
   {
     email: "manager.mdk.pasay@nipponhasha.ph",
     password: "MDKPmanager24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Pasay",
     role: "branch_manager"
   },
   {
     email: "validator.mdk.pasay@nipponhasha.ph",
     password: "MDKPvalidate24!",
-    brand: "Mendokoro Ramenba",
+    brand: "Mendokoro",
     branch: "Pasay",
     role: "branch_validator"
   },

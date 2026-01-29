@@ -329,7 +329,7 @@
   <header class="site-header">
     <nav class="nav">
       <div class="brand-left">
-        <img class="brand-img" src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba">
+        <img class="brand-img" src="assets/logos/mendokorologo.png" alt="Mendokoro">
       </div>
       <div class="brand-right">
         <div class="brand-name">MENDOKORO RAMENBA</div>
@@ -342,7 +342,7 @@
   <section class="hero" id="hero">
     <div class="wrap">
       <div class="hero-logo">
-        <img src="assets/logos/mendokorologo.png" alt="Mendokoro Ramenba">
+        <img src="assets/logos/mendokorologo.png" alt="Mendokoro">
       </div>
 
       <div class="subtitle">A Nippon Hasha Brand</div>
@@ -684,7 +684,7 @@
 
       try {
         const { data, error } = await supabase.functions.invoke('init-survey', {
-          body: { receipt: receiptParam, brand: 'Mendokoro Ramenba', branch: branchParam }
+          body: { receipt: receiptParam, brand: 'Mendokoro', branch: branchParam }
         });
 
         if (error) throw error;
