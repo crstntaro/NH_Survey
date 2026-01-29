@@ -42,8 +42,8 @@ const MAX_IP_ATTEMPTS = 20; // 20 attempts per IP per window (higher since multi
 // SECURITY: Valid roles whitelist
 const VALID_ROLES = ['super_admin', 'brand_admin', 'branch_admin', 'brand_manager', 'validator'];
 
-// SECURITY: Valid brands whitelist
-const VALID_BRANDS = ['Mendokoro', 'Yushoken', 'Kazunori', 'MaruDori', 'Kazu Café', null];
+// SECURITY: Valid brands whitelist (must match values in create-admin-users.ts)
+const VALID_BRANDS = ['All', 'Mendokoro Ramenba', 'Ramen Yushoken', 'Marudori', 'Kazunori', 'Kazu Café', null];
 
 // Function to handle OPTIONS preflight requests
 function handleOptions(origin: string | null) {
