@@ -1873,8 +1873,8 @@
       const isSuperAdminRole = role === 'super_admin';
       const isBrandManager = role === 'brand_manager' || role === 'branch_manager';
 
-      // Tabs that validators can NOT see (they can only see: validator, redeemed, profile)
-      const restrictedTabs = ['overview', 'responses', 'pending', 'analytics', 'export'];
+      // Tabs that validators can NOT see (they can only see: validator, pending, redeemed, profile)
+      const restrictedTabs = ['overview', 'responses', 'analytics', 'export'];
 
       // Hide/show sidebar tabs based on role
       sidebarTabs.forEach(tab => {
