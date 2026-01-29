@@ -479,9 +479,9 @@ async function handleUpdateProfile(req: Request, supabase: SupabaseClient, corsH
         if (!isDataUrl && !isHttpsUrl) {
             return new Response(JSON.stringify({ error: 'Invalid profile picture format' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
-        // Check size for data URLs (roughly 500KB limit)
-        if (isDataUrl && profile_pic.length > 700000) {
-            return new Response(JSON.stringify({ error: 'Profile picture too large (max 500KB)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        // Check size for data URLs (roughly 1MB limit - base64 adds ~33% overhead)
+        if (isDataUrl && profile_pic.length > 1400000) {
+            return new Response(JSON.stringify({ error: 'Profile picture too large (max 1MB)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
     }
 

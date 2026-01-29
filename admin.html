@@ -1383,7 +1383,7 @@
               <input type="file" id="tabProfilePicFile" accept="image/*" style="display:none">
               <button type="button" class="btn" id="tabUploadPicBtn" style="font-size:12px; padding:8px 16px">Upload Photo</button>
               <button type="button" class="btn" id="tabRemovePicBtn" style="font-size:12px; padding:8px 12px; margin-left:8px; display:none">Remove</button>
-              <p style="font-size:11px; color:var(--muted); margin:6px 0 0">Max 500KB. JPG, PNG, or GIF.</p>
+              <p style="font-size:11px; color:var(--muted); margin:6px 0 0">Max 1MB. JPG, PNG, or GIF.</p>
             </div>
           </div>
           <input type="hidden" id="tabProfilePicData">
@@ -2187,8 +2187,8 @@
       const file = e.target.files[0];
       if (!file) return;
 
-      if (file.size > 500000) {
-        document.getElementById('tabProfileSaveMsg').innerHTML = '<div class="error-msg">Image must be under 500KB</div>';
+      if (file.size > 1000000) {
+        document.getElementById('tabProfileSaveMsg').innerHTML = '<div class="error-msg">Image must be under 1MB</div>';
         return;
       }
 
