@@ -686,16 +686,17 @@
 
     /* NPS Category Filter Buttons */
     .nps-category-filters {
-      display: flex;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
       margin-bottom: 16px;
-      flex-wrap: wrap;
     }
     .nps-cat-btn {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      padding: 10px 18px;
+      padding: 12px 18px;
       border-radius: 10px;
       border: 2px solid var(--line);
       background: var(--surface);
@@ -736,6 +737,7 @@
     /* Mobile responsiveness */
     @media (max-width:900px){
       .kpis { grid-template-columns:repeat(2, 1fr); }
+      .nps-category-filters { grid-template-columns:1fr; }
       .filters-grid { grid-template-columns:repeat(2, 1fr); }
       .export-filters { grid-template-columns:repeat(2, 1fr); }
 
