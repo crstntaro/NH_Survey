@@ -386,30 +386,52 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
         return new Response(JSON.stringify({ error: 'Survey ID is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { error } = await supabase
+    // Try full update with all tracking columns first
+    const claimedBy = user.email || 'admin';
+    const claimedBranch = user.app_metadata?.branch || 'Unknown';
+    const claimedBrand = user.app_metadata?.brand || 'Unknown';
+    const claimedAt = new Date().toISOString();
+
+    let { error } = await supabase
         .from('survey_responses')
         .update({
             reward_claimed: true,
-            reward_claimed_at: new Date().toISOString(),
-            reward_claimed_by: user.email || 'admin',
-            reward_claimed_branch: user.app_metadata?.branch || 'Unknown',
-            reward_claimed_brand: user.app_metadata?.brand || 'Unknown'
+            reward_claimed_at: claimedAt,
+            reward_claimed_by: claimedBy,
+            reward_claimed_branch: claimedBranch,
+            reward_claimed_brand: claimedBrand
         })
         .eq('id', id);
 
+    // If full update fails (e.g. missing columns), try minimal update
     if (error) {
-        console.error('Error marking reward as redeemed:', error);
-        return new Response(JSON.stringify({ error: 'Failed to mark as redeemed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.error('Full update failed, trying minimal update:', error);
+        const { error: minimalError } = await supabase
+            .from('survey_responses')
+            .update({
+                reward_claimed: true,
+                reward_claimed_at: claimedAt
+            })
+            .eq('id', id);
+
+        if (minimalError) {
+            console.error('Minimal update also failed:', minimalError);
+            return new Response(JSON.stringify({ error: `Failed to mark as redeemed: ${minimalError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
     }
 
-    // Log the action
-    await supabase.from('admin_audit_log').insert({
-        admin_id: user.app_metadata?.admin_id,
-        action: 'reward_redeemed',
-        resource_type: 'survey_response',
-        resource_id: id,
-        details: { email: user.email }
-    });
+    // Log the action (non-blocking, don't fail if audit log insert fails)
+    try {
+        await supabase.from('admin_audit_log').insert({
+            admin_id: user.app_metadata?.admin_id,
+            action: 'reward_redeemed',
+            resource_type: 'survey_response',
+            resource_id: id,
+            details: { email: user.email, branch: claimedBranch, brand: claimedBrand }
+        });
+    } catch (auditErr) {
+        console.error('Audit log insert failed (non-critical):', auditErr);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
         status: 200,
