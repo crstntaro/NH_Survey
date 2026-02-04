@@ -584,6 +584,17 @@
     }
     .sidebar-tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
     .sidebar-tab.active { background: var(--gold); color: #fff; }
+    .sidebar-external {
+      text-decoration: none;
+      color: rgba(14,155,164,0.9);
+      border: 1px solid rgba(14,155,164,0.3);
+      background: rgba(14,155,164,0.08);
+    }
+    .sidebar-external:hover {
+      background: rgba(14,155,164,0.18);
+      color: #0e9ba4;
+      border-color: rgba(14,155,164,0.5);
+    }
 
     .sidebar-footer {
       padding: 16px 20px;
@@ -884,6 +895,15 @@
       <button class="sidebar-tab" data-tab="redeemed">Redeemed</button>
       <button class="sidebar-tab" data-tab="analytics">Analytics</button>
       <button class="sidebar-tab" data-tab="export">Export</button>
+      <div style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0"></div>
+      <a href="https://crstntaro.github.io/NH_FoodTruckSurvey/admin.html" target="_blank" rel="noopener" class="sidebar-tab sidebar-external" title="Opens in new tab">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+        Food Truck
+      </a>
     </nav>
     <div class="sidebar-footer">
       <button class="sidebar-tab" data-tab="profile" style="width:100%;margin-bottom:10px;background:rgba(255,255,255,0.05)">
