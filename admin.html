@@ -673,6 +673,55 @@
       color: rgba(255,255,255,0.7);
     }
 
+    /* NPS Category Filter Buttons */
+    .nps-category-filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .nps-cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+      font-family: var(--font);
+      font-weight: 700;
+      font-size: 14px;
+      transition: all var(--dur-fast) var(--ease);
+      color: var(--muted);
+      position: relative;
+    }
+    .nps-cat-btn:hover { transform: translateY(-1px); box-shadow: var(--elev-1); }
+    .nps-cat-btn .nps-cat-icon {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 14px;
+    }
+    .nps-cat-btn .nps-cat-count {
+      background: var(--line); border-radius: 20px; padding: 2px 8px;
+      font-size: 12px; font-weight: 800;
+    }
+    /* Detractor button */
+    .nps-cat-btn.detractor { border-color: rgba(196,30,58,0.3); }
+    .nps-cat-btn.detractor .nps-cat-icon { background: rgba(196,30,58,0.15); color: var(--bad); }
+    .nps-cat-btn.detractor.active { background: rgba(196,30,58,0.08); border-color: var(--bad); color: var(--bad); }
+    .nps-cat-btn.detractor.active .nps-cat-count { background: rgba(196,30,58,0.2); color: var(--bad); }
+    /* Passive button */
+    .nps-cat-btn.passive { border-color: rgba(255,157,0,0.3); }
+    .nps-cat-btn.passive .nps-cat-icon { background: rgba(255,157,0,0.15); color: var(--warn); }
+    .nps-cat-btn.passive.active { background: rgba(255,157,0,0.08); border-color: var(--warn); color: var(--warn); }
+    .nps-cat-btn.passive.active .nps-cat-count { background: rgba(255,157,0,0.2); color: var(--warn); }
+    /* Promoter button */
+    .nps-cat-btn.promoter { border-color: rgba(14,154,90,0.3); }
+    .nps-cat-btn.promoter .nps-cat-icon { background: rgba(14,154,90,0.15); color: var(--ok); }
+    .nps-cat-btn.promoter.active { background: rgba(14,154,90,0.08); border-color: var(--ok); color: var(--ok); }
+    .nps-cat-btn.promoter.active .nps-cat-count { background: rgba(14,154,90,0.2); color: var(--ok); }
+
     /* Mobile responsiveness */
     @media (max-width:900px){
       .kpis { grid-template-columns:repeat(2, 1fr); }
@@ -854,8 +903,8 @@
     <!-- OVERVIEW TAB - Win-Back Dashboard -->
     <section class="tabpanel" id="tab-overview">
       <div class="card">
-        <h3>Win-Back Dashboard</h3>
-        <p class="subtitle">Prioritize detractors and turn unhappy customers into advocates. Sorted oldest to newest.</p>
+        <h3>NPS Dashboard</h3>
+        <p class="subtitle">Monitor all NPS categories. Detractors are prioritized for win-back, with promoters and passives also tracked.</p>
 
         <div class="kpis" id="overviewKpis">
           <div class="kpi critical">
@@ -909,9 +958,28 @@
           </div>
         </div>
 
+        <!-- NPS Category Filter Buttons -->
+        <div class="nps-category-filters">
+          <button class="nps-cat-btn active detractor" data-nps-cat="detractors" id="btnDetractors">
+            <span class="nps-cat-icon">!</span>
+            <span class="nps-cat-label">Detractors</span>
+            <span class="nps-cat-count" id="btnDetractorsCount">0</span>
+          </button>
+          <button class="nps-cat-btn passive" data-nps-cat="passives" id="btnPassives">
+            <span class="nps-cat-icon">~</span>
+            <span class="nps-cat-label">Passives</span>
+            <span class="nps-cat-count" id="btnPassivesCount">0</span>
+          </button>
+          <button class="nps-cat-btn promoter" data-nps-cat="promoters" id="btnPromoters">
+            <span class="nps-cat-icon">&#x2713;</span>
+            <span class="nps-cat-label">Promoters</span>
+            <span class="nps-cat-count" id="btnPromotersCount">0</span>
+          </button>
+        </div>
+
         <div class="table-wrap">
           <table class="table" id="detractorsTable">
-            <thead>
+            <thead id="overviewTableHead">
               <tr>
                 <th>Age</th>
                 <th>NPS</th>
@@ -2564,6 +2632,8 @@
     }
 
     /* ---------- Overview Tab ---------- */
+    let overviewNpsCat = 'detractors'; // default category shown
+
     function paintOverview() {
       const detractors = DataService.getDetractors(allResponses);
       const critical = detractors.filter(r => r.q12 <= 3);
@@ -2599,43 +2669,115 @@
       document.getElementById('overviewDetractorsPct').textContent = `${npsData.total ? Math.round((npsData.detractors / npsData.total) * 100) : 0}%`;
       document.getElementById('overviewTotalResponses').textContent = npsData.total;
 
-      // Paint detractors table
+      // Update category button counts
+      const promoters = allResponses.filter(r => r.q12 !== null && r.q12 >= 9);
+      const passives = allResponses.filter(r => r.q12 !== null && r.q12 >= 7 && r.q12 <= 8);
+      document.getElementById('btnDetractorsCount').textContent = detractors.length;
+      document.getElementById('btnPassivesCount').textContent = passives.length;
+      document.getElementById('btnPromotersCount').textContent = promoters.length;
+
+      // Setup category button click handlers (only once)
+      if (!paintOverview._listenersAttached) {
+        document.querySelectorAll('.nps-cat-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            overviewNpsCat = btn.dataset.npsCat;
+            document.querySelectorAll('.nps-cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            paintOverviewTable();
+          });
+        });
+        paintOverview._listenersAttached = true;
+      }
+
+      paintOverviewTable();
+    }
+
+    function paintOverviewTable() {
       const tbody = document.getElementById('detractorsBody');
+      const thead = document.getElementById('overviewTableHead');
       tbody.innerHTML = '';
 
-      if (detractors.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">🎉</div>No detractors found! Great job!</div></td></tr>`;
+      let rows = [];
+      let emptyMsg = '';
+      let emptyIcon = '';
+
+      if (overviewNpsCat === 'detractors') {
+        rows = DataService.getDetractors(allResponses);
+        emptyMsg = 'No detractors found! Great job!';
+        emptyIcon = '&#127881;';
+        thead.innerHTML = `<tr><th>Age</th><th>NPS</th><th>Brand / Branch</th><th>Customer</th><th>Concern</th><th>Priority</th><th>Status</th><th>Actions</th></tr>`;
+      } else if (overviewNpsCat === 'passives') {
+        rows = allResponses.filter(r => r.q12 !== null && r.q12 >= 7 && r.q12 <= 8)
+          .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+        emptyMsg = 'No passives found.';
+        emptyIcon = '&#128203;';
+        thead.innerHTML = `<tr><th>Age</th><th>NPS</th><th>Brand / Branch</th><th>Customer</th><th>Feedback</th><th>Status</th><th>Actions</th></tr>`;
+      } else {
+        rows = allResponses.filter(r => r.q12 !== null && r.q12 >= 9)
+          .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+        emptyMsg = 'No promoters found yet.';
+        emptyIcon = '&#11088;';
+        thead.innerHTML = `<tr><th>Age</th><th>NPS</th><th>Brand / Branch</th><th>Customer</th><th>Feedback</th><th>Status</th><th>Actions</th></tr>`;
+      }
+
+      if (rows.length === 0) {
+        const colSpan = overviewNpsCat === 'detractors' ? 8 : 7;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty"><div class="empty-icon">${emptyIcon}</div>${emptyMsg}</div></td></tr>`;
         return;
       }
 
-      detractors.forEach(r => {
-        const daysOld = Math.floor((Date.now() - new Date(r.completed_at).getTime()) / 86400000);
-        const priorityClass = getPriorityClass(r.q12, daysOld);
-        const priority = r.q12 <= 3 ? 'Critical' : daysOld > 7 ? 'Urgent' : daysOld > 3 ? 'High' : 'Normal';
+      if (overviewNpsCat === 'detractors') {
+        rows.forEach(r => {
+          const daysOld = Math.floor((Date.now() - new Date(r.completed_at).getTime()) / 86400000);
+          const priorityClass = getPriorityClass(r.q12, daysOld);
+          const priority = r.q12 <= 3 ? 'Critical' : daysOld > 7 ? 'Urgent' : daysOld > 3 ? 'High' : 'Normal';
 
-        const tr = document.createElement('tr');
-        tr.className = priorityClass;
-        // SECURITY: All user data is escaped to prevent XSS
-        tr.innerHTML = `
-          <td data-label="Age">${getAgingBadge(r.completed_at, r.ticket_status)}</td>
-          <td data-label="NPS">${npsBadge(r.q12)}</td>
-          <td data-label="Brand / Branch">${brandBadge(sanitize(r.brand))}<br><small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small></td>
-          <td data-label="Customer">${sanitize(r.name) || '-'}<br><small style="color:var(--muted)">${sanitize(r.email) || ''}</small></td>
-          <td data-label="Concern" style="max-width:200px">${sanitize(r.q12_follow) || '-'}</td>
-          <td data-label="Priority"><span class="aging-badge ${priority === 'Critical' || priority === 'Urgent' ? 'urgent' : priority === 'High' ? 'old' : 'recent'}">${priority}</span></td>
-          <td data-label="Status">
-            <select class="statusSel ${sanitize(r.ticket_status) || 'open'}" data-id="${sanitize(r.id)}">
-              <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
-              <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-              <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
-              <option value="voc" ${r.ticket_status === 'voc' ? 'selected' : ''}>VOC</option>
-              <option value="inactive" ${r.ticket_status === 'inactive' ? 'selected' : ''}>Inactive</option>
-            </select>
-          </td>
-          <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
+          const tr = document.createElement('tr');
+          tr.className = priorityClass;
+          tr.innerHTML = `
+            <td data-label="Age">${getAgingBadge(r.completed_at, r.ticket_status)}</td>
+            <td data-label="NPS">${npsBadge(r.q12)}</td>
+            <td data-label="Brand / Branch">${brandBadge(sanitize(r.brand))}<br><small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small></td>
+            <td data-label="Customer">${sanitize(r.name) || '-'}<br><small style="color:var(--muted)">${sanitize(r.email) || ''}</small></td>
+            <td data-label="Concern" style="max-width:200px">${sanitize(r.q12_follow) || '-'}</td>
+            <td data-label="Priority"><span class="aging-badge ${priority === 'Critical' || priority === 'Urgent' ? 'urgent' : priority === 'High' ? 'old' : 'recent'}">${priority}</span></td>
+            <td data-label="Status">
+              <select class="statusSel ${sanitize(r.ticket_status) || 'open'}" data-id="${sanitize(r.id)}">
+                <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
+                <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                <option value="voc" ${r.ticket_status === 'voc' ? 'selected' : ''}>VOC</option>
+                <option value="inactive" ${r.ticket_status === 'inactive' ? 'selected' : ''}>Inactive</option>
+              </select>
+            </td>
+            <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        // Passives and Promoters table rows
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Age">${getAgingBadge(r.completed_at, r.ticket_status)}</td>
+            <td data-label="NPS">${npsBadge(r.q12)}</td>
+            <td data-label="Brand / Branch">${brandBadge(sanitize(r.brand))}<br><small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small></td>
+            <td data-label="Customer">${sanitize(r.name) || '-'}<br><small style="color:var(--muted)">${sanitize(r.email) || ''}</small></td>
+            <td data-label="Feedback" style="max-width:200px">${sanitize(r.q12_follow) || '-'}</td>
+            <td data-label="Status">
+              <select class="statusSel ${sanitize(r.ticket_status) || 'open'}" data-id="${sanitize(r.id)}">
+                <option value="open" ${r.ticket_status === 'open' || !r.ticket_status ? 'selected' : ''}>Open</option>
+                <option value="in_progress" ${r.ticket_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                <option value="resolved" ${r.ticket_status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                <option value="voc" ${r.ticket_status === 'voc' ? 'selected' : ''}>VOC</option>
+                <option value="inactive" ${r.ticket_status === 'inactive' ? 'selected' : ''}>Inactive</option>
+              </select>
+            </td>
+            <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
 
       // Status change handlers
       tbody.querySelectorAll('.statusSel').forEach(sel => {
@@ -2646,7 +2788,6 @@
 
           const success = await DataService.updateTicketStatus(id, newStatus);
           if (success) {
-            // Update local data
             const response = allResponses.find(r => r.id === id);
             if (response) response.ticket_status = newStatus;
           }
