@@ -77,6 +77,15 @@ serve(async (req) => {
       throw new Error("Receipt number is required")
     }
 
+    // Validate receipt format (must start with valid 4-char prefix)
+    const trimmedReceipt = receipt.trim();
+    if (trimmedReceipt.length < 5 || trimmedReceipt.length > 50) {
+      throw new Error("Invalid receipt number format")
+    }
+    if (!/^[A-Za-z0-9\-]+$/.test(trimmedReceipt)) {
+      throw new Error("Invalid receipt number format")
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -86,7 +95,7 @@ serve(async (req) => {
     const { data: existingResponse, error: checkError } = await supabaseAdmin
       .from('survey_responses')
       .select('id, reward_code, completed_at')
-      .eq('receipt', receipt)
+      .eq('receipt', trimmedReceipt)
       .not('reward_code', 'is', null)
       .not('completed_at', 'is', null)
       .limit(1)
@@ -108,7 +117,7 @@ serve(async (req) => {
     const { data: incompleteResponse } = await supabaseAdmin
       .from('survey_responses')
       .select('id')
-      .eq('receipt', receipt)
+      .eq('receipt', trimmedReceipt)
       .is('completed_at', null)
       .limit(1)
       .maybeSingle()
@@ -125,13 +134,12 @@ serve(async (req) => {
     }
 
     // Create a new survey response
-    // Generate unique placeholder email using receipt and timestamp
-    const placeholderEmail = `survey_${receipt}_${Date.now()}@placeholder.local`;
+    const placeholderEmail = `survey_${trimmedReceipt}_${Date.now()}@placeholder.local`;
 
     const { data: newResponse, error: insertError } = await supabaseAdmin
       .from('survey_responses')
       .insert({
-        receipt: receipt,
+        receipt: trimmedReceipt,
         brand: brand || null,
         branch: branch || null,
         email: placeholderEmail,
@@ -141,6 +149,25 @@ serve(async (req) => {
       .single()
 
     if (insertError || !newResponse) {
+      // Handle race condition: if another request just created this receipt, try resuming
+      if (insertError?.code === '23505') {
+        const { data: raceResponse } = await supabaseAdmin
+          .from('survey_responses')
+          .select('id')
+          .eq('receipt', trimmedReceipt)
+          .is('completed_at', null)
+          .limit(1)
+          .maybeSingle()
+        if (raceResponse) {
+          return new Response(JSON.stringify({
+            response_id: raceResponse.id,
+            resumed: true
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        }
+      }
       console.error('Insert Error:', insertError);
       throw new Error(`Could not create survey response: ${insertError?.message || 'Unknown error'}`)
     }

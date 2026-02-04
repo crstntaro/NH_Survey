@@ -1572,14 +1572,12 @@
         if (data.error) throw new Error(data.error);
         if (!data.reward_code) throw new Error('No reward code received. Please try again.');
 
+        const rewardCode = data.reward_code;
         setTimeout(()=>{
-          if (overlay) {
-            overlay.style.display = 'none';
-          }
           const params = new URLSearchParams();
           if(receiptParam) params.set('receipt', receiptParam);
           if(responseId) params.set('response_id', responseId);
-          params.set('reward_code', data.reward_code);
+          params.set('reward_code', rewardCode);
           const dest = 'kzreward.html?'+params.toString();
           window.location.href = dest;
         }, 500);

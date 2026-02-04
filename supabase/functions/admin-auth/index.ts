@@ -386,13 +386,31 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
         return new Response(JSON.stringify({ error: 'Survey ID is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Try full update with all tracking columns first
+    // Check if already redeemed (prevents double redemption race condition)
+    const { data: existing, error: checkErr } = await supabase
+        .from('survey_responses')
+        .select('reward_claimed, reward_claimed_by, reward_claimed_at')
+        .eq('id', id)
+        .single();
+
+    if (checkErr || !existing) {
+        return new Response(JSON.stringify({ error: 'Survey response not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    if (existing.reward_claimed) {
+        return new Response(JSON.stringify({
+            error: `Already redeemed by ${existing.reward_claimed_by || 'unknown'} on ${existing.reward_claimed_at || 'unknown date'}`,
+            already_claimed: true
+        }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Atomic update: only set claimed if still unclaimed (prevents race condition)
     const claimedBy = user.email || 'admin';
     const claimedBranch = user.app_metadata?.branch || 'Unknown';
     const claimedBrand = user.app_metadata?.brand || 'Unknown';
     const claimedAt = new Date().toISOString();
 
-    let { error } = await supabase
+    let { error, count } = await supabase
         .from('survey_responses')
         .update({
             reward_claimed: true,
@@ -401,7 +419,8 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
             reward_claimed_branch: claimedBranch,
             reward_claimed_brand: claimedBrand
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('reward_claimed', false);
 
     // If full update fails (e.g. missing columns), try minimal update
     if (error) {
@@ -412,7 +431,8 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
                 reward_claimed: true,
                 reward_claimed_at: claimedAt
             })
-            .eq('id', id);
+            .eq('id', id)
+            .eq('reward_claimed', false);
 
         if (minimalError) {
             console.error('Minimal update also failed:', minimalError);

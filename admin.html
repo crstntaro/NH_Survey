@@ -2651,9 +2651,10 @@
     let overviewNpsCat = 'detractors'; // default category shown
 
     function paintOverview() {
-      const detractors = DataService.getDetractors(allResponses);
+      const accessible = filterByUserAccess(allResponses);
+      const detractors = DataService.getDetractors(accessible);
       const critical = detractors.filter(r => r.q12 <= 3);
-      const openTickets = allResponses.filter(r => r.ticket_status === 'open' || !r.ticket_status);
+      const openTickets = accessible.filter(r => r.ticket_status === 'open' || !r.ticket_status);
 
       // Calculate oldest unresolved
       let oldestUnresolved = '-';
@@ -2665,7 +2666,7 @@
       }
 
       // Count inactive customers (30+ days without resolution)
-      const inactiveCustomers = allResponses.filter(r => isCustomerInactive(r));
+      const inactiveCustomers = accessible.filter(r => isCustomerInactive(r));
 
       // Update KPIs
       document.getElementById('kpiCritical').textContent = critical.length;
@@ -2675,7 +2676,7 @@
       document.getElementById('kpiInactive').textContent = inactiveCustomers.length;
 
       // Calculate and display overall NPS
-      const npsData = DataService.calculateNPS(allResponses);
+      const npsData = DataService.calculateNPS(accessible);
       const npsScoreEl = document.getElementById('overviewNpsScore');
       npsScoreEl.textContent = npsData.score;
       npsScoreEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
@@ -2686,8 +2687,8 @@
       document.getElementById('overviewTotalResponses').textContent = npsData.total;
 
       // Update category button counts
-      const promoters = allResponses.filter(r => r.q12 !== null && r.q12 >= 9);
-      const passives = allResponses.filter(r => r.q12 !== null && r.q12 >= 7 && r.q12 <= 8);
+      const promoters = accessible.filter(r => r.q12 !== null && r.q12 >= 9);
+      const passives = accessible.filter(r => r.q12 !== null && r.q12 >= 7 && r.q12 <= 8);
       document.getElementById('btnDetractorsCount').textContent = detractors.length;
       document.getElementById('btnPassivesCount').textContent = passives.length;
       document.getElementById('btnPromotersCount').textContent = promoters.length;
@@ -2717,19 +2718,20 @@
       let emptyMsg = '';
       let emptyIcon = '';
 
+      const accessible = filterByUserAccess(allResponses);
       if (overviewNpsCat === 'detractors') {
-        rows = DataService.getDetractors(allResponses);
+        rows = DataService.getDetractors(accessible);
         emptyMsg = 'No detractors found! Great job!';
         emptyIcon = '&#127881;';
         thead.innerHTML = `<tr><th>Age</th><th>NPS</th><th>Brand / Branch</th><th>Customer</th><th>Concern</th><th>Priority</th><th>Status</th><th>Actions</th></tr>`;
       } else if (overviewNpsCat === 'passives') {
-        rows = allResponses.filter(r => r.q12 !== null && r.q12 >= 7 && r.q12 <= 8)
+        rows = accessible.filter(r => r.q12 !== null && r.q12 >= 7 && r.q12 <= 8)
           .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
         emptyMsg = 'No passives found.';
         emptyIcon = '&#128203;';
         thead.innerHTML = `<tr><th>Age</th><th>NPS</th><th>Brand / Branch</th><th>Customer</th><th>Feedback</th><th>Status</th><th>Actions</th></tr>`;
       } else {
-        rows = allResponses.filter(r => r.q12 !== null && r.q12 >= 9)
+        rows = accessible.filter(r => r.q12 !== null && r.q12 >= 9)
           .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
         emptyMsg = 'No promoters found yet.';
         emptyIcon = '&#11088;';
