@@ -1630,35 +1630,25 @@
 
     
 
-            if (error) throw error;
-
+            if (error) {
+              const errBody = error.context;
+              if (errBody && errBody.error) throw new Error(errBody.error);
+              throw error;
+            }
             if (data.error) throw new Error(data.error);
-
-    
+            if (!data.reward_code) throw new Error('No reward code received. Please try again.');
 
             setTimeout(()=>{
-
               if (overlay) {
-
                 overlay.style.display = 'none';
-
               }
-
               const params = new URLSearchParams();
-
               if(receiptParam) params.set('receipt', receiptParam);
-
               if(responseId) params.set('response_id', responseId);
-
-              if(data.reward_code) params.set('reward_code', data.reward_code);
-
-              const dest = params.toString() ? 'kzcreward.html?'+params.toString() : 'kzcreward.html';
-
+              params.set('reward_code', data.reward_code);
+              const dest = 'kzcreward.html?'+params.toString();
               window.location.href = dest;
-
             }, 500);
-
-    
 
           } catch (error) {
             console.error('Error submitting survey:', error);
@@ -1667,7 +1657,8 @@
             }
 
             // Check if receipt was already used
-            if (error.message && error.message.includes('already been used')) {
+            const errMsg = (error.message || '').toLowerCase();
+            if (errMsg.includes('already been used') || errMsg.includes('already') && errMsg.includes('reward')) {
               const alreadyUsedModal = document.createElement('div');
               alreadyUsedModal.id = 'alreadyUsedModal';
               alreadyUsedModal.innerHTML = `

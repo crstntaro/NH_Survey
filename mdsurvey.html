@@ -1580,8 +1580,14 @@
           body: { response_id: responseId, payload },
         });
 
-        if (error) throw error;
+        if (error) {
+          // FunctionsHttpError: extract the actual error from context
+          const errBody = error.context;
+          if (errBody && errBody.error) throw new Error(errBody.error);
+          throw error;
+        }
         if (data.error) throw new Error(data.error);
+        if (!data.reward_code) throw new Error('No reward code received. Please try again.');
 
         setTimeout(()=>{
           if (overlay) {
@@ -1590,8 +1596,8 @@
           const params = new URLSearchParams();
           if(receiptParam) params.set('receipt', receiptParam);
           if(responseId) params.set('response_id', responseId);
-          if(data.reward_code) params.set('reward_code', data.reward_code);
-          const dest = params.toString() ? 'mdreward.html?'+params.toString() : 'mdreward.html';
+          params.set('reward_code', data.reward_code);
+          const dest = 'mdreward.html?'+params.toString();
           window.location.href = dest;
         }, 500);
 
@@ -1602,7 +1608,8 @@
         }
 
         // Check if receipt was already used
-        if (error.message && error.message.includes('already been used')) {
+        const errMsg = (error.message || '').toLowerCase();
+        if (errMsg.includes('already been used') || errMsg.includes('already') && errMsg.includes('reward')) {
           // Show receipt already used modal
           const alreadyUsedModal = document.createElement('div');
           alreadyUsedModal.id = 'alreadyUsedModal';
