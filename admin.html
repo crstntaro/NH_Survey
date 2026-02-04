@@ -1052,9 +1052,9 @@
                 </select>
               </div>
               <div class="field" id="branchFilterWrap" style="display:none">
-                <label>Branch/Store</label>
+                <label>Store</label>
                 <select id="respFilterBranch">
-                  <option value="">All Branches</option>
+                  <option value="">All Stores</option>
                 </select>
               </div>
               <div class="field">
@@ -1172,9 +1172,9 @@
                 </select>
               </div>
               <div class="field" id="pendingBranchFilterWrap" style="display:none">
-                <label>Branch/Store</label>
+                <label>Store</label>
                 <select id="pendingFilterBranch">
-                  <option value="">All Branches</option>
+                  <option value="">All Stores</option>
                 </select>
               </div>
               <div class="field">
@@ -1266,9 +1266,9 @@
                 </select>
               </div>
               <div class="field" id="redeemedBranchFilterWrap" style="display:none">
-                <label>Branch/Store</label>
+                <label>Store</label>
                 <select id="redeemedFilterBranch">
-                  <option value="">All Branches</option>
+                  <option value="">All Stores</option>
                 </select>
               </div>
               <div class="field">
@@ -1327,11 +1327,18 @@
         <h3>Analytics Dashboard</h3>
         <p class="subtitle">Multi-brand NPS analysis and trends for executive review.</p>
 
-        <div class="period-selector">
-          <button class="period-btn active" data-period="7">Last 7 Days</button>
-          <button class="period-btn" data-period="30">Last 30 Days</button>
-          <button class="period-btn" data-period="90">Last 90 Days</button>
-          <button class="period-btn" data-period="all">All Time</button>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+          <div class="period-selector" style="margin-bottom:0">
+            <button class="period-btn active" data-period="7">Last 7 Days</button>
+            <button class="period-btn" data-period="30">Last 30 Days</button>
+            <button class="period-btn" data-period="90">Last 90 Days</button>
+            <button class="period-btn" data-period="all">All Time</button>
+          </div>
+          <div class="field" id="analyticsStoreFilterWrap" style="display:none;margin:0;min-width:120px">
+            <select id="analyticsFilterStore" style="padding:6px 10px;font:600 12px var(--font);border-radius:8px;border:1px solid var(--line)">
+              <option value="">All Stores</option>
+            </select>
+          </div>
         </div>
 
         <div class="kpis" id="analyticsKpis">
@@ -1635,19 +1642,29 @@
 
     /* ---------- Brand Config ---------- */
     const brandMeta = {
-      'Ramen Yushoken': { color: '#f4b400', route: 'YSHK', branches: ['Molito (Alabang)', 'Cebu', 'Ortigas', 'Pasay'] },
-      'Mendokoro': { color: '#c41e3a', route: 'MDNK', branches: ['Molito (Alabang)', 'Bonifacio Global City', 'Cebu', 'Katipunan', 'Salcedo Village (Makati)', 'Pasay'] },
-      'Marudori': { color: '#0e9a5a', route: 'MRDR', branches: ['Rockwell', 'Vertis North'] },
-      'Kazu Café': { color: '#2f9e6e', route: 'KZCF', branches: ['Kazu Café (Makati)'] },
-      'Kazunori': { color: '#2f9e6e', route: 'KZNR', branches: ['Kazunori (Makati)'] }
+      'Ramen Yushoken': { color: '#f4b400', route: 'YSHK', stores: ['YSKA', 'YSKC', 'YSKO', 'YSKP'] },
+      'Mendokoro': { color: '#c41e3a', route: 'MDNK', stores: ['MDKA', 'MDKB', 'MDKC', 'MDKK', 'MDKM', 'MDKP'] },
+      'Marudori': { color: '#0e9a5a', route: 'MRDR', stores: ['MRDR', 'MRDV'] },
+      'Kazu Café': { color: '#2f9e6e', route: 'KZCF', stores: ['KZCF'] },
+      'Kazunori': { color: '#2f9e6e', route: 'KZNR', stores: ['KZNM'] }
     };
 
-    // All unique branches across all brands
-    const allBranches = [
-      'Molito (Alabang)', 'Bonifacio Global City', 'Cebu', 'Katipunan',
-      'Salcedo Village (Makati)', 'Pasay', 'Ortigas', 'Rockwell',
-      'Vertis North', 'Kazu Café (Makati)', 'Kazunori (Makati)'
+    // Store code → brand mapping & ordered list
+    const STORE_CODES = [
+      'MDKA', 'MDKB', 'MDKC', 'MDKK', 'MDKM', 'MDKP',
+      'MRDR', 'MRDV',
+      'YSKA', 'YSKC', 'YSKO', 'YSKP',
+      'KZCF', 'KZNM'
     ];
+    const storeToBrand = {};
+    Object.entries(brandMeta).forEach(([brand, meta]) => {
+      meta.stores.forEach(code => { storeToBrand[code] = brand; });
+    });
+
+    // Helper: get 4-char store code from receipt
+    function getStoreCode(receipt) {
+      return (receipt || '').substring(0, 4).toUpperCase();
+    }
 
     /* ---------- State ---------- */
     let currentUser = null;
@@ -2605,48 +2622,25 @@
       filteredResponses = filterByUserAccess([...allResponses]);
       console.log('Filtered responses:', filteredResponses.length);
 
-      // Show branch filter for super admin and populate with unique branches
+      // Show store filter for super admin and populate with store codes
       if (isSuperAdmin()) {
-        const uniqueBranches = [...new Set(allResponses.map(r => r.branch).filter(Boolean))].sort();
-
-        // Responses tab branch filter
-        const branchFilterWrap = document.getElementById('branchFilterWrap');
-        const branchSelect = document.getElementById('respFilterBranch');
-        if (branchFilterWrap && branchSelect) {
-          branchFilterWrap.style.display = 'block';
-          uniqueBranches.forEach(branch => {
-            const option = document.createElement('option');
-            option.value = branch;
-            option.textContent = branch;
-            branchSelect.appendChild(option);
-          });
+        function populateStoreFilter(wrapId, selectId) {
+          const wrap = document.getElementById(wrapId);
+          const sel = document.getElementById(selectId);
+          if (wrap && sel) {
+            wrap.style.display = 'block';
+            STORE_CODES.forEach(code => {
+              const opt = document.createElement('option');
+              opt.value = code;
+              opt.textContent = code;
+              sel.appendChild(opt);
+            });
+          }
         }
-
-        // Redeemed tab branch filter
-        const redeemedBranchFilterWrap = document.getElementById('redeemedBranchFilterWrap');
-        const redeemedBranchSelect = document.getElementById('redeemedFilterBranch');
-        if (redeemedBranchFilterWrap && redeemedBranchSelect) {
-          redeemedBranchFilterWrap.style.display = 'block';
-          uniqueBranches.forEach(branch => {
-            const option = document.createElement('option');
-            option.value = branch;
-            option.textContent = branch;
-            redeemedBranchSelect.appendChild(option);
-          });
-        }
-
-        // Pending tab branch filter
-        const pendingBranchFilterWrap = document.getElementById('pendingBranchFilterWrap');
-        const pendingBranchSelect = document.getElementById('pendingFilterBranch');
-        if (pendingBranchFilterWrap && pendingBranchSelect) {
-          pendingBranchFilterWrap.style.display = 'block';
-          uniqueBranches.forEach(branch => {
-            const option = document.createElement('option');
-            option.value = branch;
-            option.textContent = branch;
-            pendingBranchSelect.appendChild(option);
-          });
-        }
+        populateStoreFilter('branchFilterWrap', 'respFilterBranch');
+        populateStoreFilter('redeemedBranchFilterWrap', 'redeemedFilterBranch');
+        populateStoreFilter('pendingBranchFilterWrap', 'pendingFilterBranch');
+        populateStoreFilter('analyticsStoreFilterWrap', 'analyticsFilterStore');
       }
 
       // Paint initial view
@@ -2905,7 +2899,7 @@
           if (!haystack.includes(search)) return false;
         }
         if (brand && r.brand !== brand) return false;
-        if (branch && r.branch !== branch) return false;
+        if (branch && getStoreCode(r.receipt) !== branch) return false;
         if (npsFilter) {
           const cat = getNPSCategory(r.q12);
           if (cat !== npsFilter) return false;
@@ -3070,7 +3064,7 @@
           if (!haystack.includes(search)) return false;
         }
         if (brand && r.brand !== brand) return false;
-        if (branch && r.branch !== branch) return false;
+        if (branch && getStoreCode(r.receipt) !== branch) return false;
         if (statusFilter) {
           const rewardStatus = getRewardStatus(r.completed_at);
           if (statusFilter === 'valid' && rewardStatus.status !== 'valid') return false;
@@ -3190,7 +3184,7 @@
           if (!haystack.includes(search)) return false;
         }
         if (brand && r.brand !== brand) return false;
-        if (branch && r.branch !== branch) return false;
+        if (branch && getStoreCode(r.receipt) !== branch) return false;
         if (from && r.reward_claimed_at < from) return false;
         if (to && r.reward_claimed_at > to + 'T23:59:59') return false;
         return true;
@@ -3270,8 +3264,12 @@
 
     /* ---------- Analytics Tab ---------- */
     function paintAnalytics() {
-      // Filter by user access then by period
-      const userResponses = filterByUserAccess(allResponses);
+      // Filter by user access, store, then by period
+      let userResponses = filterByUserAccess(allResponses);
+      const storeFilter = document.getElementById('analyticsFilterStore')?.value || '';
+      if (storeFilter) {
+        userResponses = userResponses.filter(r => getStoreCode(r.receipt) === storeFilter);
+      }
       let periodResponses = userResponses;
       if (analyticsPeriod !== 'all') {
         const cutoff = new Date(Date.now() - analyticsPeriod * 86400000);
@@ -3449,6 +3447,11 @@
         analyticsPeriod = btn.dataset.period === 'all' ? 'all' : parseInt(btn.dataset.period);
         paintAnalytics();
       });
+    });
+
+    // Analytics store filter
+    document.getElementById('analyticsFilterStore')?.addEventListener('change', () => {
+      paintAnalytics();
     });
 
     /* ---------- Export Tab ---------- */
