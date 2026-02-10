@@ -1868,12 +1868,11 @@
     }
 
     /* ---------- Utility Functions ---------- */
-    // Calculate average of all slider ratings (q5-q11, 1-5 scale) and convert to 0-10
+    // Calculate average of all slider ratings (q5-q11, already 1-10 scale)
     function calculateAvgRating(r) {
       const ratings = [r.q5, r.q6, r.q7, r.q8, r.q10, r.q11].filter(v => v !== null && v !== undefined);
       if (ratings.length === 0) return null;
-      const avg = ratings.reduce((a, b) => a + Number(b), 0) / ratings.length;
-      return Math.round((avg - 1) * 2.5); // Convert 1-5 to 0-10 scale
+      return Math.round(ratings.reduce((a, b) => a + Number(b), 0) / ratings.length);
     }
 
     function getNPSCategory(score) {
@@ -2293,13 +2292,7 @@
       if (confPw) confPw.value = '';
     }
 
-    function getInitials(name, email) {
-      if (name) {
-        const parts = name.split(' ');
-        return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
-      }
-      return email ? email.substring(0, 2).toUpperCase() : 'A';
-    }
+    // getInitials defined in Profile Modal section below
 
     // Profile picture upload button
     document.getElementById('tabUploadPicBtn')?.addEventListener('click', () => {
@@ -2959,9 +2952,8 @@
       currentValidationResponse = response;
 
       // Populate details
-      const avgNps = calculateAvgRating(response);
       document.getElementById('valCustomer').textContent = response.name || '-';
-      document.getElementById('valNps').innerHTML = npsBadge(avgNps !== null ? avgNps : response.q12);
+      document.getElementById('valNps').innerHTML = npsBadge(response.q12);
       document.getElementById('valReceipt').textContent = response.receipt || '-';
       document.getElementById('valCode').textContent = response.reward_code || '-';
       document.getElementById('valDate').textContent = formatDate(response.completed_at);
@@ -3496,7 +3488,7 @@
         'Date': formatDate(r.completed_at),
         'Brand': r.brand,
         'Branch': r.branch,
-        'Receipt': r.receipt || r.receipt || '-',
+        'Receipt': r.receipt || '-',
         'Customer Name': r.name || '-',
         'Customer Email': r.email || '-',
         'Data Privacy Consent': r.dpa ? 'Yes' : 'No',
@@ -3538,7 +3530,7 @@
         'Date': formatDate(r.completed_at),
         'Brand': r.brand,
         'Branch': r.branch,
-        'Receipt': r.receipt || r.receipt || '-',
+        'Receipt': r.receipt || '-',
         'Customer Name': r.name || '-',
         'Customer Email': r.email || '-',
         'Data Privacy Consent': r.dpa ? 'Yes' : 'No',
@@ -3562,7 +3554,7 @@
     });
 
     /* ---------- Response Detail Modal ---------- */
-    function formatRating(value, max = 5) {
+    function formatRating(value, max = 10) {
       if (value === null || value === undefined || value === '') return '-';
       return `${value}/${max}`;
     }
@@ -3633,9 +3625,9 @@
             </div>
           </div>
 
-          <!-- Ratings (1-5 scale) -->
+          <!-- Ratings (1-10 scale) -->
           <div style="padding:12px; border:1px solid var(--line); border-radius:8px">
-            <div style="font:700 12px var(--font); margin-bottom:12px">Ratings (1-5 scale)</div>
+            <div style="font:700 12px var(--font); margin-bottom:12px">Ratings (1-10 scale)</div>
             <div style="display:grid; gap:8px; font-size:13px">
               <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Overall Experience</span> <strong>${formatRating(response.q5)}</strong></div>
               <div style="display:flex; justify-content:space-between"><span style="color:var(--muted)">Food Quality</span> <strong>${formatRating(response.q6)}</strong></div>

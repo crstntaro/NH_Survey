@@ -20,8 +20,18 @@ function timingSafeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-// Get allowed origins from environment or use default
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://nipponhasha.ph,https://www.nipponhasha.ph').split(',');
+const ALLOWED_ORIGINS: string[] = [
+  'https://nipponhasha.ph',
+  'https://www.nipponhasha.ph',
+  'https://tarotaro-nh.github.io',
+  'https://crstntaro.github.io',
+  // Development origins (remove in production)
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:8080',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:3000',
+];
 
 function getCorsHeaders(origin: string | null) {
   const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -67,7 +77,7 @@ serve(async (req) => {
     }
 
     // SECURITY: Use constant-time comparison to prevent timing attacks
-    if (!timingSafeEqual(data.reward_code.toUpperCase(), reward_code.toUpperCase())) {
+    if (!data.reward_code || !timingSafeEqual(data.reward_code.toUpperCase(), reward_code.toUpperCase())) {
       throw new Error('Invalid reward code.')
     }
 
