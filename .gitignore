@@ -1,6 +1,8 @@
 # Credentials - NEVER COMMIT
 CREDENTIALS.md
 scripts/CREDENTIALS.md
+scripts/create-admin-users.ts
+scripts/setup-admin-users.sql
 *.credentials
 *.secret
 

@@ -8,12 +8,6 @@ const ALLOWED_ORIGINS: string[] = [
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
   'https://crstntaro.github.io',
-  // Development origins (remove in production)
-  'http://localhost:3000',
-  'http://localhost:5500',
-  'http://localhost:8080',
-  'http://127.0.0.1:5500',
-  'http://127.0.0.1:3000',
 ];
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
@@ -58,8 +52,10 @@ function isValidReceiptFormat(receipt: string): boolean {
 
 // SECURITY: Whitelist of allowed payload fields to prevent injection attacks
 const ALLOWED_PAYLOAD_FIELDS = [
-  'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q10', 'q11',
-  'q12', 'q12_follow', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18',
+  'q2', 'q3', 'q4', 'q5', 'q5_follow', 'q6', 'q6_follow',
+  'q7', 'q7_follow', 'q8', 'q8_follow', 'q10', 'q10_follow',
+  'q11', 'q11_follow', 'q12', 'q12_follow',
+  'q13', 'q14', 'q15', 'q16', 'q17', 'q18',
   'name', 'email', 'phone', 'dpa', 'promo', 'receipt',
   'brand', 'branch'
 ];
@@ -98,9 +94,20 @@ function sanitizePayload(payload: Record<string, unknown>): Record<string, unkno
 const rateLimitMap = new Map<string, { count: number, timestamp: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 5; // 5 submissions per minute per IP
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+let lastCleanup = Date.now();
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Periodic cleanup of expired entries to prevent memory leak
+  if (now - lastCleanup > CLEANUP_INTERVAL) {
+    for (const [key, value] of rateLimitMap) {
+      if (now - value.timestamp > RATE_LIMIT_WINDOW) rateLimitMap.delete(key);
+    }
+    lastCleanup = now;
+  }
+
   const record = rateLimitMap.get(ip);
 
   if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {

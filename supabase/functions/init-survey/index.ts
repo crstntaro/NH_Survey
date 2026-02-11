@@ -9,12 +9,6 @@ const ALLOWED_ORIGINS: string[] = [
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
   'https://crstntaro.github.io',
-  // Development origins (remove in production)
-  'http://localhost:3000',
-  'http://localhost:5500',
-  'http://localhost:8080',
-  'http://127.0.0.1:5500',
-  'http://127.0.0.1:3000',
 ];
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
@@ -34,9 +28,20 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 const rateLimitMap = new Map<string, { count: number, timestamp: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 10; // 10 requests per minute per IP
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+let lastCleanup = Date.now();
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Periodic cleanup of expired entries to prevent memory leak
+  if (now - lastCleanup > CLEANUP_INTERVAL) {
+    for (const [key, value] of rateLimitMap) {
+      if (now - value.timestamp > RATE_LIMIT_WINDOW) rateLimitMap.delete(key);
+    }
+    lastCleanup = now;
+  }
+
   const record = rateLimitMap.get(ip);
 
   if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {
@@ -84,6 +89,12 @@ serve(async (req) => {
     }
     if (!/^[A-Za-z0-9\-]+$/.test(trimmedReceipt)) {
       throw new Error("Invalid receipt number format")
+    }
+    // Validate receipt prefix matches a known store code
+    const validPrefixes = ['MDKA', 'MDKB', 'MDKC', 'MDKK', 'MDKM', 'MDKP', 'YSKA', 'YSKC', 'YSKO', 'YSKP', 'MRDR', 'MRDV', 'KZCF', 'KZNM'];
+    const receiptPrefix = trimmedReceipt.substring(0, 4).toUpperCase();
+    if (!validPrefixes.includes(receiptPrefix)) {
+      throw new Error("Invalid receipt number prefix")
     }
 
     const supabaseAdmin = createClient(
@@ -133,6 +144,12 @@ serve(async (req) => {
       })
     }
 
+    // Validate brand if provided
+    const validBrands = ['Mendokoro', 'Ramen Yushoken', 'Marudori', 'Kazunori', 'Kazu Café'];
+    const safeBrand = brand && validBrands.includes(brand) ? brand : null;
+    // Sanitize branch (alphanumeric, spaces, hyphens, max 100 chars)
+    const safeBranch = branch && typeof branch === 'string' ? branch.replace(/[^\w\s\-]/g, '').slice(0, 100) : null;
+
     // Create a new survey response
     const placeholderEmail = `survey_${trimmedReceipt}_${Date.now()}@placeholder.local`;
 
@@ -140,8 +157,8 @@ serve(async (req) => {
       .from('survey_responses')
       .insert({
         receipt: trimmedReceipt,
-        brand: brand || null,
-        branch: branch || null,
+        brand: safeBrand,
+        branch: safeBranch,
         email: placeholderEmail,
         created_at: new Date().toISOString(),
       })

@@ -182,12 +182,10 @@
 
   <!-- html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script>
     (async function(){
       const SUPABASE_URL = 'https://hxkrwxwrbffjkmepqlbh.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4a3J3eHdyYmZmamttZXBxbGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NjQ0MzYsImV4cCI6MjA3MTM0MDQzNn0.clmhrWPkZp9lD1zcUJRDF-2BPlpmt6x2ojNkKwjJBFw';
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       const qs = new URLSearchParams(location.search);
       const responseId = qs.get('response_id');
@@ -220,24 +218,14 @@
       }
 
       try {
-          const { data, error } = await supabase
-              .from('survey_responses')
-              .select('reward_code, receipt, completed_at')
-              .eq('id', responseId)
-              .single();
-
-          if (error || !data) {
-              throw new Error('Survey response not found.');
-          }
-
-          if (!data.completed_at) {
-              throw new Error('Survey not yet completed.');
-          }
-
-          // Security: Verify reward code matches (case-insensitive)
-          if (data.reward_code.toUpperCase() !== rewardCodeFromUrl.toUpperCase()) {
-              throw new Error('Invalid reward code.');
-          }
+          // Fetch reward details via secure edge function (bypasses RLS with service role)
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/get-reward-details`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+            body: JSON.stringify({ response_id: responseId, reward_code: rewardCodeFromUrl })
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || 'Failed to load reward details.');
 
           const reward = data.reward_code;
           const receipt = data.receipt;

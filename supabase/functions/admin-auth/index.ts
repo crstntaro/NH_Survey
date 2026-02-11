@@ -9,12 +9,6 @@ const ALLOWED_ORIGINS: string[] = [
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
   'https://crstntaro.github.io',
-  // Development origins (remove in production)
-  'http://localhost:3000',
-  'http://localhost:5500',
-  'http://localhost:8080',
-  'http://127.0.0.1:5500',
-  'http://127.0.0.1:3000',
 ];
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
@@ -32,12 +26,26 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-// In-memory store for rate limiting (simple implementation)
+// In-memory store for rate limiting
 const loginAttempts = new Map<string, { count: number, timestamp: number }>();
 const ipLoginAttempts = new Map<string, { count: number, timestamp: number }>();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const MAX_ATTEMPTS = 5;
 const MAX_IP_ATTEMPTS = 20; // 20 attempts per IP per window (higher since multiple users may share IP)
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // Clean up every 5 minutes
+let lastRateLimitCleanup = Date.now();
+
+function cleanupRateLimitMaps() {
+  const now = Date.now();
+  if (now - lastRateLimitCleanup < CLEANUP_INTERVAL) return;
+  for (const [key, val] of loginAttempts) {
+    if (now - val.timestamp > RATE_LIMIT_WINDOW) loginAttempts.delete(key);
+  }
+  for (const [key, val] of ipLoginAttempts) {
+    if (now - val.timestamp > RATE_LIMIT_WINDOW) ipLoginAttempts.delete(key);
+  }
+  lastRateLimitCleanup = now;
+}
 
 // SECURITY: Valid roles whitelist
 const VALID_ROLES = ['super_admin', 'brand_admin', 'branch_admin', 'brand_manager', 'validator', 'branch_manager', 'branch_validator'];
@@ -131,6 +139,7 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
   }
 
   // --- Rate Limiting Check ---
+  cleanupRateLimitMaps();
   const now = Date.now();
   const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
 
@@ -237,6 +246,7 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
 
   // 7. Reset login attempts on success
   loginAttempts.delete(email);
+  ipLoginAttempts.delete(clientIp);
 
   return new Response(JSON.stringify({
     success: true,

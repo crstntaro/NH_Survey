@@ -8,12 +8,6 @@ const ALLOWED_ORIGINS: string[] = [
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
   'https://crstntaro.github.io',
-  // Development origins (remove in production)
-  'http://localhost:3000',
-  'http://localhost:5500',
-  'http://localhost:8080',
-  'http://127.0.0.1:5500',
-  'http://127.0.0.1:3000',
 ];
 
 function getCorsHeaders(origin: string | null): Record<string, string> {

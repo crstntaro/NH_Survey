@@ -4,18 +4,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // SECURITY: Constant-time string comparison to prevent timing attacks
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Compare against self to maintain constant time even on length mismatch
-    const dummy = a;
-    let result = a.length ^ b.length;
-    for (let i = 0; i < dummy.length; i++) {
-      result |= dummy.charCodeAt(i) ^ dummy.charCodeAt(i);
-    }
-    return false;
-  }
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  const maxLen = Math.max(a.length, b.length);
+  let result = a.length ^ b.length;
+  for (let i = 0; i < maxLen; i++) {
+    const charA = i < a.length ? a.charCodeAt(i) : 0;
+    const charB = i < b.length ? b.charCodeAt(i) : 0;
+    result |= charA ^ charB;
   }
   return result === 0;
 }
@@ -25,12 +19,6 @@ const ALLOWED_ORIGINS: string[] = [
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
   'https://crstntaro.github.io',
-  // Development origins (remove in production)
-  'http://localhost:3000',
-  'http://localhost:5500',
-  'http://localhost:8080',
-  'http://127.0.0.1:5500',
-  'http://127.0.0.1:3000',
 ];
 
 function getCorsHeaders(origin: string | null) {
@@ -42,6 +30,34 @@ function getCorsHeaders(origin: string | null) {
   };
 }
 
+// Rate limiting for public endpoint
+const rateLimitMap = new Map<string, { count: number, timestamp: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 10; // 10 requests per minute per IP
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // Clean up every 5 minutes
+let lastCleanup = Date.now();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+
+  // Periodic cleanup of expired entries to prevent memory leak
+  if (now - lastCleanup > CLEANUP_INTERVAL) {
+    for (const [key, value] of rateLimitMap) {
+      if (now - value.timestamp > RATE_LIMIT_WINDOW) rateLimitMap.delete(key);
+    }
+    lastCleanup = now;
+  }
+
+  const record = rateLimitMap.get(ip);
+  if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { count: 1, timestamp: now });
+    return true;
+  }
+  if (record.count >= MAX_REQUESTS) return false;
+  record.count++;
+  return true;
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -50,11 +66,32 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Rate limiting
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 429,
+    });
+  }
+
   try {
     const { response_id, reward_code } = await req.json()
 
     if (!response_id || !reward_code) {
       throw new Error("Missing response_id or reward_code in request body.")
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(response_id)) {
+      throw new Error("Invalid response_id format.")
+    }
+
+    // Validate reward code format
+    const rewardCodeRegex = /^GZ[0-9A-F]{12}$/i;
+    if (!rewardCodeRegex.test(reward_code)) {
+      throw new Error("Invalid reward code format.")
     }
 
     const supabaseAdmin = createClient(
@@ -90,9 +127,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    // Log full error server-side
     console.error('Error:', error);
-    // SECURITY: Return generic error to prevent information disclosure
     return new Response(JSON.stringify({ error: 'Invalid request or reward code.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
