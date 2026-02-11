@@ -3011,9 +3011,9 @@
           allResponses.push(currentValidationResponse);
         }
 
-        // Refresh the pending and redeemed tabs
+        // Refresh the pending and redeemed tabs immediately
         paintPending();
-        if (activeTab === 'redeemed') paintRedeemed();
+        paintRedeemed();
       } else {
         btn.disabled = false;
         btn.textContent = 'Mark as Redeemed';
@@ -3166,8 +3166,19 @@
     let filteredRedeemed = [];
 
     function paintRedeemed() {
-      // Get all redeemed responses
-      const redeemedResponses = filterByUserAccess(allResponses).filter(r => r.reward_claimed);
+      // Get all redeemed responses — include both surveys from user's access scope
+      // AND rewards that were redeemed at the user's branch/brand (cross-brand redemptions)
+      const accessFiltered = filterByUserAccess(allResponses);
+      const redeemedResponses = allResponses.filter(r => {
+        if (!r.reward_claimed) return false;
+        // Already in user's access scope
+        if (accessFiltered.includes(r)) return true;
+        // Redeemed at user's location (cross-brand)
+        if (isSuperAdmin()) return true;
+        if (isBrandManager() && r.reward_claimed_brand === currentUser?.brand) return true;
+        if (r.reward_claimed_brand === currentUser?.brand && r.reward_claimed_branch === currentUser?.branch) return true;
+        return false;
+      });
 
       // Apply filters
       const search = document.getElementById('redeemedFilterSearch')?.value.toLowerCase() || '';
