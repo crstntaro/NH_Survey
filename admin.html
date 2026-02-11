@@ -2818,6 +2818,12 @@
           if (success) {
             const response = allResponses.find(r => r.id === id);
             if (response) response.ticket_status = newStatus;
+            // Refresh filteredResponses so other tabs stay consistent
+            const fr = allResponses.find(r2 => r2.id === id);
+            if (fr) {
+              const fi = filteredResponses.find(r2 => r2.id === id);
+              if (fi) fi.ticket_status = newStatus;
+            }
           }
         });
       });
@@ -2878,6 +2884,9 @@
           if (success) {
             const response = allResponses.find(r => r.id === id);
             if (response) response.ticket_status = newStatus;
+            // Also update filteredResponses to keep in sync
+            const fi = filteredResponses.find(r2 => r2.id === id);
+            if (fi) fi.ticket_status = newStatus;
           }
         });
       });
@@ -3039,9 +3048,19 @@
           allResponses.push(currentValidationResponse);
         }
 
-        // Refresh the pending and redeemed tabs immediately
+        // Refresh all data tabs after redemption
+        // Update filteredResponses too so Responses tab stays in sync
+        const fri = filteredResponses.find(r2 => r2.id === currentValidationResponse.id);
+        if (fri) {
+          fri.reward_claimed = true;
+          fri.reward_claimed_at = claimedAt;
+          fri.reward_claimed_by = claimedBy;
+          fri.reward_claimed_branch = claimedBranch;
+          fri.reward_claimed_brand = claimedBrand;
+        }
         paintPending();
         paintRedeemed();
+        paintResponses();
       } else {
         btn.disabled = false;
         btn.textContent = 'Mark as Redeemed';
@@ -3384,7 +3403,8 @@
             borderColor: '#85754E',
             backgroundColor: 'rgba(133,117,78,0.1)',
             fill: true,
-            tension: 0.4
+            tension: 0.4,
+            spanGaps: true
           }]
         },
         options: {
@@ -3449,7 +3469,7 @@
 
     function paintDetractorComments(responses) {
       const container = document.getElementById('detractorComments');
-      const detractors = responses.filter(r => r.q12 <= 6 && r.q12_follow).slice(0, 10);
+      const detractors = responses.filter(r => r.q12 != null && r.q12 <= 6 && r.q12_follow).slice(0, 10);
 
       if (detractors.length === 0) {
         container.innerHTML = '<div class="empty">No detractor comments in this period</div>';

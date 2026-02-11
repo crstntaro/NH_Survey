@@ -60,15 +60,28 @@ function isValidReceiptFormat(receipt: string): boolean {
 const ALLOWED_PAYLOAD_FIELDS = [
   'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q10', 'q11',
   'q12', 'q12_follow', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18',
-  'name', 'email', 'phone', 'dpa', 'promo', 'receipt'
+  'name', 'email', 'phone', 'dpa', 'promo', 'receipt',
+  'brand', 'branch'
 ];
+
+// Fields that accept array values (e.g., q17 = list of restaurants visited)
+const ARRAY_FIELDS = ['q17'];
 
 function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
   for (const field of ALLOWED_PAYLOAD_FIELDS) {
     if (field in payload && payload[field] !== undefined) {
-      // SECURITY: Sanitize string values
       const value = payload[field];
+      // SECURITY: Handle array fields (e.g., q17 = list of restaurants)
+      if (ARRAY_FIELDS.includes(field) && Array.isArray(value)) {
+        const safeArray = value
+          .filter((item): item is string => typeof item === 'string' && !item.includes('\0'))
+          .map(item => item.slice(0, 200)) // Max 200 chars per array item
+          .slice(0, 20); // Max 20 items
+        if (safeArray.length > 0) sanitized[field] = safeArray;
+        continue;
+      }
+      // SECURITY: Sanitize string values
       if (typeof value === 'string') {
         // Block null bytes and limit length
         if (value.includes('\0')) continue;

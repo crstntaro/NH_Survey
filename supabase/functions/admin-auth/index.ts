@@ -265,14 +265,15 @@ async function handleLogout(req: Request, supabase: SupabaseClient, corsHeaders:
   if (userError || !user) {
     return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-  
+
   await supabase.from('admin_audit_log').insert({
       admin_id: user.app_metadata.admin_id,
       action: 'logout',
       resource_type: 'session'
   });
 
-  await supabase.auth.signOut();
+  // SECURITY: Invalidate all sessions server-side (not just client signOut)
+  await supabase.auth.admin.signOut(user.id);
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
@@ -575,15 +576,9 @@ async function handleFetchRedeemed(req: Request, supabase: SupabaseClient, corsH
 }
 
 async function handleUpdateStatus(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const auth = await verifyAdmin(req, supabase, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user!;
 
     const { id, status } = await req.json();
     if (!id || !status) {
@@ -612,15 +607,9 @@ async function handleUpdateStatus(req: Request, supabase: SupabaseClient, corsHe
 }
 
 async function handleUpdateProfile(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const auth = await verifyAdmin(req, supabase, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user!;
 
     const { display_name, profile_pic } = await req.json();
 
