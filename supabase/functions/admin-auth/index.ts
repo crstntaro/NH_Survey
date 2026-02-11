@@ -95,6 +95,9 @@ serve(async (req) => {
       case '/admin-auth/mark-redeemed':
         response = await handleMarkRedeemed(req, supabaseAdmin, corsHeaders);
         break;
+      case '/admin-auth/fetch-redeemed':
+        response = await handleFetchRedeemed(req, supabaseAdmin, corsHeaders);
+        break;
       case '/admin-auth/update-status':
         response = await handleUpdateStatus(req, supabaseAdmin, corsHeaders);
         break;
@@ -373,16 +376,29 @@ async function handleChangePassword(req: Request, supabase: SupabaseClient, cors
     });
 }
 
-async function handleValidateReward(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+// Helper: verify token and check admin role
+async function verifyAdmin(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
     const token = req.headers.get('Authorization')?.replace('Bearer ', '');
     if (!token) {
-        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        return { error: new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }) };
     }
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
-        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        return { error: new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }) };
     }
+
+    const role = user.app_metadata?.role;
+    if (!role || !VALID_ROLES.includes(role)) {
+        return { error: new Response(JSON.stringify({ error: 'Unauthorized: admin role required' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }) };
+    }
+
+    return { user };
+}
+
+async function handleValidateReward(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+    const auth = await verifyAdmin(req, supabase, corsHeaders);
+    if (auth.error) return auth.error;
 
     const { query } = await req.json();
     if (!query || typeof query !== 'string') {
@@ -421,15 +437,9 @@ async function handleValidateReward(req: Request, supabase: SupabaseClient, cors
 }
 
 async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const auth = await verifyAdmin(req, supabase, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user!;
 
     const { id } = await req.json();
     if (!id) {
@@ -460,34 +470,43 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
     const claimedBrand = user.app_metadata?.brand || 'Unknown';
     const claimedAt = new Date().toISOString();
 
+    const updateData = {
+        reward_claimed: true,
+        reward_claimed_at: claimedAt,
+        reward_claimed_by: claimedBy,
+        reward_claimed_branch: claimedBranch,
+        reward_claimed_brand: claimedBrand
+    };
+
     let { error, count } = await supabase
         .from('survey_responses')
-        .update({
-            reward_claimed: true,
-            reward_claimed_at: claimedAt,
-            reward_claimed_by: claimedBy,
-            reward_claimed_branch: claimedBranch,
-            reward_claimed_brand: claimedBrand
-        })
+        .update(updateData)
         .eq('id', id)
         .eq('reward_claimed', false);
 
     // If full update fails (e.g. missing columns), try minimal update
     if (error) {
         console.error('Full update failed, trying minimal update:', error);
-        const { error: minimalError } = await supabase
+        const minimalData = { reward_claimed: true, reward_claimed_at: claimedAt };
+        const result = await supabase
             .from('survey_responses')
-            .update({
-                reward_claimed: true,
-                reward_claimed_at: claimedAt
-            })
+            .update(minimalData)
             .eq('id', id)
             .eq('reward_claimed', false);
 
-        if (minimalError) {
-            console.error('Minimal update also failed:', minimalError);
-            return new Response(JSON.stringify({ error: `Failed to mark as redeemed: ${minimalError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        if (result.error) {
+            console.error('Minimal update also failed:', result.error);
+            return new Response(JSON.stringify({ error: `Failed to mark as redeemed: ${result.error.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
+        count = result.count;
+    }
+
+    // Check count to detect race condition (another request claimed it between check and update)
+    if (count === 0) {
+        return new Response(JSON.stringify({
+            error: 'Reward was just claimed by another user. Please refresh.',
+            already_claimed: true
+        }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Log the action (non-blocking, don't fail if audit log insert fails)
@@ -503,7 +522,53 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
         console.error('Audit log insert failed (non-critical):', auditErr);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    // Return server-side claimed data so frontend uses authoritative values
+    return new Response(JSON.stringify({
+        success: true,
+        claimed: { reward_claimed_at: claimedAt, reward_claimed_by: claimedBy, reward_claimed_branch: claimedBranch, reward_claimed_brand: claimedBrand }
+    }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleFetchRedeemed(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+    const auth = await verifyAdmin(req, supabase, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user!;
+
+    const role = user.app_metadata?.role;
+    const brand = user.app_metadata?.brand;
+    const branch = user.app_metadata?.branch;
+
+    // Fetch ALL redeemed responses using service role (bypasses RLS)
+    const { data, error } = await supabase
+        .from('survey_responses')
+        .select('*')
+        .eq('reward_claimed', true)
+        .order('reward_claimed_at', { ascending: false });
+
+    if (error) {
+        console.error('Fetch redeemed error:', error);
+        return new Response(JSON.stringify({ error: 'Failed to fetch redeemed rewards' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Filter server-side based on user's role:
+    // Show rewards where: survey is in user's scope OR reward was claimed at user's location
+    const filtered = (data || []).filter((r: Record<string, unknown>) => {
+        if (role === 'super_admin' || brand === 'All') return true;
+        // Survey is from user's brand
+        const inScope = (role === 'brand_admin' || role === 'brand_manager')
+            ? r.brand === brand
+            : (r.brand === brand && r.branch === branch);
+        // Reward was claimed at user's location
+        const claimedHere = (role === 'brand_admin' || role === 'brand_manager')
+            ? r.reward_claimed_brand === brand
+            : (r.reward_claimed_brand === brand && r.reward_claimed_branch === branch);
+        return inScope || claimedHere;
+    });
+
+    return new Response(JSON.stringify({ success: true, data: filtered }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

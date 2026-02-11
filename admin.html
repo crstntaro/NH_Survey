@@ -1747,10 +1747,32 @@
 
           const data = await response.json();
           if (!response.ok || !data.success) throw new Error(data.error || 'Update failed');
-          return true;
+          return data.claimed || true;
         } catch (err) {
           console.error('Error marking reward claimed:', err);
           return false;
+        }
+      },
+
+      async fetchRedeemed() {
+        try {
+          const token = localStorage.getItem('admin_token');
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/fetch-redeemed`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({})
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) throw new Error(data.error || 'Fetch failed');
+          return data.data || [];
+        } catch (err) {
+          console.error('Error fetching redeemed rewards:', err);
+          return [];
         }
       },
 
@@ -2573,7 +2595,7 @@
     }
 
     function isBrandManager() {
-      return currentUser?.role === 'brand_manager' || currentUser?.role === 'branch_manager';
+      return currentUser?.role === 'brand_admin' || currentUser?.role === 'brand_manager' || currentUser?.role === 'branch_manager';
     }
 
     function isValidator() {
@@ -2979,10 +3001,16 @@
       btn.disabled = true;
       btn.textContent = 'Processing...';
 
-      const success = await DataService.markRewardClaimed(currentValidationResponse.id);
+      const result = await DataService.markRewardClaimed(currentValidationResponse.id);
 
-      if (success) {
-        const claimedAt = new Date().toISOString();
+      if (result) {
+        // Use server-returned authoritative data
+        const claimed = (typeof result === 'object') ? result : {};
+        const claimedAt = claimed.reward_claimed_at || new Date().toISOString();
+        const claimedBy = claimed.reward_claimed_by || currentUser?.email;
+        const claimedBranch = claimed.reward_claimed_branch || currentUser?.branch;
+        const claimedBrand = claimed.reward_claimed_brand || currentUser?.brand;
+
         const statusEl = document.getElementById('validatorStatus');
         statusEl.textContent = '✅ Marked as Redeemed!';
         statusEl.className = 'status valid';
@@ -2990,7 +3018,7 @@
         statusEl.offsetHeight; // Trigger reflow
         statusEl.style.animation = 'successPulse 0.5s ease';
 
-        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${sanitize(currentUser?.email)} at ${sanitize(currentUser?.branch)} (${sanitize(currentUser?.brand)})</span>`;
+        document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${sanitize(claimedBy)} at ${sanitize(claimedBranch)} (${sanitize(claimedBrand)})</span>`;
         document.getElementById('validatorActions').style.display = 'none';
 
         // Update local data (response may be from a different brand/branch)
@@ -2998,16 +3026,16 @@
         if (response) {
           response.reward_claimed = true;
           response.reward_claimed_at = claimedAt;
-          response.reward_claimed_by = currentUser?.email;
-          response.reward_claimed_branch = currentUser?.branch;
-          response.reward_claimed_brand = currentUser?.brand;
+          response.reward_claimed_by = claimedBy;
+          response.reward_claimed_branch = claimedBranch;
+          response.reward_claimed_brand = claimedBrand;
         } else {
-          // Cross-brand/branch redemption: add to local data so it appears in redeemed tab
+          // Cross-brand/branch redemption: add to local data
           currentValidationResponse.reward_claimed = true;
           currentValidationResponse.reward_claimed_at = claimedAt;
-          currentValidationResponse.reward_claimed_by = currentUser?.email;
-          currentValidationResponse.reward_claimed_branch = currentUser?.branch;
-          currentValidationResponse.reward_claimed_brand = currentUser?.brand;
+          currentValidationResponse.reward_claimed_by = claimedBy;
+          currentValidationResponse.reward_claimed_branch = claimedBranch;
+          currentValidationResponse.reward_claimed_brand = claimedBrand;
           allResponses.push(currentValidationResponse);
         }
 
@@ -3165,20 +3193,13 @@
     /* ---------- Redeemed Tab ---------- */
     let filteredRedeemed = [];
 
-    function paintRedeemed() {
-      // Get all redeemed responses — include both surveys from user's access scope
-      // AND rewards that were redeemed at the user's branch/brand (cross-brand redemptions)
-      const accessFiltered = filterByUserAccess(allResponses);
-      const redeemedResponses = allResponses.filter(r => {
-        if (!r.reward_claimed) return false;
-        // Already in user's access scope
-        if (accessFiltered.includes(r)) return true;
-        // Redeemed at user's location (cross-brand)
-        if (isSuperAdmin()) return true;
-        if (isBrandManager() && r.reward_claimed_brand === currentUser?.brand) return true;
-        if (r.reward_claimed_brand === currentUser?.brand && r.reward_claimed_branch === currentUser?.branch) return true;
-        return false;
-      });
+    // Cache for redeemed data fetched from edge function
+    let cachedRedeemedData = null;
+
+    async function paintRedeemed() {
+      // Fetch redeemed data from edge function (bypasses RLS, includes cross-brand)
+      const redeemedResponses = await DataService.fetchRedeemed();
+      cachedRedeemedData = redeemedResponses;
 
       // Apply filters
       const search = document.getElementById('redeemedFilterSearch')?.value.toLowerCase() || '';
