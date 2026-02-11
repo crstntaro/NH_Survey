@@ -89,6 +89,9 @@ serve(async (req) => {
       case '/admin-auth/change-password':
         response = await handleChangePassword(req, supabaseAdmin, corsHeaders);
         break;
+      case '/admin-auth/validate-reward':
+        response = await handleValidateReward(req, supabaseAdmin, corsHeaders);
+        break;
       case '/admin-auth/mark-redeemed':
         response = await handleMarkRedeemed(req, supabaseAdmin, corsHeaders);
         break;
@@ -365,6 +368,53 @@ async function handleChangePassword(req: Request, supabase: SupabaseClient, cors
     await supabase.auth.admin.signOut(user.id);
 
     return new Response(JSON.stringify({ success: true, message: 'Password updated. Please log in again.' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleValidateReward(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        return new Response(JSON.stringify({ error: 'No token provided' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { query } = await req.json();
+    if (!query || typeof query !== 'string') {
+        return new Response(JSON.stringify({ error: 'Query is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const upperQuery = query.trim().toUpperCase();
+
+    // Search by reward code first (uses service role key — bypasses RLS)
+    let { data, error } = await supabase
+        .from('survey_responses')
+        .select('*')
+        .eq('reward_code', upperQuery)
+        .single();
+
+    if (!data) {
+        // Try by receipt number
+        const result = await supabase
+            .from('survey_responses')
+            .select('*')
+            .eq('receipt', upperQuery)
+            .single();
+        data = result.data;
+        error = result.error;
+    }
+
+    if (error && error.code !== 'PGRST116') {
+        console.error('Validate reward query error:', error);
+        return new Response(JSON.stringify({ error: 'Search failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ success: true, data: data || null }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

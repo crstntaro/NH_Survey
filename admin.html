@@ -1756,26 +1756,21 @@
 
       async findByCodeOrReceipt(query) {
         try {
-          // Try to find by reward code first
-          let { data, error } = await sb
-            .from('survey_responses')
-            .select('*')
-            .eq('reward_code', query.toUpperCase())
-            .single();
+          // Use edge function to search across all brands/branches (bypasses RLS)
+          const token = localStorage.getItem('admin_token');
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/validate-reward`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({ query })
+          });
 
-          if (!data) {
-            // Try to find by receipt
-            const result = await sb
-              .from('survey_responses')
-              .select('*')
-              .eq('receipt', query.toUpperCase())
-              .single();
-            data = result.data;
-            error = result.error;
-          }
-
-          if (error && error.code !== 'PGRST116') throw error;
-          return data;
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.error || 'Search failed');
+          return result.data;
         } catch (err) {
           console.error('Error finding response:', err);
           return null;
@@ -2671,7 +2666,7 @@
       // Calculate and display overall NPS
       const npsData = DataService.calculateNPS(accessible);
       const npsScoreEl = document.getElementById('overviewNpsScore');
-      npsScoreEl.textContent = npsData.score;
+      npsScoreEl.textContent = `${npsData.score}%`;
       npsScoreEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
 
       document.getElementById('overviewPromoters').textContent = `${npsData.total ? Math.round((npsData.promoters / npsData.total) * 100) : 0}%`;
@@ -2998,7 +2993,7 @@
         document.getElementById('valRewardStatus').innerHTML = `<span style="color:var(--ok)">Just claimed by ${sanitize(currentUser?.email)} at ${sanitize(currentUser?.branch)} (${sanitize(currentUser?.brand)})</span>`;
         document.getElementById('validatorActions').style.display = 'none';
 
-        // Update local data
+        // Update local data (response may be from a different brand/branch)
         const response = allResponses.find(r => r.id === currentValidationResponse.id);
         if (response) {
           response.reward_claimed = true;
@@ -3006,9 +3001,18 @@
           response.reward_claimed_by = currentUser?.email;
           response.reward_claimed_branch = currentUser?.branch;
           response.reward_claimed_brand = currentUser?.brand;
+        } else {
+          // Cross-brand/branch redemption: add to local data so it appears in redeemed tab
+          currentValidationResponse.reward_claimed = true;
+          currentValidationResponse.reward_claimed_at = claimedAt;
+          currentValidationResponse.reward_claimed_by = currentUser?.email;
+          currentValidationResponse.reward_claimed_branch = currentUser?.branch;
+          currentValidationResponse.reward_claimed_brand = currentUser?.brand;
+          allResponses.push(currentValidationResponse);
         }
 
-        // Refresh the redeemed tab data if needed
+        // Refresh the pending and redeemed tabs
+        paintPending();
         if (activeTab === 'redeemed') paintRedeemed();
       } else {
         btn.disabled = false;
@@ -3275,7 +3279,7 @@
 
       // Update KPIs
       const npsEl = document.getElementById('kpiNpsScore');
-      npsEl.textContent = npsData.score;
+      npsEl.textContent = `${npsData.score}%`;
       npsEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
 
       document.getElementById('kpiPromoters').textContent = `${npsData.total ? Math.round((npsData.promoters / npsData.total) * 100) : 0}%`;
