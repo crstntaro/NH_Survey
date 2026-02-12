@@ -1661,6 +1661,15 @@
       meta.stores.forEach(code => { storeToBrand[code] = brand; });
     });
 
+    // Store code → branch mapping
+    const storeToBranch = {
+      MDKA: 'Molito (Alabang)', MDKB: 'Bonifacio Global City', MDKC: 'Cebu',
+      MDKK: 'Katipunan', MDKM: 'Salcedo Village (Makati)', MDKP: 'Pasay',
+      YSKA: 'Molito (Alabang)', YSKC: 'Cebu', YSKO: 'Ortigas', YSKP: 'Pasay',
+      MRDR: 'Rockwell', MRDV: 'Vertis North',
+      KZCF: 'Makati', KZNM: 'Makati'
+    };
+
     // Helper: get 4-char store code from receipt
     function getStoreCode(receipt) {
       return (receipt || '').substring(0, 4).toUpperCase();
@@ -2642,6 +2651,16 @@
       // Fetch real data from Supabase
       allResponses = await DataService.fetchResponses();
       console.log('Total responses loaded:', allResponses.length);
+
+      // Auto-derive brand/branch from receipt prefix if missing
+      allResponses.forEach(r => {
+        if ((!r.brand || !r.branch) && r.receipt) {
+          const code = getStoreCode(r.receipt);
+          if (!r.brand && storeToBrand[code]) r.brand = storeToBrand[code];
+          if (!r.branch && storeToBranch[code]) r.branch = storeToBranch[code];
+        }
+      });
+
       // For Responses/Analytics/Export: filter by user access
       filteredResponses = filterByUserAccess([...allResponses]);
       console.log('Filtered responses:', filteredResponses.length);
