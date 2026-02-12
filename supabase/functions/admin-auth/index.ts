@@ -489,31 +489,33 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
         reward_claimed_brand: claimedBrand
     };
 
-    let { error, count } = await supabase
+    let { error, data: updatedRows } = await supabase
         .from('survey_responses')
         .update(updateData)
         .eq('id', id)
-        .eq('reward_claimed', false);
+        .eq('reward_claimed', false)
+        .select('id');
 
     // If full update fails (e.g. missing columns), try minimal update
     if (error) {
         console.error('Full update failed, trying minimal update:', error);
-        const minimalData = { reward_claimed: true, reward_claimed_at: claimedAt };
+        const minimalData = { reward_claimed: true, reward_claimed_at: claimedAt, reward_claimed_by: claimedBy };
         const result = await supabase
             .from('survey_responses')
             .update(minimalData)
             .eq('id', id)
-            .eq('reward_claimed', false);
+            .eq('reward_claimed', false)
+            .select('id');
 
         if (result.error) {
             console.error('Minimal update also failed:', result.error);
             return new Response(JSON.stringify({ error: `Failed to mark as redeemed: ${result.error.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
-        count = result.count;
+        updatedRows = result.data;
     }
 
-    // Check count to detect race condition (another request claimed it between check and update)
-    if (count === 0) {
+    // Check if any rows were actually updated (detects race condition)
+    if (!updatedRows || updatedRows.length === 0) {
         return new Response(JSON.stringify({
             error: 'Reward was just claimed by another user. Please refresh.',
             already_claimed: true
@@ -557,12 +559,15 @@ async function handleFetchRedeemed(req: Request, supabase: SupabaseClient, corsH
         .from('survey_responses')
         .select('*')
         .eq('reward_claimed', true)
-        .order('reward_claimed_at', { ascending: false });
+        .order('reward_claimed_at', { ascending: false })
+        .limit(5000);
 
     if (error) {
         console.error('Fetch redeemed error:', error);
-        return new Response(JSON.stringify({ error: 'Failed to fetch redeemed rewards' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: 'Failed to fetch redeemed rewards', details: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    console.log(`Fetch redeemed: ${(data || []).length} total redeemed rows found, user role=${role} brand=${brand} branch=${branch}`);
 
     // Filter server-side based on user's role:
     // Show rewards where: survey is in user's scope OR reward was claimed at user's location
@@ -572,12 +577,16 @@ async function handleFetchRedeemed(req: Request, supabase: SupabaseClient, corsH
         const inScope = (role === 'brand_admin' || role === 'brand_manager')
             ? r.brand === brand
             : (r.brand === brand && r.branch === branch);
-        // Reward was claimed at user's location
-        const claimedHere = (role === 'brand_admin' || role === 'brand_manager')
-            ? r.reward_claimed_brand === brand
-            : (r.reward_claimed_brand === brand && r.reward_claimed_branch === branch);
+        // Reward was claimed at user's location (also check if claimed_brand is null — still show if survey is in scope)
+        const claimedHere = r.reward_claimed_brand
+            ? ((role === 'brand_admin' || role === 'brand_manager')
+                ? r.reward_claimed_brand === brand
+                : (r.reward_claimed_brand === brand && r.reward_claimed_branch === branch))
+            : false;
         return inScope || claimedHere;
     });
+
+    console.log(`Fetch redeemed: ${filtered.length} rows after role-based filter`);
 
     return new Response(JSON.stringify({ success: true, data: filtered }), {
         status: 200,

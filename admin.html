@@ -955,9 +955,9 @@
         <div class="nps-summary">
           <div class="nps-summary-inner">
             <div class="nps-main">
-              <div class="nps-label">OVERALL NPS SCORE</div>
+              <div class="nps-label">AVERAGE RATING</div>
               <div class="nps-value" id="overviewNpsScore">-</div>
-              <div class="nps-sublabel" id="overviewNpsLabel">Net Promoter Score</div>
+              <div class="nps-sublabel" id="overviewNpsLabel">Average of 1-10 Ratings</div>
             </div>
             <div class="nps-breakdown">
               <div class="nps-stat">
@@ -1344,7 +1344,7 @@
         <div class="kpis" id="analyticsKpis">
           <div class="kpi">
             <div class="v" id="kpiNpsScore">-</div>
-            <div class="l">Overall NPS Score</div>
+            <div class="l">Average Rating (1-10)</div>
           </div>
           <div class="kpi success">
             <div class="v" id="kpiPromoters">-</div>
@@ -1372,7 +1372,7 @@
             </div>
           </div>
           <div class="chart-card">
-            <h4>Brand NPS Comparison</h4>
+            <h4>Brand Rating Comparison</h4>
             <div class="chart-container">
               <canvas id="brandNpsChart"></canvas>
             </div>
@@ -1381,7 +1381,7 @@
 
         <div class="chart-row" style="margin-top:16px">
           <div class="chart-card">
-            <h4>NPS Trend Over Time</h4>
+            <h4>Rating Trend Over Time</h4>
             <div class="chart-container">
               <canvas id="npsTrendChart"></canvas>
             </div>
@@ -1757,6 +1757,10 @@
       async fetchRedeemed() {
         try {
           const token = localStorage.getItem('admin_token');
+          if (!token) {
+            console.error('fetchRedeemed: No admin token found');
+            return [];
+          }
           const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth/fetch-redeemed`, {
             method: 'POST',
             headers: {
@@ -1767,11 +1771,19 @@
             body: JSON.stringify({})
           });
 
+          if (!response.ok) {
+            const text = await response.text();
+            console.error('fetchRedeemed HTTP error:', response.status, text);
+            return [];
+          }
           const data = await response.json();
-          if (!response.ok || !data.success) throw new Error(data.error || 'Fetch failed');
+          if (!data.success) {
+            console.error('fetchRedeemed API error:', data.error);
+            return [];
+          }
           return data.data || [];
         } catch (err) {
-          console.error('Error fetching redeemed rewards:', err);
+          console.error('fetchRedeemed network/parse error:', err);
           return [];
         }
       },
@@ -1828,17 +1840,19 @@
       },
 
       calculateNPS(responses) {
-        const scored = responses.filter(r => r.q12 !== null);
-        if (scored.length === 0) return { score: 0, promoters: 0, passives: 0, detractors: 0, total: 0 };
+        const scored = responses.filter(r => r.q12 !== null && r.q12 !== undefined);
+        if (scored.length === 0) return { score: 0, average: 0, promoters: 0, passives: 0, detractors: 0, total: 0 };
 
         const promoters = scored.filter(r => r.q12 >= 9).length;
         const passives = scored.filter(r => r.q12 >= 7 && r.q12 <= 8).length;
         const detractors = scored.filter(r => r.q12 <= 6).length;
         const total = scored.length;
 
-        const score = Math.round(((promoters - detractors) / total) * 100);
+        // Simple average of 1-10 ratings
+        const sum = scored.reduce((acc, r) => acc + r.q12, 0);
+        const average = parseFloat((sum / total).toFixed(1));
 
-        return { score, promoters, passives, detractors, total };
+        return { score: average, average, promoters, passives, detractors, total };
       },
 
       calculateBrandNPS(responses) {
@@ -2685,15 +2699,15 @@
       document.getElementById('kpiOldestUnresolved').textContent = oldestUnresolved;
       document.getElementById('kpiInactive').textContent = inactiveCustomers.length;
 
-      // Calculate and display overall NPS
+      // Calculate and display overall NPS (average rating 1-10)
       const npsData = DataService.calculateNPS(accessible);
       const npsScoreEl = document.getElementById('overviewNpsScore');
-      npsScoreEl.textContent = `${npsData.score}%`;
-      npsScoreEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
+      npsScoreEl.textContent = npsData.average;
+      npsScoreEl.style.color = npsData.average >= 7 ? 'var(--ok)' : npsData.average >= 5 ? 'var(--warn)' : 'var(--bad)';
 
-      document.getElementById('overviewPromoters').textContent = `${npsData.total ? Math.round((npsData.promoters / npsData.total) * 100) : 0}%`;
-      document.getElementById('overviewPassives').textContent = `${npsData.total ? Math.round((npsData.passives / npsData.total) * 100) : 0}%`;
-      document.getElementById('overviewDetractorsPct').textContent = `${npsData.total ? Math.round((npsData.detractors / npsData.total) * 100) : 0}%`;
+      document.getElementById('overviewPromoters').textContent = npsData.promoters;
+      document.getElementById('overviewPassives').textContent = npsData.passives;
+      document.getElementById('overviewDetractorsPct').textContent = npsData.detractors;
       document.getElementById('overviewTotalResponses').textContent = npsData.total;
 
       // Update category button counts
@@ -3217,7 +3231,23 @@
 
     async function paintRedeemed() {
       // Fetch redeemed data from edge function (bypasses RLS, includes cross-brand)
-      const redeemedResponses = await DataService.fetchRedeemed();
+      let redeemedResponses = await DataService.fetchRedeemed();
+
+      // Fallback: if API returned empty, use locally cached allResponses
+      if (redeemedResponses.length === 0) {
+        const localRedeemed = allResponses.filter(r => r.reward_claimed === true && r.reward_code);
+        if (localRedeemed.length > 0) {
+          console.warn('fetch-redeemed API returned empty, using local data fallback (' + localRedeemed.length + ' items)');
+          redeemedResponses = localRedeemed;
+        }
+      } else {
+        // Merge: add any locally-known redeemed items not in API response
+        const apiIds = new Set(redeemedResponses.map(r => r.id));
+        const localOnly = allResponses.filter(r => r.reward_claimed === true && r.reward_code && !apiIds.has(r.id));
+        if (localOnly.length > 0) {
+          redeemedResponses = [...redeemedResponses, ...localOnly];
+        }
+      }
       cachedRedeemedData = redeemedResponses;
 
       // Apply filters
@@ -3328,14 +3358,14 @@
       const npsData = DataService.calculateNPS(periodResponses);
       const brandNPS = DataService.calculateBrandNPS(periodResponses);
 
-      // Update KPIs
+      // Update KPIs (average rating 1-10)
       const npsEl = document.getElementById('kpiNpsScore');
-      npsEl.textContent = `${npsData.score}%`;
-      npsEl.style.color = npsData.score > 0 ? 'var(--ok)' : npsData.score < 0 ? 'var(--bad)' : 'var(--warn)';
+      npsEl.textContent = npsData.average;
+      npsEl.style.color = npsData.average >= 7 ? 'var(--ok)' : npsData.average >= 5 ? 'var(--warn)' : 'var(--bad)';
 
-      document.getElementById('kpiPromoters').textContent = `${npsData.total ? Math.round((npsData.promoters / npsData.total) * 100) : 0}%`;
-      document.getElementById('kpiPassives').textContent = `${npsData.total ? Math.round((npsData.passives / npsData.total) * 100) : 0}%`;
-      document.getElementById('kpiDetractorsPct').textContent = `${npsData.total ? Math.round((npsData.detractors / npsData.total) * 100) : 0}%`;
+      document.getElementById('kpiPromoters').textContent = npsData.promoters;
+      document.getElementById('kpiPassives').textContent = npsData.passives;
+      document.getElementById('kpiDetractorsPct').textContent = npsData.detractors;
       document.getElementById('kpiTotalResponses').textContent = npsData.total;
 
       // Destroy existing charts
@@ -3373,7 +3403,7 @@
         data: {
           labels: brandLabels,
           datasets: [{
-            label: 'NPS Score',
+            label: 'Average Rating',
             data: brandScores,
             backgroundColor: brandColors,
             borderRadius: 6
@@ -3385,7 +3415,7 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { min: -100, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }
+            x: { min: 1, max: 10, grid: { color: 'rgba(0,0,0,0.05)' } }
           }
         }
       });
@@ -3398,7 +3428,7 @@
         data: {
           labels: trendData.labels,
           datasets: [{
-            label: 'NPS Score',
+            label: 'Average Rating',
             data: trendData.scores,
             borderColor: '#85754E',
             backgroundColor: 'rgba(133,117,78,0.1)',
@@ -3412,7 +3442,7 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            y: { min: -100, max: 100 }
+            y: { min: 1, max: 10 }
           }
         }
       });
