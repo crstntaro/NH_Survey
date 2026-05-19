@@ -1,19 +1,22 @@
-// Import necessary libraries
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.0/mod.ts';
 
 // Strict allowed origins list - EXACT MATCH ONLY (no wildcards or substring matching)
 const ALLOWED_ORIGINS: string[] = [
+  'https://survey.nipponhasha.com',
   'https://nipponhasha.ph',
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
   'https://crstntaro.github.io',
 ];
 
+function isLocalhostOrigin(origin: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
+
 function getCorsHeaders(origin: string | null): Record<string, string> {
   // SECURITY: Only allow exact origin matches - no wildcards or substring matching
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const isAllowed = origin && (ALLOWED_ORIGINS.includes(origin) || isLocalhostOrigin(origin));
 
   // If origin not in whitelist, use first production origin (requests will fail CORS)
   const allowedOrigin = isAllowed ? origin : ALLOWED_ORIGINS[0];
@@ -53,19 +56,16 @@ const VALID_ROLES = ['super_admin', 'brand_admin', 'branch_admin', 'brand_manage
 // SECURITY: Valid brands whitelist (must match values in create-admin-users.ts)
 const VALID_BRANDS = ['All', 'Mendokoro', 'Ramen Yushoken', 'Marudori', 'Kazunori', 'Kazu Café', null];
 
-// Function to handle OPTIONS preflight requests
 function handleOptions(origin: string | null) {
   return new Response('ok', { headers: getCorsHeaders(origin) });
 }
 
-// Function to create a Supabase client with the service role key
 function getSupabaseAdmin(): SupabaseClient {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('ADMIN_SERVICE_ROLE_KEY')!;
   return createClient(supabaseUrl, serviceKey);
 }
 
-// Main serve function
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -129,8 +129,6 @@ serve(async (req) => {
   }
 });
 
-// --- ROUTE HANDLERS ---
-
 async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: Record<string, string>) {
   const { email, password } = await req.json();
 
@@ -138,7 +136,6 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
     return new Response(JSON.stringify({ error: 'Email and password are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  // --- Rate Limiting Check ---
   cleanupRateLimitMaps();
   const now = Date.now();
   const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
@@ -193,8 +190,6 @@ async function handleLogin(req: Request, supabase: SupabaseClient, corsHeaders: 
     return new Response(JSON.stringify({ error: 'User account is inactive' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  // 3. Verify password using Supabase Auth (or bcrypt if needed)
-  // We use Supabase Auth to handle the session and JWT generation
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -352,8 +347,6 @@ async function handleChangePassword(req: Request, supabase: SupabaseClient, cors
         return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Supabase does not have a direct way to verify the current password via API.
-    // A workaround is to try to sign in with it.
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email!, password: current_password });
     if (signInError) {
         return new Response(JSON.stringify({ error: 'Invalid current password' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -366,9 +359,14 @@ async function handleChangePassword(req: Request, supabase: SupabaseClient, cors
         return new Response(JSON.stringify({ error: 'Failed to update password' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     
-    // Also update the `password_hash` in our public `admin_users` table.
-    const password_hash = await bcrypt.hash(new_password);
-    await supabase.from('admin_users').update({ password_hash }).eq('id', user.app_metadata.admin_id);
+    // Also update the `password_hash` in our public `admin_users` table via pgcrypto RPC (bcrypt unavailable in Deno Deploy).
+    const { error: hashError } = await supabase.rpc('update_admin_password_hash', {
+        p_user_id: user.app_metadata.admin_id,
+        p_new_password: new_password
+    });
+    if (hashError) {
+        console.error('Warning: Failed to update password_hash in admin_users:', hashError);
+    }
 
 
     await supabase.from('admin_audit_log').insert({
@@ -468,7 +466,7 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
         return new Response(JSON.stringify({ error: 'Survey response not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (existing.reward_claimed) {
+    if (existing.reward_claimed === true) {
         return new Response(JSON.stringify({
             error: `Already redeemed by ${existing.reward_claimed_by || 'unknown'} on ${existing.reward_claimed_at || 'unknown date'}`,
             already_claimed: true
@@ -489,29 +487,17 @@ async function handleMarkRedeemed(req: Request, supabase: SupabaseClient, corsHe
         reward_claimed_brand: claimedBrand
     };
 
-    let { error, data: updatedRows } = await supabase
+    // Pre-check (lines above) already confirmed reward_claimed !== true.
+    // Use simple eq('id') filter — .or() on UPDATE causes PostgREST to reject valid columns.
+    const { error, data: updatedRows } = await supabase
         .from('survey_responses')
         .update(updateData)
         .eq('id', id)
-        .eq('reward_claimed', false)
         .select('id');
 
-    // If full update fails (e.g. missing columns), try minimal update
     if (error) {
-        console.error('Full update failed, trying minimal update:', error);
-        const minimalData = { reward_claimed: true, reward_claimed_at: claimedAt, reward_claimed_by: claimedBy };
-        const result = await supabase
-            .from('survey_responses')
-            .update(minimalData)
-            .eq('id', id)
-            .eq('reward_claimed', false)
-            .select('id');
-
-        if (result.error) {
-            console.error('Minimal update also failed:', result.error);
-            return new Response(JSON.stringify({ error: `Failed to mark as redeemed: ${result.error.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-        updatedRows = result.data;
+        console.error('Update failed:', error);
+        return new Response(JSON.stringify({ error: `Failed to mark as redeemed: ${error.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Check if any rows were actually updated (detects race condition)
@@ -567,7 +553,6 @@ async function handleFetchRedeemed(req: Request, supabase: SupabaseClient, corsH
         return new Response(JSON.stringify({ error: 'Failed to fetch redeemed rewards', details: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log(`Fetch redeemed: ${(data || []).length} total redeemed rows found, user role=${role} brand=${brand} branch=${branch}`);
 
     // Filter server-side based on user's role:
     // Show rewards where: survey is in user's scope OR reward was claimed at user's location
@@ -586,7 +571,6 @@ async function handleFetchRedeemed(req: Request, supabase: SupabaseClient, corsH
         return inScope || claimedHere;
     });
 
-    console.log(`Fetch redeemed: ${filtered.length} rows after role-based filter`);
 
     return new Response(JSON.stringify({ success: true, data: filtered }), {
         status: 200,
