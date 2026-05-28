@@ -4,6 +4,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 // Strict allowed origins list - EXACT MATCH ONLY (no wildcards or substring matching)
 const ALLOWED_ORIGINS: string[] = [
   'https://survey.nipponhasha.com',
+  'https://surveydb.nipponhasha.com',
   'https://nipponhasha.ph',
   'https://www.nipponhasha.ph',
   'https://tarotaro-nh.github.io',
