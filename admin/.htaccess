@@ -1,0 +1,22 @@
+# Admin dashboard host (surveydb.nipponhasha.com) — web root points here.
+# This is the only .htaccess that applies once Web Root = admin/.
+
+RewriteEngine On
+
+# Serve index.html for the root request
+DirectoryIndex index.html
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# No directory listings
+Options -Indexes
+
+# Block dotfiles (.htaccess, .gitkeep, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
