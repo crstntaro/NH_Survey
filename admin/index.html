@@ -3048,6 +3048,11 @@
         statusEl.textContent = '✅ Valid - Reward Available';
         statusEl.className = 'status valid';
         document.getElementById('valRewardStatus').innerHTML = '<span style="color:var(--ok)">Unclaimed</span>';
+        // Reset the redeem button in case a prior redemption left it in its "✓ Redeemed"/disabled state
+        const redeemBtn = document.getElementById('markRedeemedBtn');
+        redeemBtn.disabled = false;
+        redeemBtn.textContent = 'Mark as Redeemed';
+        redeemBtn.className = 'btn success';
         actionsEl.style.display = 'flex';
       }
 
