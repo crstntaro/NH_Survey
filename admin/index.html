@@ -1143,7 +1143,7 @@
     <section class="tabpanel" id="tab-pending" hidden>
       <div class="card">
         <h3>Pending Rewards</h3>
-        <p class="subtitle">Unclaimed rewards awaiting redemption. Rewards expire 30 days after survey completion.</p>
+        <p class="subtitle">Unclaimed rewards awaiting redemption. Reward codes do not expire — they stay claimable indefinitely.</p>
 
         <div class="search-toggle-wrap">
           <button class="search-toggle-btn" id="pendingSearchToggle">
@@ -1177,15 +1177,6 @@
                   <option value="">All Stores</option>
                 </select>
               </div>
-              <div class="field">
-                <label>Status</label>
-                <select id="pendingFilterStatus">
-                  <option value="">All</option>
-                  <option value="valid">Valid (< 30 days)</option>
-                  <option value="expiring">Expiring Soon (< 7 days)</option>
-                  <option value="expired">Expired (> 30 days)</option>
-                </select>
-              </div>
             </div>
             <div class="filter-actions">
               <button class="btn" id="pendingClearFilters">Clear</button>
@@ -1201,15 +1192,7 @@
           </div>
           <div class="kpi success">
             <div class="v" id="kpiValidPending">-</div>
-            <div class="l">Valid (< 30 days)</div>
-          </div>
-          <div class="kpi warning">
-            <div class="v" id="kpiExpiringSoon">-</div>
-            <div class="l">Expiring Soon (< 7 days)</div>
-          </div>
-          <div class="kpi critical">
-            <div class="v" id="kpiExpired">-</div>
-            <div class="l">Expired</div>
+            <div class="l">Claimable</div>
           </div>
         </div>
 
@@ -1222,7 +1205,7 @@
                 <th>Reward Code</th>
                 <th>Receipt</th>
                 <th>Brand / Branch</th>
-                <th>Days Left</th>
+                <th>Reward</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -1398,6 +1381,40 @@
           <h4 style="font:800 14px var(--font); margin-bottom:12px">Recent Detractor Comments</h4>
           <div id="detractorComments"></div>
         </div>
+      </div>
+
+      <!-- Text Response Insights — own card, outside analytics card to avoid double nesting -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+          <h3 style="margin:0">Question Summaries</h3>
+          <span style="font:600 11px var(--font);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:var(--line);padding:3px 10px;border-radius:999px">Every survey question summarized</span>
+        </div>
+        <p class="subtitle">Most common answer to each question. Free-text replies are grouped so variants (e.g. "Inasal" &amp; "Mang Inasal") count as one.</p>
+
+        <!-- Quick-glance: #1 answer per question -->
+        <div class="kpis" style="margin-bottom:20px">
+          <div class="kpi" style="border-left:4px solid #d4af37;overflow:hidden">
+            <div style="font:700 13px/1.3 var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="tiKpiRestaurant">-</div>
+            <div class="l">#1 Restaurant Visited</div>
+          </div>
+          <div class="kpi" style="border-left:4px solid var(--info);overflow:hidden">
+            <div style="font:700 13px/1.3 var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="tiKpiLocation">-</div>
+            <div class="l">#1 Preferred Location</div>
+          </div>
+          <div class="kpi" style="border-left:4px solid var(--ok);overflow:hidden">
+            <div style="font:700 13px/1.3 var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="tiKpiLiked">-</div>
+            <div class="l">#1 Liked Most</div>
+          </div>
+          <div class="kpi" style="border-left:4px solid var(--warn);overflow:hidden">
+            <div style="font:700 13px/1.3 var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="tiKpiIdea">-</div>
+            <div class="l">#1 Customer Idea</div>
+          </div>
+        </div>
+
+        <!-- Per-question summary grid — populated by renderQuestionSummaries().
+             min-width:0 on the cards prevents grid blowout. -->
+        <div id="questionSummaries" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px"></div>
+
       </div>
     </section>
 
@@ -3144,22 +3161,6 @@
     /* ---------- Pending Rewards Tab ---------- */
     let filteredPending = [];
 
-    function getRewardStatus(completedAt) {
-      if (!completedAt) return { status: 'unknown', daysLeft: 0, class: 'recent' };
-      const completedDate = new Date(completedAt);
-      const now = new Date();
-      const daysSinceCompletion = Math.floor((now - completedDate) / 86400000);
-      const daysLeft = 30 - daysSinceCompletion;
-
-      if (daysLeft <= 0) {
-        return { status: 'expired', daysLeft: 0, class: 'urgent', label: 'Expired' };
-      } else if (daysLeft <= 7) {
-        return { status: 'expiring', daysLeft, class: 'old', label: `${daysLeft}d` };
-      } else {
-        return { status: 'valid', daysLeft, class: 'recent', label: `${daysLeft}d` };
-      }
-    }
-
     function paintPending() {
       // Get all unclaimed reward responses
       const pendingResponses = filterByUserAccess(allResponses).filter(r => r.reward_code && !r.reward_claimed);
@@ -3168,7 +3169,6 @@
       const search = document.getElementById('pendingFilterSearch')?.value.toLowerCase() || '';
       const brand = document.getElementById('pendingFilterBrand')?.value || '';
       const branch = document.getElementById('pendingFilterBranch')?.value || '';
-      const statusFilter = document.getElementById('pendingFilterStatus')?.value || '';
 
       filteredPending = pendingResponses.filter(r => {
         if (search) {
@@ -3177,33 +3177,15 @@
         }
         if (brand && r.brand !== brand) return false;
         if (branch && getStoreCode(r.receipt) !== branch) return false;
-        if (statusFilter) {
-          const rewardStatus = getRewardStatus(r.completed_at);
-          if (statusFilter === 'valid' && rewardStatus.status !== 'valid') return false;
-          if (statusFilter === 'expiring' && rewardStatus.status !== 'expiring') return false;
-          if (statusFilter === 'expired' && rewardStatus.status !== 'expired') return false;
-        }
         return true;
       });
 
-      // Sort by days left (expired last, then by expiration urgency)
-      filteredPending.sort((a, b) => {
-        const statusA = getRewardStatus(a.completed_at);
-        const statusB = getRewardStatus(b.completed_at);
-        if (statusA.status === 'expired' && statusB.status !== 'expired') return 1;
-        if (statusB.status === 'expired' && statusA.status !== 'expired') return -1;
-        return statusA.daysLeft - statusB.daysLeft; // Fewer days left first
-      });
+      // Sort by survey date — most recent first (rewards no longer expire).
+      filteredPending.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
-      // Update KPIs
-      const valid = pendingResponses.filter(r => getRewardStatus(r.completed_at).status === 'valid');
-      const expiring = pendingResponses.filter(r => getRewardStatus(r.completed_at).status === 'expiring');
-      const expired = pendingResponses.filter(r => getRewardStatus(r.completed_at).status === 'expired');
-
+      // Update KPIs — rewards no longer expire, so all pending rewards are claimable.
       document.getElementById('kpiTotalPending').textContent = pendingResponses.length;
-      document.getElementById('kpiValidPending').textContent = valid.length;
-      document.getElementById('kpiExpiringSoon').textContent = expiring.length;
-      document.getElementById('kpiExpired').textContent = expired.length;
+      document.getElementById('kpiValidPending').textContent = pendingResponses.length;
 
       // Paint table
       const tbody = document.getElementById('pendingBody');
@@ -3215,9 +3197,7 @@
       }
 
       filteredPending.forEach(r => {
-        const rewardStatus = getRewardStatus(r.completed_at);
         const tr = document.createElement('tr');
-        tr.className = rewardStatus.status === 'expired' ? 'priority-critical' : rewardStatus.status === 'expiring' ? 'priority-high' : '';
         // SECURITY: All user data is escaped to prevent XSS
         tr.innerHTML = `
           <td data-label="Survey Date">${formatDate(r.completed_at)}</td>
@@ -3231,13 +3211,11 @@
             ${brandBadge(sanitize(r.brand))}<br>
             <small style="color:var(--muted)">${sanitize(r.branch) || '-'}</small>
           </td>
-          <td data-label="Days Left">
-            <span class="aging-badge ${rewardStatus.class}">${rewardStatus.label}</span>
+          <td data-label="Reward">
+            <span class="aging-badge recent">Active</span>
           </td>
           <td data-label="Status">
-            <span class="status-badge ${rewardStatus.status === 'expired' ? '' : 'unclaimed'}" style="${rewardStatus.status === 'expired' ? 'background:rgba(196,30,58,0.15);color:var(--bad)' : ''}">
-              ${rewardStatus.status === 'expired' ? 'Expired' : 'Pending'}
-            </span>
+            <span class="status-badge unclaimed">Pending</span>
           </td>
           <td data-label="Actions"><button class="btn" data-view="${sanitize(r.id)}">View</button></td>
         `;
@@ -3267,7 +3245,6 @@
       document.getElementById('pendingFilterSearch').value = '';
       document.getElementById('pendingFilterBrand').value = '';
       document.getElementById('pendingFilterBranch').value = '';
-      document.getElementById('pendingFilterStatus').value = '';
       paintPending();
     });
 
@@ -3523,6 +3500,9 @@
 
       // Detractor comments
       paintDetractorComments(periodResponses);
+
+      // Text response rankings
+      paintTextInsights(periodResponses);
     }
 
     function calculateTrendData(responses) {
@@ -3570,6 +3550,350 @@
           <div style="font-size:11px; color:var(--muted); margin-top:8px">${formatDate(r.completed_at)}</div>
         </div>
       `).join('');
+    }
+
+    /* ---------- Text Insights ---------- */
+
+    // Phrases treated as "no answer" — filtered out of idea/suggestion rankings
+    const TEXT_SKIP = new Set([
+      'none','n/a','na','n.a.','nil','nothing','no','nope','-','none.','none so far',
+      'no suggestion','no suggestions','nothing else','wala','none for now',
+      'none yet','no ideas','no comments','no concerns','no feedback','nothing to add',
+      'none at the moment','wala po','ok lang','ok','good','same','keep it up','test'
+    ]);
+
+    /* ----- Fuzzy answer grouping -----
+       Groups near-duplicate free-text answers so variants of the same thing are
+       counted as one. e.g. "Inasal", "mang inasal" and "Mang Inasal Cebu" all
+       collapse into a single ranked entry. */
+
+    // Words that carry no identity — stripped before comparing answers.
+    const FUZZY_STOPWORDS = new Set([
+      'the','a','an','and','at','of','de','el','la','los','las','sa','ng','po',
+      'restaurant','resto','resto','cafe','coffee','co','inc','corp','corporation',
+      'ph','philippines','manila','branch','grill','grille','bar','kitchen','house',
+      'eatery','diner','foods','food','place','store','shop','mall','city'
+    ]);
+
+    function fuzzyNormalize(s) {
+      return String(s)
+        .toLowerCase()
+        .normalize('NFKD').replace(/[\u0300-\u036f]/g, '') // strip accents
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9\s]/g, ' ')                       // punctuation -> space
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Common single-token abbreviations / nicknames folded to a canonical token so
+    // e.g. "McDo" groups with "McDonald's". Keys are post-normalization tokens;
+    // only single-token targets are listed (multi-word names group via overlap).
+    const FUZZY_TOKEN_ALIASES = {
+      mcdo: 'mcdonald', macdo: 'mcdonald',
+      jbc: 'jollibee', jolibee: 'jollibee',
+      sbux: 'starbucks'
+    };
+
+    // Significant tokens used for matching (stopwords removed, plurals folded, aliases applied).
+    function fuzzyTokens(s) {
+      return fuzzyNormalize(s)
+        .split(' ')
+        .filter(t => t && !FUZZY_STOPWORDS.has(t))
+        .map(t => (t.length > 3 && t.endsWith('s')) ? t.slice(0, -1) : t)
+        .map(t => FUZZY_TOKEN_ALIASES[t] || t);
+    }
+
+    function levenshtein(a, b) {
+      if (a === b) return 0;
+      const m = a.length, n = b.length;
+      if (!m) return n; if (!n) return m;
+      let prev = Array.from({ length: n + 1 }, (_, i) => i);
+      let curr = new Array(n + 1);
+      for (let i = 1; i <= m; i++) {
+        curr[0] = i;
+        for (let j = 1; j <= n; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+        }
+        [prev, curr] = [curr, prev];
+      }
+      return prev[n];
+    }
+
+    // Are two token lists close enough to be the same answer?
+    function fuzzySimilar(aTok, bTok) {
+      if (!aTok.length || !bTok.length) return false;
+      const aSet = new Set(aTok), bSet = new Set(bTok);
+      let inter = 0;
+      for (const t of aSet) if (bSet.has(t)) inter++;
+      const smaller = Math.min(aSet.size, bSet.size);
+      const union = aSet.size + bSet.size - inter;
+      // Full containment — "inasal" ⊆ {mang, inasal}
+      if (inter > 0 && inter === smaller) return true;
+      // Strong token overlap
+      if (inter > 0 && inter / union >= 0.5) return true;
+      // Single-token typo tolerance — "jolibee" vs "jollibee"
+      if (aSet.size === 1 && bSet.size === 1) {
+        const x = [...aSet][0], y = [...bSet][0];
+        if (x.length >= 4 && y.length >= 4) {
+          const ratio = 1 - levenshtein(x, y) / Math.max(x.length, y.length);
+          if (ratio >= 0.8) return true;
+        }
+      }
+      return false;
+    }
+
+    // Greedy frequency-ordered clustering of raw answer strings.
+    function fuzzyGroup(values) {
+      const variants = new Map(); // signature -> { tokens, count, displays:Map }
+      for (const raw of values) {
+        const display = String(raw).trim();
+        if (!display) continue;
+        const tokens = fuzzyTokens(display);
+        const sig = tokens.length ? tokens.join(' ') : fuzzyNormalize(display);
+        if (!sig) continue;
+        if (!variants.has(sig)) variants.set(sig, { tokens: tokens.length ? tokens : [sig], count: 0, displays: new Map() });
+        const v = variants.get(sig);
+        v.count++;
+        v.displays.set(display, (v.displays.get(display) || 0) + 1);
+      }
+      const entries = [...variants.values()].sort((a, b) => b.count - a.count);
+      const clusters = [];
+      for (const e of entries) {
+        let placed = false;
+        for (const c of clusters) {
+          if (fuzzySimilar(e.tokens, c.tokens)) {
+            c.count += e.count;
+            for (const [d, k] of e.displays) c.displays.set(d, (c.displays.get(d) || 0) + k);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) clusters.push({ tokens: e.tokens, count: e.count, displays: new Map(e.displays) });
+      }
+      // Canonical label = the most common original spelling in the cluster.
+      return clusters.map(c => {
+        let bestD = '', bestN = -1;
+        for (const [d, k] of c.displays) if (k > bestN) { bestN = k; bestD = d; }
+        return { value: bestD, count: c.count };
+      }).sort((a, b) => b.count - a.count);
+    }
+
+    function computeTopN(responses, field, isArray, n = 10, skipNulls = false, fuzzy = false) {
+      // Collect every individual answer string.
+      const raw = [];
+      for (const r of responses) {
+        const val = r[field];
+        if (val === null || val === undefined || val === '') continue;
+        let items;
+        if (isArray) {
+          items = Array.isArray(val) ? val : (() => { try { return JSON.parse(val); } catch(e) { return [val]; } })();
+          if (!Array.isArray(items)) items = [val];
+        } else {
+          items = [val];
+        }
+        for (const item of items) {
+          if (item === null || item === undefined) continue;
+          const normalized = String(item).trim();
+          if (!normalized || normalized === '-') continue;
+          if (skipNulls && TEXT_SKIP.has(normalized.toLowerCase())) continue;
+          raw.push(normalized);
+        }
+      }
+
+      let grouped;
+      if (fuzzy) {
+        grouped = fuzzyGroup(raw);
+      } else {
+        const counts = new Map();
+        for (const normalized of raw) {
+          const key = normalized.toLowerCase();
+          if (!counts.has(key)) counts.set(key, { value: normalized, count: 0 });
+          counts.get(key).count++;
+        }
+        grouped = [...counts.values()].sort((a, b) => b.count - a.count);
+      }
+      return grouped.slice(0, n).map((v, i) => ({ rank: i + 1, value: v.value, count: v.count }));
+    }
+
+    function rankBadge(rank) {
+      const medals = { 1: '#d4af37', 2: '#9e9e9e', 3: '#cd7f32' };
+      const bg = medals[rank] || 'var(--line)';
+      const fg = medals[rank] ? '#fff' : 'var(--muted)';
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${bg};color:${fg};font:700 11px var(--font);flex-shrink:0">${rank}</span>`;
+    }
+
+    function rankingTableHTML(data, total, emptyMsg) {
+      if (!data.length) {
+        return `<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">${emptyMsg || 'No data yet.'}</div>`;
+      }
+      const maxCount = data[0].count;
+      return `<table style="width:100%;border-collapse:collapse;table-layout:fixed">
+        <colgroup>
+          <col style="width:32px">
+          <col>
+          <col style="width:44px">
+          <col style="width:52px">
+        </colgroup>
+        <tbody>${data.map(row => {
+          const pct = total > 0 ? Math.round(row.count / total * 100) : 0;
+          const barW = Math.round(row.count / maxCount * 100);
+          const isTop3 = row.rank <= 3;
+          return `<tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:8px 6px 8px 0;vertical-align:middle">${rankBadge(row.rank)}</td>
+            <td style="padding:8px 6px;vertical-align:middle;overflow:hidden">
+              <div style="font:${isTop3?'700':'500'} 13px var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${sanitize(row.value)}">${sanitize(row.value)}</div>
+              <div style="margin-top:4px;height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+                <div style="width:${barW}%;height:100%;background:${isTop3?'var(--gold)':'#b0a88a'};border-radius:3px"></div>
+              </div>
+            </td>
+            <td style="padding:8px 4px;text-align:right;vertical-align:middle;font:800 14px var(--font);color:${isTop3?'var(--ink)':'var(--muted)'}">${row.count}</td>
+            <td style="padding:8px 0 8px 8px;vertical-align:middle;text-align:right;font:600 11px var(--font);color:var(--muted);white-space:nowrap">${pct}%</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+
+    function renderRankingTable(containerId, data, total, emptyMsg) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = rankingTableHTML(data, total, emptyMsg);
+    }
+
+    /* ----- All-question summary registry ----- */
+    // Every survey question that takes customer input. Free-text answers are
+    // fuzzy-grouped; choice/multi are exact-counted; ratings show a 1–10 distribution.
+    const QUESTION_SUMMARIES = [
+      { col:'q2',  qlabel:'Q2',  label:'First time at this branch?',           type:'choice', tag:'Visit' },
+      { col:'q4',  qlabel:'Q3',  label:'How often do you visit?',              type:'choice', tag:'Visit' },
+      { col:'q3',  qlabel:'Q4',  label:'Dine-in or Take-out?',                 type:'choice', tag:'Visit' },
+      { col:'q13', qlabel:'Q5',  label:'Dietary restrictions / preferences',   type:'multi',  tag:'Menu' },
+      { col:'q17', qlabel:'Q6',  label:'Last five restaurants visited',        type:'text', array:true, fuzzy:true, tag:'Competitor Intel' },
+      { col:'q18', qlabel:'Q7',  label:'What did you like most?',              type:'text', fuzzy:true, tag:'Strengths' },
+      { col:'q5',  qlabel:'Q8',  label:'Overall customer experience',          type:'rating', tag:'Rating' },
+      { col:'q6',  qlabel:'Q9',  label:'Value for money',                      type:'rating', tag:'Rating' },
+      { col:'q7',  qlabel:'Q10', label:'Overall food quality',                 type:'rating', tag:'Rating' },
+      { col:'q8',  qlabel:'Q11', label:'Staff friendliness',                   type:'rating', tag:'Rating' },
+      { col:'q10', qlabel:'Q12', label:'Service promptness',                   type:'rating', tag:'Rating' },
+      { col:'q11', qlabel:'Q13', label:'Cleanliness & orderliness',            type:'rating', tag:'Rating' },
+      { col:'q12', qlabel:'Q14', label:'Likelihood to recommend (NPS)',        type:'rating', tag:'NPS' },
+      { col:'q14', qlabel:'Q15', label:'Ideas for new dishes / improvements',  type:'text', fuzzy:true, skipNulls:true, tag:'Product' },
+      { col:'q16', qlabel:'Q16', label:'Where should we open next?',           type:'text', fuzzy:true, tag:'Expansion' },
+      { col:'q15', qlabel:'Q17', label:'Other suggestions / shout-outs',       type:'text', fuzzy:true, skipNulls:true, tag:'Voice of Customer' },
+    ];
+
+    // Split comma-joined multi-select answers (e.g. q13 "No Pork, No Nuts") into arrays.
+    function splitMultiResponses(responses, col) {
+      return responses.map(r => {
+        const v = r[col];
+        if (v === null || v === undefined || v === '') return { [col]: null };
+        const parts = String(v).split(',').map(s => s.trim()).filter(Boolean);
+        return { [col]: parts.length ? parts : null };
+      });
+    }
+
+    // Returns the ranked answers for a question (used by both UI and export).
+    function summarizeQuestion(responses, q, n = 10) {
+      if (q.type === 'multi') {
+        return computeTopN(splitMultiResponses(responses, q.col), q.col, true, n, false, false);
+      }
+      return computeTopN(responses, q.col, !!q.array, n, !!q.skipNulls, !!q.fuzzy);
+    }
+
+    // Rating distribution (score -> count) plus average and answered count.
+    function summarizeRating(responses, col) {
+      const dist = new Map();
+      let sum = 0, count = 0;
+      for (const r of responses) {
+        const v = r[col];
+        if (v === null || v === undefined || v === '') continue;
+        const num = Number(v);
+        if (!Number.isFinite(num)) continue;
+        dist.set(num, (dist.get(num) || 0) + 1);
+        sum += num; count++;
+      }
+      const rows = [...dist.entries()].sort((a, b) => b[0] - a[0])
+        .map(([score, c]) => ({ value: String(score), count: c }));
+      return { rows, avg: count ? (sum / count) : 0, count };
+    }
+
+    function ratingCardHTML(responses, col) {
+      const { rows, avg, count } = summarizeRating(responses, col);
+      if (!count) {
+        return `<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">No ratings yet.</div>`;
+      }
+      const maxCount = Math.max(...rows.map(r => r.count));
+      const avgColor = avg >= 8 ? 'var(--ok)' : avg >= 6 ? 'var(--warn)' : 'var(--bad)';
+      const bars = rows.map(r => {
+        const barW = Math.round(r.count / maxCount * 100);
+        const pct = Math.round(r.count / count * 100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0">
+          <span style="width:20px;text-align:right;font:700 11px var(--font);color:var(--muted)">${r.value}</span>
+          <div style="flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${avgColor};border-radius:4px"></div>
+          </div>
+          <span style="width:60px;text-align:right;font:600 11px var(--font);color:var(--muted)">${r.count} · ${pct}%</span>
+        </div>`;
+      }).join('');
+      return `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">
+          <span style="font:800 26px var(--font);color:${avgColor}">${avg.toFixed(1)}</span>
+          <span style="font:600 11px var(--font);color:var(--muted)">avg · ${count} response${count===1?'':'s'}</span>
+        </div>${bars}`;
+    }
+
+    const TAG_COLORS = {
+      'Competitor Intel':'var(--gold)','Strengths':'var(--ok)','Product':'var(--warn)',
+      'Expansion':'var(--info)','Voice of Customer':'#6b7280','NPS':'#c41e3a',
+      'Rating':'#7c6f9c','Visit':'#0e9a5a','Menu':'#b8860b'
+    };
+
+    function renderQuestionSummaries(responses) {
+      const container = document.getElementById('questionSummaries');
+      if (!container) return;
+      const total = responses.length;
+      container.innerHTML = QUESTION_SUMMARIES.map(q => {
+        const tagColor = TAG_COLORS[q.tag] || 'var(--gold)';
+        let body;
+        if (q.type === 'rating') {
+          body = ratingCardHTML(responses, q.col);
+        } else {
+          const rows = summarizeQuestion(responses, q, 10);
+          const empty = q.skipNulls
+            ? 'No meaningful answers yet — "None / N/A" replies are filtered out.'
+            : `No data yet — appears as customers answer ${q.qlabel}.`;
+          body = rankingTableHTML(rows, total, empty);
+        }
+        return `<div style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0;overflow:hidden">
+          <div style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font:600 10px var(--font);color:#fff;background:${tagColor};padding:2px 8px;border-radius:999px;white-space:nowrap">${q.qlabel} · ${q.tag}</span>
+              <span style="font:800 13px var(--font)">${q.label}</span>
+            </div>
+          </div>
+          ${body}
+        </div>`;
+      }).join('');
+    }
+
+    function paintTextInsights(responses) {
+      // Quick-glance KPI cards (fuzzy-grouped so variants count as one)
+      const restaurants = computeTopN(responses, 'q17', true,  1, false, true);
+      const locations   = computeTopN(responses, 'q16', false, 1, false, true);
+      const liked       = computeTopN(responses, 'q18', false, 1, false, true);
+      const ideas       = computeTopN(responses, 'q14', false, 1, true,  true);
+
+      const setKpi = (id, data) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = data.length ? `${data[0].value} (${data[0].count}×)` : '-';
+      };
+      setKpi('tiKpiRestaurant', restaurants);
+      setKpi('tiKpiLocation',   locations);
+      setKpi('tiKpiLiked',      liked);
+      setKpi('tiKpiIdea',       ideas);
+
+      // Full per-question summary grid (all input questions)
+      renderQuestionSummaries(responses);
     }
 
     // Period selector
@@ -3636,14 +3960,26 @@
         'NPS Category': getNPSCategory(r.q12),
         'NPS Feedback': r.q12_follow || '-',
         'First Visit': r.q2 || '-',
-        'Visit Frequency': r.q3 || '-',
-        'Party Size': r.q4 || '-',
+        'Dine-in / Take-out': r.q3 || '-',
+        'Visit Frequency': r.q4 || '-',
         'Overall Experience': r.q5 || '-',
-        'Food Quality': r.q6 || '-',
-        'Staff Friendliness': r.q7 || '-',
-        'Orders Correct': r.q8 || '-',
-        'Value for Money': r.q10 || '-',
-        'Service Promptness': r.q11 || '-',
+        'Overall Experience — Comment': r.q5_follow || '-',
+        'Value for Money': r.q6 || '-',
+        'Value for Money — Comment': r.q6_follow || '-',
+        'Food Quality': r.q7 || '-',
+        'Food Quality — Comment': r.q7_follow || '-',
+        'Staff Friendliness': r.q8 || '-',
+        'Staff Friendliness — Comment': r.q8_follow || '-',
+        'Service Promptness': r.q10 || '-',
+        'Service Promptness — Comment': r.q10_follow || '-',
+        'Cleanliness & Orderliness': r.q11 || '-',
+        'Cleanliness — Comment': r.q11_follow || '-',
+        'Dietary Restrictions': r.q13 || '-',
+        'Last 5 Restaurants Visited': Array.isArray(r.q17) ? r.q17.join('; ') : (r.q17 || '-'),
+        'Liked Most': r.q18 || '-',
+        'Ideas / Improvements': r.q14 || '-',
+        'Other Suggestions': r.q15 || '-',
+        'Preferred Next Location': r.q16 || '-',
         'Ticket Status': r.ticket_status || 'open',
         'Reward Code': r.reward_code || '-',
         'Reward Claimed': r.reward_claimed ? 'Yes' : 'No',
@@ -3653,6 +3989,34 @@
       const ws = XLSX.utils.json_to_sheet(exportRows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Survey Responses');
+
+      // Consolidated "Answer Summaries" sheet — top answers for every input
+      // question. Free-text answers are fuzzy-grouped (variants count as one);
+      // ratings list their 1–10 distribution with the average.
+      const n = data.length;
+      const pctOf = c => `${n > 0 ? Math.round(c / n * 100) : 0}%`;
+      const summaryRows = [];
+      QUESTION_SUMMARIES.forEach(q => {
+        if (q.type === 'rating') {
+          const { rows, avg, count } = summarizeRating(data, q.col);
+          summaryRows.push({ 'Question': `${q.qlabel} — ${q.label}`, 'Rank': '', 'Answer': `Average: ${avg.toFixed(1)} / 10`, 'Mentions': count, '% of Responses': pctOf(count) });
+          rows.forEach(r => summaryRows.push({ 'Question': '', 'Rank': '', 'Answer': `Rated ${r.value}`, 'Mentions': r.count, '% of Responses': pctOf(r.count) }));
+        } else {
+          const top = summarizeQuestion(data, q, 10);
+          if (!top.length) {
+            summaryRows.push({ 'Question': `${q.qlabel} — ${q.label}`, 'Rank': '', 'Answer': '(no answers)', 'Mentions': '', '% of Responses': '' });
+          } else {
+            top.forEach((r, i) => summaryRows.push({
+              'Question': i === 0 ? `${q.qlabel} — ${q.label}` : '',
+              'Rank': r.rank, 'Answer': r.value, 'Mentions': r.count, '% of Responses': pctOf(r.count)
+            }));
+          }
+        }
+        summaryRows.push({ 'Question': '', 'Rank': '', 'Answer': '', 'Mentions': '', '% of Responses': '' }); // spacer
+      });
+      if (summaryRows.length) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Answer Summaries');
+      }
 
       const filename = `survey_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
       XLSX.writeFile(wb, filename);
@@ -3677,13 +4041,50 @@
         'NPS Score': r.q12,
         'NPS Category': getNPSCategory(r.q12),
         'NPS Feedback': r.q12_follow || '-',
+        'First Visit': r.q2 || '-',
+        'Dine-in / Take-out': r.q3 || '-',
+        'Visit Frequency': r.q4 || '-',
+        'Overall Experience': r.q5 || '-',
+        'Value for Money': r.q6 || '-',
+        'Food Quality': r.q7 || '-',
+        'Staff Friendliness': r.q8 || '-',
+        'Service Promptness': r.q10 || '-',
+        'Cleanliness & Orderliness': r.q11 || '-',
+        'Dietary Restrictions': r.q13 || '-',
+        'Last 5 Restaurants Visited': Array.isArray(r.q17) ? r.q17.join('; ') : (r.q17 || '-'),
+        'Liked Most': r.q18 || '-',
+        'Ideas / Improvements': r.q14 || '-',
+        'Other Suggestions': r.q15 || '-',
+        'Preferred Next Location': r.q16 || '-',
         'Ticket Status': r.ticket_status || 'open',
         'Reward Code': r.reward_code || '-',
         'Reward Claimed': r.reward_claimed ? 'Yes' : 'No'
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportRows);
-      const csv = XLSX.utils.sheet_to_csv(ws);
+      let csv = XLSX.utils.sheet_to_csv(ws);
+
+      // Append a fuzzy-grouped answer summary block for every input question.
+      const n = data.length;
+      const pctOf = c => `${n > 0 ? Math.round(c / n * 100) : 0}%`;
+      const summaryRows = [['Question', 'Rank', 'Answer', 'Mentions', '% of Responses']];
+      QUESTION_SUMMARIES.forEach(q => {
+        if (q.type === 'rating') {
+          const { rows, avg, count } = summarizeRating(data, q.col);
+          summaryRows.push([`${q.qlabel} — ${q.label}`, '', `Average: ${avg.toFixed(1)} / 10`, count, pctOf(count)]);
+          rows.forEach(r => summaryRows.push(['', '', `Rated ${r.value}`, r.count, pctOf(r.count)]));
+        } else {
+          const top = summarizeQuestion(data, q, 10);
+          if (!top.length) {
+            summaryRows.push([`${q.qlabel} — ${q.label}`, '', '(no answers)', '', '']);
+          } else {
+            top.forEach((r, i) => summaryRows.push([i === 0 ? `${q.qlabel} — ${q.label}` : '', r.rank, r.value, r.count, pctOf(r.count)]));
+          }
+        }
+        summaryRows.push(['', '', '', '', '']);
+      });
+      const summaryWs = XLSX.utils.aoa_to_sheet([['ANSWER SUMMARIES'], []].concat(summaryRows));
+      csv += '\r\n\r\n' + XLSX.utils.sheet_to_csv(summaryWs);
 
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
